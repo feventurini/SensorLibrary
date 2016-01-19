@@ -1,11 +1,13 @@
-package discovery;
+
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 
-public class RMI_Client {
+import discovery.Provider;
+
+public class TestUser {
 
 	public static void main(String[] args) {
 		int registryPort = 1099;
@@ -37,7 +39,7 @@ public class RMI_Client {
 		try {
 			String completeName = "//" + registryHost + ":" + registryPort
 					+ "/" + serviceName;
-			Discovery serverRMI = (Discovery) Naming.lookup(completeName);
+			Provider provider = (Provider) Naming.lookup(completeName);
 			System.out.println("ClientRMI: Servizio \"" + serviceName
 					+ "\" connesso");
 
@@ -53,7 +55,7 @@ public class RMI_Client {
 					// Lettura dell'input da stdIn
 					try {
 						// Invocazione di serverRMI.metodo1
-						serverRMI.metodo1();
+						provider.find("cucina", "temperatura");
 						// Stampa del risultato
 					} catch (RemoteException re) {
 						re.printStackTrace();
@@ -62,7 +64,7 @@ public class RMI_Client {
 					// Lettura dell'input da stdIn
 					try {
 						// Invocazione di serverRMI.metodo2
-						String[] result = serverRMI.metodo2(1,"a");
+						provider.find("cucina", null);
 						// Stampa del risultato
 					} catch (RemoteException re) {
 						re.printStackTrace();
