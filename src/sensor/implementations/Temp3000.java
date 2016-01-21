@@ -11,9 +11,9 @@ import sensor.TempSensor;
 
 public class Temp3000 implements TempSensor {
 
-	private Random r;
-	private ExecutorService executor;
-	private Unit sensorUnit;
+	private transient Random r;
+	private transient ExecutorService executor;
+	private transient Unit sensorUnit;
 
 	public Temp3000() {
 		r = new Random();

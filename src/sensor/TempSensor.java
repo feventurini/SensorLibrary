@@ -1,7 +1,6 @@
 package sensor;
 
 import java.rmi.RemoteException;
-import java.util.concurrent.Future;
 
 public interface TempSensor extends Sensor {
 	public enum Unit {
@@ -50,7 +49,7 @@ public interface TempSensor extends Sensor {
 	/**
 	 * Reads the temperature asynchronously
 	 * 
-	 * @return a {@link Future} representing the temperature that will be read
+	 * @return a {@link FutureResult} representing the temperature that will be read
 	 */
-	public Future<Double> readTemperatureAsync(Unit unit) throws RemoteException;
+	public FutureResult<Double> readTemperatureAsync(Unit unit) throws RemoteException;
 }
