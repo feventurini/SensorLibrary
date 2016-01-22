@@ -1,8 +1,8 @@
 package sensor.implementations;
 
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -10,10 +10,9 @@ import java.util.concurrent.Executors;
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
 import sensor.TempSensor;
-import sensor.TempSensor.Unit;
 
-public class Temp2000 implements TempSensor {
-
+public class Temp2000 extends UnicastRemoteObject implements TempSensor {
+	private static final long serialVersionUID = -9066863232278842877L;
 	private transient Random r;
 	private transient ExecutorService executor;
 	private transient Unit sensorUnit;

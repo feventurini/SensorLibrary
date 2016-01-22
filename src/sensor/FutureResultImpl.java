@@ -1,8 +1,15 @@
 package sensor;
 
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 
-public class FutureResultImpl<T> implements FutureResult<T> {	
+public class FutureResultImpl<T> extends UnicastRemoteObject implements FutureResult<T> {	
+	private static final long serialVersionUID = 1L;
+
+	public FutureResultImpl() throws RemoteException {
+		super();
+	}
+
 	private T result = null;
 	
 	public synchronized void set(T result) {

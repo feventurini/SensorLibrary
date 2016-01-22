@@ -23,7 +23,10 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	public synchronized Sensor find(String location, String name) throws RemoteException {
 		if (location==null||name==null||location.isEmpty()||name.isEmpty())
 			throw new RemoteException("Argument error");
-		return null;
+		String fullName = location+":"+name;
+		if (!bindings.containsKey(fullName))
+			throw new RemoteException("Sensor "+fullName+" not found");
+		return bindings.get(fullName);
 	}
 
 	@Override

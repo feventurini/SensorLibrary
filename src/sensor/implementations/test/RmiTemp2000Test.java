@@ -24,12 +24,16 @@ public class RmiTemp2000Test {
 		System.out.println("Set up ok");
 
 		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
+		System.out.println("SINCRONO");
 		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
+		System.out.println("SINCRONO");
 		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
+		System.out.println("SINCRONO");
 	
 		List<FutureResult<Double>> results = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
 			results.add(t.readTemperatureAsync(Unit.CELSIUS));
+			System.out.println("ASINCRONO SHALALALALALA");
 		}
 		results.forEach((future) -> {
 			new Thread(() -> {
