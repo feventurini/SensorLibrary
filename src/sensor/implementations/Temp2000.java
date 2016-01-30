@@ -13,9 +13,9 @@ import sensor.TempSensor;
 
 public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 	private static final long serialVersionUID = -9066863232278842877L;
-	private transient Random r;
-	private transient ExecutorService executor;
-	private transient Unit sensorUnit;
+	private Random r;
+	private ExecutorService executor;
+	private Unit sensorUnit;
 
 	public Temp2000() throws RemoteException {
 		r = new Random();

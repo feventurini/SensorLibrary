@@ -1,80 +1,43 @@
 
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
 
 import discovery.Provider;
+import sensor.FutureResult;
+import sensor.RfidSensor;
 
 public class TestUser {
 
-	public static void main(String[] args) {
-		int registryPort = 1099;
-		String serviceName = "Server";
-		BufferedReader stdIn = new BufferedReader(new InputStreamReader(
-				System.in));
+	public static void main(String[] args) throws RemoteException, InterruptedException, MalformedURLException, NotBoundException{
+		Provider p = (Provider) Naming.lookup("rmi://192.168.0.18:1099/ProviderRMI");
+		RfidSensor t = (RfidSensor) p.find("test", "Rfid_SL030");
+		System.out.println("Set up ok");
 
-		if (args.length < 1 || args.length > 2) {
-			System.out.println("Usage: ClientRMI registryHost [registryPort]");
-			System.exit(1);
+		System.out.println("Sync " + t.readTag());
+		System.out.println("SINCRONO");
+		System.out.println("Sync " + t.readTag());
+		System.out.println("SINCRONO");
+		System.out.println("Sync " + t.readTag());
+		System.out.println("SINCRONO");
+	
+		List<FutureResult<String>> results = new ArrayList<>();
+		for (int i = 0; i < 10; i++) {
+			results.add(t.readTagAsync());
+			System.out.println("ASINCRONO SHALALALALALA");
 		}
-
-		String registryHost = args[0];
-		if (args.length == 2) {
-			try {
-				registryPort = Integer.parseInt(args[1]);
-			} catch (NumberFormatException e) {
-				System.out
-						.println("Usage: ClientRMI registryHost [registryPort]");
-				System.exit(2);
-			}
-			if (registryPort < 1024 || registryPort > 65535) {
-				System.out.println("Port out of range");
-				System.exit(3);
-			}
-		}
-
-		// Connessione al servizio RMI remoto
-		try {
-			String completeName = "//" + registryHost + ":" + registryPort
-					+ "/" + serviceName;
-			Provider provider = (Provider) Naming.lookup(completeName);
-			System.out.println("ClientRMI: Servizio \"" + serviceName
-					+ "\" connesso");
-
-			String richiesta;
-
-			while (true) {
-				System.out.printf("Che vuoi fare?\n1\tmetodo1\n2\tmetodo2\n^D\tper uscire\n");
-				richiesta = stdIn.readLine();
-				if(richiesta==null) {
-					System.out.println("Ciao, alla prossima");
-					break;
-				} else if (richiesta.equals("1")) {
-					// Lettura dell'input da stdIn
-					try {
-						// Invocazione di serverRMI.metodo1
-						provider.find("cucina", "temperatura");
-						// Stampa del risultato
-					} catch (RemoteException re) {
-						re.printStackTrace();
-					}
-				} else if (richiesta.equals("2")) {
-					// Lettura dell'input da stdIn
-					try {
-						// Invocazione di serverRMI.metodo2
-						provider.find("cucina", null);
-						// Stampa del risultato
-					} catch (RemoteException re) {
-						re.printStackTrace();
-					}
-				} else
-					System.out.println("Servizio non disponibile");
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(4);
-		}
-	}
-}
+		results.forEach((futureResult) -> {
+			new Thread(() -> {
+				try {
+					System.out.println("Async " + futureResult.get());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}).start();
+		});
+		Thread.sleep(10000);
+	}}

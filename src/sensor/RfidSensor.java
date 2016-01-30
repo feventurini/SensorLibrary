@@ -17,5 +17,5 @@ public interface RfidSensor extends Sensor {
 	 * 
 	 * @return a {@link Future} representing the tag that will be read when present
 	 */
-	public Future<Double> readTemperatureAsync() throws RemoteException;
+	public FutureResult<String> readTagAsync() throws RemoteException;
 }

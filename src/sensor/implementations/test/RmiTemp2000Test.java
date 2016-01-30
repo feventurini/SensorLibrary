@@ -35,10 +35,10 @@ public class RmiTemp2000Test {
 			results.add(t.readTemperatureAsync(Unit.CELSIUS));
 			System.out.println("ASINCRONO SHALALALALALA");
 		}
-		results.forEach((future) -> {
+		results.forEach((futureResult) -> {
 			new Thread(() -> {
 				try {
-					System.out.println("Async " + future.get());
+					System.out.println("Async " + futureResult.get());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
