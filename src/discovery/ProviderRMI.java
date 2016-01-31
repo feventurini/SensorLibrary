@@ -2,7 +2,9 @@ package discovery;
 
 import java.net.MalformedURLException;
 import java.rmi.Naming;
+import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +25,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	public synchronized Sensor find(String location, String name) throws RemoteException {
 		if (location==null||name==null||location.isEmpty()||name.isEmpty())
 			throw new RemoteException("Argument error");
-		String fullName = location+":"+name;
+		String fullName = name+"@"+location;
 		if (!bindings.containsKey(fullName))
 			throw new RemoteException("Sensor "+fullName+" not found");
 		return bindings.get(fullName);
@@ -42,10 +44,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (location==null||name==null||sensor==null||location.isEmpty()||name.isEmpty())
 			throw new RemoteException("Argument error");
 
-		String fullName = location+":"+name;
+		String fullName = name+"@"+location;
 		if (bindings.containsKey(fullName))
 			throw new RemoteException("Sensor "+fullName+" already registered");
 		bindings.put(fullName, sensor);
+		System.out.println("Registered: " + fullName);
 	}
 
 	@Override
@@ -53,11 +56,13 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (location==null||name==null||location.isEmpty()||name.isEmpty())
 			throw new RemoteException("Argument error");
 		
-		String fullName = location+":"+name;
+		String fullName = name+"@"+location;
 		bindings.remove(fullName);
+		System.out.println("Unregistered: " + fullName);
 	}
 
-	// Avvio del Server RMI
+	// Avvio del Server RMI 
+	// java -Djava.security.policy=rmi.policy discovery.ProviderRMI
 	public static void main(String[] args) {
 		int registryPort = 1099;
 		String registryHost = "localhost";
@@ -77,6 +82,18 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		} else if (args.length > 1) {
 			System.out.println("Too many arguments");
 			System.out.println("Usage: ProviderRMI [registryPort]");
+			System.exit(-1);
+		}
+		
+		// Impostazione del SecurityManager
+	    if (System.getSecurityManager() == null) {
+	      System.setSecurityManager(new RMISecurityManager());
+	    }
+	    
+	    try {
+			LocateRegistry.createRegistry(registryPort);
+		} catch (RemoteException e) {
+			e.printStackTrace();
 			System.exit(-1);
 		}
 

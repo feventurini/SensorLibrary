@@ -1,5 +1,7 @@
 package sensor.implementations;
 
+import java.rmi.Naming;
+import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Random;
@@ -7,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import discovery.Provider;
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
 import sensor.TempSensor;
@@ -43,5 +46,42 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 		FutureResultImpl<Double> result = new FutureResultImpl<>();
 		(CompletableFuture.supplyAsync(() -> measure(unit), executor)).thenAccept((value) -> result.set(value));
 		return result;
+	}
+	
+	// java -Djava.security.policy=rmi.policy sensor/implementations/Temp2000 192.168.0.12
+	public static void main(String[] args) throws Exception {
+		int providerPort = 1099;
+		String serviceName = "ProviderRMI";
+		
+		if (args.length < 1 || args.length > 2) {
+			System.out.println("Usage: Temp2000 providerHost [providerPort]");
+			System.exit(1);
+		}
+
+		String providerHost = args[0];
+		if (args.length == 2) {
+			try {
+				providerPort = Integer.parseInt(args[1]);
+			} catch (NumberFormatException e) {
+				System.out
+						.println("Usage: Temp2000 providerHost [providerPort]");
+				System.exit(2);
+			}
+			if (providerPort < 1024 || providerPort > 65535) {
+				System.out.println("Port out of range");
+				System.exit(3);
+			}
+		}
+		
+		// Impostazione del SecurityManager
+	    if (System.getSecurityManager() == null) {
+	      System.setSecurityManager(new RMISecurityManager());
+	    }
+		
+		String completeName = "rmi://" + providerHost + ":" + providerPort
+				+ "/" + serviceName;
+		Provider p = (Provider) Naming.lookup(completeName);
+		p.register("test_room", "Temp2000", new Temp2000());
+		System.out.println("Temp2000 registrato");
 	}
 }

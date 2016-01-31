@@ -5,33 +5,34 @@ import java.rmi.registry.LocateRegistry;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.pi4j.io.gpio.RaspiPin;
+
 import discovery.Provider;
 import discovery.ProviderRMI;
 import sensor.FutureResult;
-import sensor.TempSensor;
-import sensor.TempSensor.Unit;
-import sensor.implementations.Temp2000;
+import sensor.RfidSensor;
+import sensor.implementations.Rfid_SL030;
 
 // NON VA
-public class RmiTemp2000Test {
+public class RmiRfid_SL030Test {
 	
 	public static void main(String[] args) throws Exception {
 		ProviderRMI.main(new String[] {"1099"}); // avvio provider
 		Provider p = (Provider) Naming.lookup("//localhost:1099/ProviderRMI");
-		p.register("test", "Temp2000", new Temp2000());
-		TempSensor t = (TempSensor) p.find("test", "Temp2000");
+		p.register("test", "Rfid_SL030", new Rfid_SL030(RaspiPin.GPIO_07));
+		RfidSensor t = (RfidSensor) p.find("test", "Rfid_SL030");
 		System.out.println("Set up ok");
 
-		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
+		System.out.println("Sync " + t.readTag());
 		System.out.println("SINCRONO");
-		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
+		System.out.println("Sync " + t.readTag());
 		System.out.println("SINCRONO");
-		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
+		System.out.println("Sync " + t.readTag());
 		System.out.println("SINCRONO");
 	
-		List<FutureResult<Double>> results = new ArrayList<>();
+		List<FutureResult<String>> results = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			results.add(t.readTemperatureAsync(Unit.CELSIUS));
+			results.add(t.readTagAsync());
 			System.out.println("ASINCRONO SHALALALALALA");
 		}
 		results.forEach((futureResult) -> {

@@ -23,8 +23,7 @@ public class RmiTemp3000Test {
 
 	@Before
 	public void setUp() throws Exception {
-		LocateRegistry.createRegistry(1099);
-		ProviderRMI.main(new String[] {}); // avvio provider
+		ProviderRMI.main(new String[] {"1099"}); // avvio provider
 		Provider p = (Provider) Naming.lookup("//localhost:1099/ProviderRMI");
 		p.register("test", "Temp3000", new Temp3000());
 		t = (TempSensor) p.find("test", "Temp3000");
