@@ -41,6 +41,7 @@ public class RmiClassServer {
       throw new RuntimeException(e);
     }
 
+    System.setProperty("java.rmi.server.hostname",serverHostname);
     System.setProperty("java.rmi.server.codebase",
         "http://" + serverHostname + ":" + httpServer.getHttpPort() + "/");
   }

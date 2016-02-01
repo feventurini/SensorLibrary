@@ -1,4 +1,12 @@
+grant codeBase "http://192.168.0.18/" {
+    permission java.security.AllPermission;
+    permission java.net.SocketPermission ":1099-", "listen, connect, resolve";
+	permission java.net.SocketPermission "*:80", "connect";
+};
+
 grant {
+	permission java.util.PropertyPermission "java.rmi.server.codebase", "read, write";
+	permission java.util.PropertyPermission "java.rmi.server.hostname", "read, write";
 	permission java.net.SocketPermission "*:1024-65535", "connect, accept, resolve";
 	permission java.net.SocketPermission "*:80", "connect";
 };
