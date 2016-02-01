@@ -1,4 +1,4 @@
-package sensor.implementations.test;
+package client;
 
 import java.rmi.RemoteException;
 import java.util.ArrayList;
@@ -9,10 +9,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import implementations.Temp2000;
 import sensor.FutureResult;
 import sensor.TempSensor;
 import sensor.TempSensor.Unit;
-import sensor.implementations.Temp2000;
 
 public class Temp2000Test {
 

@@ -6,7 +6,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 
-import discovery.Provider;
+import provider.Provider;
 import sensor.FutureResult;
 import sensor.RfidSensor;
 import sensor.TempSensor;

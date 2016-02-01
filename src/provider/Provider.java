@@ -1,4 +1,4 @@
-package discovery;
+package provider;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

@@ -1,4 +1,4 @@
-package discovery;
+package provider;
 
 import java.net.MalformedURLException;
 import java.rmi.Naming;
@@ -62,7 +62,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	// Avvio del Server RMI 
-	// java -Djava.security.policy=rmi.policy discovery.ProviderRMI
+	// java -Djava.security.policy=rmi.policy provider.ProviderRMI
 	public static void main(String[] args) {
 		int registryPort = 1099;
 		String registryHost = "localhost";
@@ -90,12 +90,12 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	      System.setSecurityManager(new RMISecurityManager());
 	    }
 	    
-	    try {
-			LocateRegistry.createRegistry(registryPort);
-		} catch (RemoteException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
+//	    try {
+//			LocateRegistry.createRegistry(registryPort);
+//		} catch (RemoteException e) {
+//			e.printStackTrace();
+//			System.exit(-1);
+//		}
 
 		// Registrazione del servizio RMI
 		String completeName = "//" + registryHost + ":" + registryPort + "/" + serviceName;

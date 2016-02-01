@@ -1,4 +1,4 @@
-package sensor.implementations;
+package implementations;
 
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;
@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import discovery.Provider;
+import provider.Provider;
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
 import sensor.TempSensor;
@@ -48,7 +48,7 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 		return result;
 	}
 	
-	// java -Djava.security.policy=rmi.policy sensor/implementations/Temp2000 192.168.0.12
+	// java -Djava.security.policy=rmi.policy implementations.Temp2000 192.168.0.12
 	public static void main(String[] args) throws Exception {
 		int providerPort = 1099;
 		String serviceName = "ProviderRMI";
