@@ -4,7 +4,7 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
+import java.rmi.server.RMIClassLoader;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,45 +23,47 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 	@Override
 	public synchronized Sensor find(String location, String name) throws RemoteException {
-		if (location==null||name==null||location.isEmpty()||name.isEmpty())
+		if (location == null || name == null || location.isEmpty() || name.isEmpty())
 			throw new RemoteException("Argument error");
-		String fullName = name+"@"+location;
+		String fullName = name + "@" + location;
 		if (!bindings.containsKey(fullName))
-			throw new RemoteException("Sensor "+fullName+" not found");
+			throw new RemoteException("Sensor " + fullName + " not found");
 		return bindings.get(fullName);
 	}
 
 	@Override
 	public synchronized Sensor[] findAll(String location, String name) throws RemoteException {
-		if (location==null||name==null||location.isEmpty()||name.isEmpty())
+		if (location == null || name == null || location.isEmpty() || name.isEmpty())
 			throw new RemoteException("Argument error");
-		
+
 		return null;
 	}
 
 	@Override
 	public synchronized void register(String location, String name, Sensor sensor) throws RemoteException {
-		if (location==null||name==null||sensor==null||location.isEmpty()||name.isEmpty())
+		if (location == null || name == null || sensor == null || location.isEmpty() || name.isEmpty())
 			throw new RemoteException("Argument error");
 
-		String fullName = name+"@"+location;
+		String fullName = name + "@" + location;
+		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		if (bindings.containsKey(fullName))
-			throw new RemoteException("Sensor "+fullName+" already registered");
+			throw new RemoteException("Sensor " + fullName + " already registered");
 		bindings.put(fullName, sensor);
-		System.out.println("Registered: " + fullName);
+		System.out.println(
+				"Registered: " + fullName + " (" + sensor.getClass().getName() + " loaded from " + annotation + ")");
 	}
 
 	@Override
 	public synchronized void unregister(String location, String name) throws RemoteException {
-		if (location==null||name==null||location.isEmpty()||name.isEmpty())
+		if (location == null || name == null || location.isEmpty() || name.isEmpty())
 			throw new RemoteException("Argument error");
-		
-		String fullName = name+"@"+location;
+
+		String fullName = name + "@" + location;
 		bindings.remove(fullName);
 		System.out.println("Unregistered: " + fullName);
 	}
 
-	// Avvio del Server RMI 
+	// Avvio del Server RMI
 	// java -Djava.security.policy=rmi.policy provider.ProviderRMI
 	public static void main(String[] args) {
 		int registryPort = 1099;
@@ -84,18 +86,18 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			System.out.println("Usage: ProviderRMI [registryPort]");
 			System.exit(-1);
 		}
-		
+
 		// Impostazione del SecurityManager
-	    if (System.getSecurityManager() == null) {
-	      System.setSecurityManager(new RMISecurityManager());
-	    }
-	    
-//	    try {
-//			LocateRegistry.createRegistry(registryPort);
-//		} catch (RemoteException e) {
-//			e.printStackTrace();
-//			System.exit(-1);
-//		}
+		if (System.getSecurityManager() == null) {
+			System.setSecurityManager(new RMISecurityManager());
+		}
+
+		// try {
+		// LocateRegistry.createRegistry(registryPort);
+		// } catch (RemoteException e) {
+		// e.printStackTrace();
+		// System.exit(-1);
+		// }
 
 		// Registrazione del servizio RMI
 		String completeName = "//" + registryHost + ":" + registryPort + "/" + serviceName;

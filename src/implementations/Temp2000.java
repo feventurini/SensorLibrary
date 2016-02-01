@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import http.RmiClassServer;
 import provider.Provider;
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
@@ -21,6 +22,7 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 	private Unit sensorUnit;
 
 	public Temp2000() throws RemoteException {
+		super();
 		r = new Random();
 		executor = Executors.newFixedThreadPool(1);
 		sensorUnit = Unit.KELVIN;
@@ -77,6 +79,12 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 	    if (System.getSecurityManager() == null) {
 	      System.setSecurityManager(new RMISecurityManager());
 	    }
+	    
+	    // Avvia un server http affinchè altri possano scaricare gli stub di questa classe
+	    // da questo codebase in maniera dinamica quando serve (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
+	    // TODO: non farlo hard coded
+	    String currentHostname = "192.168.0.18";
+	    new RmiClassServer(currentHostname).run();
 		
 		String completeName = "rmi://" + providerHost + ":" + providerPort
 				+ "/" + serviceName;
