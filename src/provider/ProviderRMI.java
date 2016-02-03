@@ -26,9 +26,13 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (location == null || name == null || location.isEmpty() || name.isEmpty())
 			throw new RemoteException("Argument error");
 		String fullName = name + "@" + location;
-		if (!bindings.containsKey(fullName))
+		Sensor sensor = bindings.get(fullName);
+		if (sensor == null)
 			throw new RemoteException("Sensor " + fullName + " not found");
-		return bindings.get(fullName);
+		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
+		System.out.println(
+				"Requested: " + fullName + " (" + sensor.getClass().getName() + " loaded from " + annotation + ")");
+		return sensor;
 	}
 
 	@Override
@@ -45,10 +49,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			throw new RemoteException("Argument error");
 
 		String fullName = name + "@" + location;
-		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		if (bindings.containsKey(fullName))
 			throw new RemoteException("Sensor " + fullName + " already registered");
 		bindings.put(fullName, sensor);
+
+		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		System.out.println(
 				"Registered: " + fullName + " (" + sensor.getClass().getName() + " loaded from " + annotation + ")");
 	}

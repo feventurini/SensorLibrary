@@ -31,7 +31,7 @@ public class MiniHttpServer {
    * Startup the server and handle requests indefinitely. This method returns
    * after the server has been bound but before any requests have been served.
    */
-  void run() throws IOException {
+  void start() throws IOException {
     checkState(this.serverSocket == null);
     this.serverSocket = new ServerSocket(0);
 
@@ -146,7 +146,7 @@ public class MiniHttpServer {
     };
 
     MiniHttpServer server = new MiniHttpServer(Executors.newFixedThreadPool(3), handler);
-    server.run();
+    server.start();
     System.out.println("http://localhost:" + server.getHttpPort() + "/");
   }
 }

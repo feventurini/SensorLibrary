@@ -49,12 +49,13 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 		(CompletableFuture.supplyAsync(() -> measure(unit), executor)).thenAccept((value) -> result.set(value));
 		return result;
 	}
-	
-	// java -Djava.security.policy=rmi.policy implementations.Temp2000 192.168.0.12
+
+	// java -Djava.security.policy=rmi.policy implementations.Temp2000
+	// 192.168.0.12
 	public static void main(String[] args) throws Exception {
 		int providerPort = 1099;
 		String serviceName = "ProviderRMI";
-		
+
 		if (args.length < 1 || args.length > 2) {
 			System.out.println("Usage: Temp2000 providerHost [providerPort]");
 			System.exit(1);
@@ -65,8 +66,7 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 			try {
 				providerPort = Integer.parseInt(args[1]);
 			} catch (NumberFormatException e) {
-				System.out
-						.println("Usage: Temp2000 providerHost [providerPort]");
+				System.out.println("Usage: Temp2000 providerHost [providerPort]");
 				System.exit(2);
 			}
 			if (providerPort < 1024 || providerPort > 65535) {
@@ -74,20 +74,25 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 				System.exit(3);
 			}
 		}
-		
+
 		// Impostazione del SecurityManager
-	    if (System.getSecurityManager() == null) {
-	      System.setSecurityManager(new RMISecurityManager());
-	    }
-	    
-	    // Avvia un server http affinchè altri possano scaricare gli stub di questa classe
-	    // da questo codebase in maniera dinamica quando serve (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
-	    // TODO: non farlo hard coded
-	    String currentHostname = "192.168.0.18";
-	    new RmiClassServer(currentHostname).run();
-		
-		String completeName = "rmi://" + providerHost + ":" + providerPort
-				+ "/" + serviceName;
+		if (System.getSecurityManager() == null) {
+			System.setSecurityManager(new RMISecurityManager());
+		}
+
+		// Avvia un server http affinchè altri possano scaricare gli stub di
+		// questa classe
+		// da questo codebase in maniera dinamica quando serve
+		// (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
+		// TODO: non fare l'hostname hard coded
+		String currentHostname = "192.168.0.18";
+		RmiClassServer rmiClassServer = new RmiClassServer(currentHostname);
+		rmiClassServer.start();
+		System.setProperty("java.rmi.server.hostname", currentHostname);
+		System.setProperty("java.rmi.server.codebase", rmiClassServer.getFullName() + "/");
+
+		// Ricerca del provider e registrazione
+		String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
 		Provider p = (Provider) Naming.lookup(completeName);
 		p.register("test_room", "Temp2000", new Temp2000());
 		System.out.println("Temp2000 registrato");
