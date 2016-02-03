@@ -19,6 +19,7 @@ ssh $PROVIDER rm -r $BASE_DIR
 ssh $PROVIDER mkdir $BASE_DIR $BASE_DIR/sensor
 scp -p rmi.policy $PROVIDER:$BASE_DIR
 scp -rp provider $PROVIDER:$BASE_DIR
+scp -rp http $SENSOR:$BASE_DIR
 scp -p sensor/Sensor.class $PROVIDER:$BASE_DIR/sensor
 ssh $PROVIDER "cd $BASE_DIR && rmiregistry" &
 ssh $PROVIDER "cd $BASE_DIR && java -Djava.rmi.server.useCodebaseOnly=false -Djava.security.policy=rmi.policy provider.ProviderRMI" &
@@ -34,7 +35,6 @@ scp -rp http $SENSOR:$BASE_DIR
 scp -rp implementations $SENSOR:$BASE_DIR
 scp -p provider/Provider.class $SENSOR:$BASE_DIR/provider
 ssh $SENSOR "cd $BASE_DIR && java -Djava.rmi.server.useCodebaseOnly=false -Djava.security.policy=rmi.policy implementations.Temp2000 $PROVIDER_HOST" & 
-# forse ci vogliono  -Djava.rmi.server.codebase=http://$SENSOR_HOST/ -Djava.rmi.server.hostname=$SENSOR_HOST ma dovrebbero essere dentro http server
 sleep 10
 
 # Client

@@ -20,6 +20,7 @@ ssh $PROVIDER rm -r $BASE_DIR
 ssh $PROVIDER mkdir $BASE_DIR $BASE_DIR/sensor
 scp -p rmi.policy $PROVIDER:$BASE_DIR
 scp -rp provider $PROVIDER:$BASE_DIR
+scp -rp http $SENSOR:$BASE_DIR
 scp -p sensor/Sensor.class $PROVIDER:$BASE_DIR/sensor
 
 # Sensors

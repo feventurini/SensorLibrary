@@ -6,7 +6,6 @@ import java.rmi.RemoteException;
 import sensor.Sensor;
 
 public interface Provider extends Remote {
-
 	/**
 	 * If possible finds the sensor registered with the name and location
 	 * provided

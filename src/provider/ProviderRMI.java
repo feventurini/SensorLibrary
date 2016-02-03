@@ -9,6 +9,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import http.RmiClassServer;
 import sensor.Sensor;
 
 public class ProviderRMI extends UnicastRemoteObject implements Provider {
@@ -97,12 +98,24 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			System.setSecurityManager(new RMISecurityManager());
 		}
 
+		// TODO: un giorno proviamo se rmiregistry si può far partire da qua
 		// try {
 		// LocateRegistry.createRegistry(registryPort);
 		// } catch (RemoteException e) {
 		// e.printStackTrace();
 		// System.exit(-1);
 		// }
+
+		// Avvia un server http affinchè altri possano scaricare gli stub di
+		// questa classe
+		// da questo codebase in maniera dinamica quando serve
+		// (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
+		// TODO: non fare l'hostname hard coded
+		String currentHostname = "192.168.0.18";
+		RmiClassServer rmiClassServer = new RmiClassServer(currentHostname);
+		rmiClassServer.start();
+		System.setProperty("java.rmi.server.hostname", currentHostname);
+		System.setProperty("java.rmi.server.codebase", rmiClassServer.getFullName() + "/");
 
 		// Registrazione del servizio RMI
 		String completeName = "//" + registryHost + ":" + registryPort + "/" + serviceName;

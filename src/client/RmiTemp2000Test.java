@@ -2,9 +2,11 @@ package client;
 
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;
+import java.rmi.server.RMIClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
+import http.RmiClassServer;
 import provider.Provider;
 import sensor.FutureResult;
 import sensor.TempSensor;
@@ -43,20 +45,18 @@ public class RmiTemp2000Test {
 
 		String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
 		Provider p = (Provider) Naming.lookup(completeName);
-		System.out.println("Provider trovato");
+		System.out.println("Provider trovato, annotazione " + RMIClassLoader.getClassAnnotation(p.getClass()));
 		
 		TempSensor t = (TempSensor) p.find("test_room", "Temp2000");
-		System.out.println("Sensore trovato");
+		System.out.println("Sensore trovato, annotazione " + RMIClassLoader.getClassAnnotation(t.getClass()));
 
-		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
-		System.out.println("SINCRONO");
 		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
 		System.out.println("SINCRONO");
 		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
 		System.out.println("SINCRONO");
 
 		List<FutureResult<Double>> results = new ArrayList<>();
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 3; i++) {
 			results.add(t.readTemperatureAsync(Unit.CELSIUS));
 			System.out.println("ASINCRONO SHALALALALALA");
 		}

@@ -24,7 +24,7 @@ public class RmiClassServer {
 		this.serverHostname = serverHostname;
 		httpServer = new MiniHttpServer(Executors.newFixedThreadPool(3), new MiniHttpServer.Handler() {
 			public InputStream getResponse(String url) throws IOException {
-				System.out.println("RmiClassServer: richiesto url " + url);
+				System.out.println("RmiClassServer richiesto url: " + url);
 				return getClass().getResourceAsStream(url);
 			}
 		});
@@ -37,6 +37,7 @@ public class RmiClassServer {
 	public void start() {
 		try {
 			httpServer.start();
+			System.out.println("RmiClassServer started on: http://" + serverHostname + ":" + httpServer.getHttpPort());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
