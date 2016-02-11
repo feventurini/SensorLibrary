@@ -1,8 +1,18 @@
 package provider;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
+import http.IpUtils;
 import sensor.Sensor;
 
 public interface Provider extends Remote {
@@ -59,4 +69,48 @@ public interface Provider extends Remote {
 	 *             if the unregistration was not possible
 	 */
 	public void unregister(String location, String name) throws RemoteException;
+
+	public static String findProviderHost() throws IOException {
+
+		InetAddress group = InetAddress.getByName("230.0.0.1");
+		int port = 5000;
+		MulticastSocket ms = new MulticastSocket(port);
+		ms.joinGroup(group);
+
+		InetAddress localaddress = IpUtils.getCurrentIp();
+		DatagramSocket ds = new DatagramSocket(port, localaddress);
+		ds.setSoTimeout(5000);
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(baos);
+		dos.writeUTF(localaddress.getHostName());
+		byte data[] = baos.toByteArray();
+		dos.close();
+		baos.close();
+		DatagramPacket trigger = new DatagramPacket(data, data.length, group, port);
+		
+		ms.send(trigger);
+		ms.leaveGroup(group);
+		ms.close();
+		System.out.println("Search for provider started on " + group.getHostAddress() + ":" + port);
+		
+		data = new byte[256];
+		DatagramPacket packet = new DatagramPacket(data, data.length);
+		InetAddress providerHost = null;
+		int attempts = 0;
+		do {
+			packet.setData(data);
+			ds.receive(packet);
+			ByteArrayInputStream bias = new ByteArrayInputStream(packet.getData());
+			DataInputStream dis = new DataInputStream(bias);
+			try {
+				String addr = dis.readUTF();
+				providerHost = InetAddress.getByName(addr);
+			} catch (IOException ignore) {}
+			dis.close();
+			bias.close();
+		} while (++attempts <= 5 && (providerHost == null || providerHost.isLoopbackAddress()));
+		ds.close();
+		return providerHost.getHostAddress();
+	}
 }

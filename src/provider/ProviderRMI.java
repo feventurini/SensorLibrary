@@ -1,6 +1,14 @@
 package provider;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.MulticastSocket;
+import java.net.SocketException;
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
@@ -9,6 +17,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import http.IpUtils;
 import http.RmiClassServer;
 import sensor.Sensor;
 
@@ -110,12 +119,18 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		// questa classe
 		// da questo codebase in maniera dinamica quando serve
 		// (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
-		// TODO: non fare l'hostname hard coded
-		String currentHostname = "192.168.0.18";
-		RmiClassServer rmiClassServer = new RmiClassServer(currentHostname);
-		rmiClassServer.start();
-		System.setProperty("java.rmi.server.hostname", currentHostname);
-		System.setProperty("java.rmi.server.codebase", rmiClassServer.getFullName() + "/");
+		String currentHostname = null;
+		try {
+			currentHostname = IpUtils.getCurrentIp().getHostAddress();
+			RmiClassServer rmiClassServer = new RmiClassServer(currentHostname);
+			rmiClassServer.start();
+			System.setProperty("java.rmi.server.hostname", currentHostname);
+			System.setProperty("java.rmi.server.codebase", rmiClassServer.getFullName() + "/");
+		} catch (SocketException e) {
+			System.out.println("Unable to get the local address");
+			e.printStackTrace();
+			System.exit(1);
+		}
 
 		// Registrazione del servizio RMI
 		String completeName = "//" + registryHost + ":" + registryPort + "/" + serviceName;
@@ -126,6 +141,55 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		} catch (RemoteException | MalformedURLException e) {
 			e.printStackTrace();
 			System.exit(3);
+		}
+
+		new MulticastProvider(currentHostname).start();
+	}
+
+	public static class MulticastProvider extends Thread {
+		private String currentHostname;
+
+		public MulticastProvider(String currentHostname) {
+			this.currentHostname = currentHostname;
+		}
+
+		@Override
+		public void run() {
+			InetAddress group;
+			int port;
+			MulticastSocket ms;
+			DatagramPacket packet;
+			DatagramPacket trigger;
+			try {
+				group = InetAddress.getByName("230.0.0.1");
+				port = 5000;
+				ms = new MulticastSocket(port);
+				ms.joinGroup(group);
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				DataOutputStream dos = new DataOutputStream(baos);
+				dos.writeUTF(currentHostname);
+				byte[] data = baos.toByteArray();
+				dos.close();
+				baos.close();
+				packet = new DatagramPacket(data, data.length, group, port);
+				trigger = new DatagramPacket(new byte[1], 1);
+				System.out.println("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port);
+			} catch (IOException e) {
+				System.out.println("MulticastDiscoveryServer not started");
+				e.printStackTrace();
+				return;
+			}
+
+			while (true)
+				try {
+					ms.receive(trigger);
+					ms.send(packet); // invio in broadcast dell'ip del provider
+					ms.receive(trigger); // perchè quello che mandiamo al gruppo
+											// viene ricevuto anche qua
+				} catch (IOException e) {
+					System.out.println("Error during broadcast");
+					e.printStackTrace();
+				}
 		}
 	}
 }

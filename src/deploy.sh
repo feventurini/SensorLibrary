@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Parameters
-PROVIDER_NAME=pi
+PROVIDER_NAME=federico
 SENSOR_NAME=pi
 CLIENT_NAME=federico
-PROVIDER_HOST=192.168.0.18
+PROVIDER_HOST=192.168.0.13
 SENSOR_HOST=192.168.0.18
 CLIENT_HOST=localhost
 
@@ -20,7 +20,7 @@ ssh $PROVIDER rm -r $BASE_DIR
 ssh $PROVIDER mkdir $BASE_DIR $BASE_DIR/sensor
 scp -p rmi.policy $PROVIDER:$BASE_DIR
 scp -rp provider $PROVIDER:$BASE_DIR
-scp -rp http $SENSOR:$BASE_DIR
+scp -rp http $PROVIDER:$BASE_DIR
 scp -p sensor/Sensor.class $PROVIDER:$BASE_DIR/sensor
 
 # Sensors

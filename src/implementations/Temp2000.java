@@ -1,6 +1,9 @@
 package implementations;
 
+import java.net.MalformedURLException;
+import java.net.SocketException;
 import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -9,6 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import http.IpUtils;
 import http.RmiClassServer;
 import provider.Provider;
 import sensor.FutureResult;
@@ -52,7 +56,7 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 
 	// java -Djava.security.policy=rmi.policy implementations.Temp2000
 	// 192.168.0.12
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 		int providerPort = 1099;
 		String serviceName = "ProviderRMI";
 
@@ -84,17 +88,28 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 		// questa classe
 		// da questo codebase in maniera dinamica quando serve
 		// (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
-		// TODO: non fare l'hostname hard coded
-		String currentHostname = "192.168.0.18";
-		RmiClassServer rmiClassServer = new RmiClassServer(currentHostname);
-		rmiClassServer.start();
-		System.setProperty("java.rmi.server.hostname", currentHostname);
-		System.setProperty("java.rmi.server.codebase", rmiClassServer.getFullName() + "/");
+		String currentHostname;
+		try {
+			currentHostname = IpUtils.getCurrentIp().getHostAddress();
+			RmiClassServer rmiClassServer = new RmiClassServer(currentHostname);
+			rmiClassServer.start();
+			System.setProperty("java.rmi.server.hostname", currentHostname);
+			System.setProperty("java.rmi.server.codebase", rmiClassServer.getFullName() + "/");
+		} catch (SocketException e) {
+			System.out.println("Unable to get the local address");
+			e.printStackTrace();
+			System.exit(1);
+		}
 
-		// Ricerca del provider e registrazione
-		String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
-		Provider p = (Provider) Naming.lookup(completeName);
-		p.register("test_room", "Temp2000", new Temp2000());
-		System.out.println("Temp2000 registrato");
+		try {
+			// Ricerca del provider e registrazione
+			String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
+			Provider p = (Provider) Naming.lookup(completeName);
+			p.register("test_room", "Temp2000", new Temp2000());
+			System.out.println("Temp2000 registrato");
+		} catch (MalformedURLException | RemoteException | NotBoundException e) {
+			System.out.println("Impossible to register sensor");
+			e.printStackTrace();
+		}
 	}
 }
