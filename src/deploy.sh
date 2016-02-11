@@ -1,17 +1,6 @@
 #!/bin/bash
 
-# Parameters
-PROVIDER_NAME=federico
-SENSOR_NAME=pi
-CLIENT_NAME=federico
-PROVIDER_HOST=192.168.0.13
-SENSOR_HOST=192.168.0.18
-CLIENT_HOST=localhost
-
-PROVIDER=$PROVIDER_NAME@$PROVIDER_HOST
-SENSOR=$SENSOR_NAME@$SENSOR_HOST
-CLIENT=$CLIENT_NAME@$CLIENT_HOST
-
+./destinations.sh
 
 # Provider
 BASE_DIR=sensorlibraryprovider
