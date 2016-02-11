@@ -10,22 +10,24 @@ import java.nio.channels.FileChannel;
 
 
 public class LocalCommunicator implements Communicator {
-	private OutputStream commandStream;
-	private InputStream dataStream;
+	private OutputStream outputStream;
+	private InputStream inputStream;
 	private FileChannel fileChannel;
+	private File file;
 	
-	public LocalCommunicator(String sensorName) {
-		File file = new File(sensorName);
+	public LocalCommunicator(File file) {
         try {
+        	this.file = file;
         	// Get file channel in readwrite mode
 			fileChannel = new RandomAccessFile(file, "rw").getChannel();
  
 			// Get direct byte buffer access using channel.map() operation
-			MappedByteBuffer commandBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, 1024*1024);
-			MappedByteBuffer dataBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, 1024*1024, 1024*1024);
+			// 2 MB memory mapped files, the first 1024 bytes used 
+			MappedByteBuffer inputBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, 1024*1024);
+			MappedByteBuffer outputBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, 1024*1024, 1024*1024);
 
-			commandStream = new ByteBufferOutputStream(commandBuffer);
-			dataStream = new ByteBufferInputStream(dataBuffer);
+			outputStream = new ByteBufferOutputStream(inputBuffer);
+			inputStream = new ByteBufferInputStream(outputBuffer);
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -34,18 +36,19 @@ public class LocalCommunicator implements Communicator {
 	@Override
 	public void close() throws IOException {
 		fileChannel.close();
-		commandStream.close();
-		dataStream.close();	
+		outputStream.close();
+		inputStream.close();	
+		file.delete();
 	}
 
 	@Override
-	public InputStream getDataStream() {
-		return dataStream;
+	public InputStream getInputStream() {
+		return inputStream;
 	}
 
 	@Override
-	public OutputStream getCommandStream() {
-		return commandStream;
+	public OutputStream getOutputStream() {
+		return outputStream;
 	}
 
 }
