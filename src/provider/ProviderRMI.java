@@ -2,9 +2,11 @@ package provider;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.MulticastSocket;
@@ -143,14 +145,16 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			System.exit(3);
 		}
 
-		new MulticastProvider(currentHostname).start();
+		new MulticastProvider(currentHostname, registryPort).start();
 	}
 
 	public static class MulticastProvider extends Thread {
 		private String currentHostname;
+		private int registryPort;
 
-		public MulticastProvider(String currentHostname) {
+		public MulticastProvider(String currentHostname, int registryPort) {
 			this.currentHostname = currentHostname;
+			this.registryPort = registryPort;
 		}
 
 		@Override
@@ -158,21 +162,27 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			InetAddress group;
 			int port;
 			MulticastSocket ms;
-			DatagramPacket packet;
-			DatagramPacket trigger;
+			DatagramSocket ds;
+			DatagramPacket response;
+			DatagramPacket request;
+			byte[] providerIp = null;
+			// setup
 			try {
+				// multicast socket to receive requests
 				group = InetAddress.getByName("230.0.0.1");
 				port = 5000;
 				ms = new MulticastSocket(port);
 				ms.joinGroup(group);
+				// datagram socket to send responses
+				ds = new DatagramSocket();
+				// response to send with provider ip
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				DataOutputStream dos = new DataOutputStream(baos);
 				dos.writeUTF(currentHostname);
-				byte[] data = baos.toByteArray();
+				dos.writeInt(registryPort);
+				providerIp = baos.toByteArray();
 				dos.close();
 				baos.close();
-				packet = new DatagramPacket(data, data.length, group, port);
-				trigger = new DatagramPacket(new byte[1], 1);
 				System.out.println("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port);
 			} catch (IOException e) {
 				System.out.println("MulticastDiscoveryServer not started");
@@ -182,10 +192,19 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 			while (true)
 				try {
-					ms.receive(trigger);
-					ms.send(packet); // invio in broadcast dell'ip del provider
-					ms.receive(trigger); // perchè quello che mandiamo al gruppo
-											// viene ricevuto anche qua
+					request = new DatagramPacket(new byte[20], 20);
+					ms.receive(request);
+					// reading requestor address
+					ByteArrayInputStream bias = new ByteArrayInputStream(request.getData());
+					DataInputStream dis = new DataInputStream(bias);
+					InetAddress requestor = InetAddress.getByName(dis.readUTF());
+					int requestorPort = dis.readInt();
+					dis.close();
+					bias.close();
+					// sending response
+					response = new DatagramPacket(providerIp, providerIp.length, requestor, requestorPort);
+					ds.send(response);
+
 				} catch (IOException e) {
 					System.out.println("Error during broadcast");
 					e.printStackTrace();
