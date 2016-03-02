@@ -4,6 +4,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 
 public class IpUtils {
@@ -13,9 +14,15 @@ public class IpUtils {
 	 * {@link InetAddress#getLocalHost()}
 	 * 
 	 * @return
-	 * @throws SocketException 
+	 * @throws SocketException
+	 * @throws UnknownHostException 
 	 */
-	public static InetAddress getCurrentIp() throws SocketException {
+	public static InetAddress getCurrentIp() throws SocketException, UnknownHostException {
+		InetAddress address = InetAddress.getLocalHost();
+		if (!address.isLinkLocalAddress() && !address.isLoopbackAddress() && address instanceof Inet4Address) {
+			return address;
+		}
+
 		Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
 		while (networkInterfaces.hasMoreElements()) {
 			NetworkInterface ni = (NetworkInterface) networkInterfaces.nextElement();

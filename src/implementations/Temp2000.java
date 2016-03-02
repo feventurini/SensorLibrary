@@ -2,6 +2,7 @@ package implementations;
 
 import java.net.MalformedURLException;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RMISecurityManager;
@@ -17,22 +18,38 @@ import http.RmiClassServer;
 import provider.Provider;
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
+import sensor.SensorParameter;
 import sensor.TempSensor;
 
-public class Temp2000 extends UnicastRemoteObject implements TempSensor {
+public class Temp2000 extends SensorServer implements TempSensor {
 	private static final long serialVersionUID = -9066863232278842877L;
 	private Random r;
 	private ExecutorService executor;
-	private Unit sensorUnit;
+
+	@SensorParameter(userDescription = "Unit of measure", propertyName = "unit")
+	public Unit sensorUnit;
+
+	@SensorParameter(userDescription = "Delay between measures", propertyName = "delay")
+	public Integer delay;
 
 	public Temp2000() throws RemoteException {
+		this(Unit.KELVIN);
+	}
+
+	/**
+	 * Creates a new Temp2000 using the specified unit
+	 * 
+	 * @param unit
+	 * @throws RemoteException
+	 */
+	public Temp2000(Unit unit) throws RemoteException {
 		super();
-		r = new Random();
-		executor = Executors.newFixedThreadPool(1);
-		sensorUnit = Unit.KELVIN;
+		sensorUnit = unit;
 	}
 
 	private Double measure(Unit unit) {
+		if (isSetUp == false)
+			throw new IllegalStateException("Sensor setup incomplete");
 		try {
 			Thread.sleep(r.nextInt(5000) + 1000);
 		} catch (InterruptedException e) {
@@ -52,6 +69,23 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 		FutureResultImpl<Double> result = new FutureResultImpl<>();
 		(CompletableFuture.supplyAsync(() -> measure(unit), executor)).thenAccept((value) -> result.set(value));
 		return result;
+	}
+
+	@Override
+	public void setUp() {
+		if (!allParametersFilledUp()) {
+			isSetUp = false;
+		} else {
+			r = new Random();
+			executor = Executors.newFixedThreadPool(1);
+			isSetUp = true;
+		}
+	}
+
+	@Override
+	public void tearDown() {
+		// nothing to do here
+		System.out.println("Temp2000 stopped");
 	}
 
 	// java -Djava.security.policy=rmi.policy implementations.Temp2000
@@ -91,11 +125,12 @@ public class Temp2000 extends UnicastRemoteObject implements TempSensor {
 		String currentHostname;
 		try {
 			currentHostname = IpUtils.getCurrentIp().getHostAddress();
-			RmiClassServer rmiClassServer = new RmiClassServer(currentHostname);
+			RmiClassServer rmiClassServer = new RmiClassServer();
 			rmiClassServer.start();
 			System.setProperty("java.rmi.server.hostname", currentHostname);
-			System.setProperty("java.rmi.server.codebase", rmiClassServer.getFullName() + "/");
-		} catch (SocketException e) {
+			System.setProperty("java.rmi.server.codebase",
+					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
+		} catch (SocketException | UnknownHostException e) {
 			System.out.println("Unable to get the local address");
 			e.printStackTrace();
 			System.exit(1);

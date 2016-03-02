@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
  */
 public class RmiClassServer {
 
-	private final String serverHostname;
+	// private final String serverHostname;
 	private final MiniHttpServer httpServer;
 
 	/**
@@ -20,8 +20,7 @@ public class RmiClassServer {
 	 *            the local machine's hostname that remote clients can use to
 	 *            address this host.
 	 */
-	public RmiClassServer(String serverHostname) {
-		this.serverHostname = serverHostname;
+	public RmiClassServer() {
 		httpServer = new MiniHttpServer(Executors.newFixedThreadPool(3), new MiniHttpServer.Handler() {
 			public InputStream getResponse(String url) throws IOException {
 				System.out.println("RmiClassServer richiesto url: " + url);
@@ -37,13 +36,30 @@ public class RmiClassServer {
 	public void start() {
 		try {
 			httpServer.start();
-			System.out.println("RmiClassServer started on: http://" + serverHostname + ":" + httpServer.getHttpPort());
+			System.out.println("RmiClassServer started on: " + getUrl());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public String getFullName() {
-		return "http://" + serverHostname + ":" + httpServer.getHttpPort();
+	/**
+	 * Restituisce sempre 0.0.0.0 perchè la ServerSocket del server è in ascolto
+	 * su qualsiasi indirizzo
+	 * 
+	 * @return
+	 */
+	public String getAddress() {
+		return httpServer.getAddress();
+	}
+
+	/**
+	 * Returns the port that this server is listening for connections on.
+	 */
+	public int getHttpPort() {
+		return httpServer.getHttpPort();
+	}
+
+	public String getUrl() {
+		return "http://" + httpServer.getAddress() + ":" + httpServer.getHttpPort();
 	}
 }

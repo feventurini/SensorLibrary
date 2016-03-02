@@ -49,14 +49,6 @@ public class MiniHttpServer {
   }
 
   /**
-   * Returns the port that this server is listening for connections on.
-   */
-  public int getHttpPort() {
-    checkState(serverSocket != null);
-    return serverSocket.getLocalPort();
-  }
-
-  /**
    * Lightweight but naive implementation of HTTP 1.1.
    */
   private class ConnectionHandler implements Runnable {
@@ -84,6 +76,7 @@ public class MiniHttpServer {
         if (responseData != null) {
           write("HTTP/1.1 200 OK\r\n\r\n");
           int b;
+          // TODO migliorare l'efficienza
           while ((b = responseData.read()) != -1) {
             connection.getOutputStream().write(b);
           }
@@ -147,6 +140,18 @@ public class MiniHttpServer {
 
     MiniHttpServer server = new MiniHttpServer(Executors.newFixedThreadPool(3), handler);
     server.start();
-    System.out.println("http://localhost:" + server.getHttpPort() + "/");
+    System.out.println("MiniHttpServer started on: http://" + server.getAddress() + ":" + server.getHttpPort() + "/");
   }
+
+	public String getAddress() {
+		return serverSocket.getInetAddress().getHostAddress();
+	}
+
+	/**
+	 * Returns the port that this server is listening for connections on.
+	 */
+	public int getHttpPort() {
+		checkState(serverSocket != null);
+		return serverSocket.getLocalPort();
+	}
 }

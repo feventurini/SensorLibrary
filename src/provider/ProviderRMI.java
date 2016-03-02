@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.MulticastSocket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
@@ -106,7 +107,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 		// Impostazione del SecurityManager
 		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new RMISecurityManager());
+			System.setSecurityManager(new SecurityManager());
 		}
 
 		// TODO: un giorno proviamo se rmiregistry si può far partire da qua
@@ -124,11 +125,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		String currentHostname = null;
 		try {
 			currentHostname = IpUtils.getCurrentIp().getHostAddress();
-			RmiClassServer rmiClassServer = new RmiClassServer(currentHostname);
+			RmiClassServer rmiClassServer = new RmiClassServer();
 			rmiClassServer.start();
 			System.setProperty("java.rmi.server.hostname", currentHostname);
-			System.setProperty("java.rmi.server.codebase", rmiClassServer.getFullName() + "/");
-		} catch (SocketException e) {
+			System.setProperty("java.rmi.server.codebase", "http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
+		} catch (SocketException | UnknownHostException e) {
 			System.out.println("Unable to get the local address");
 			e.printStackTrace();
 			System.exit(1);
