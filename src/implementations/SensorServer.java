@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Properties;
@@ -23,12 +24,12 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	}
 
 	/**
-	 * Use this method to perform the initialization of the sensor.
-	 * Throw any exception that can not be handled internally to allow
-	 * Sensor Stations to abort the registration of the sensor
+	 * Use this method to perform the initialization of the sensor. Throw any
+	 * exception that can not be handled internally to allow Sensor Stations to
+	 * abort the registration of the sensor
 	 */
 	public abstract void setUp() throws Exception;
-	
+
 	public abstract String getState();
 
 	public abstract void tearDown();
@@ -41,7 +42,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 				properties.load(inputStream);
 				inputStream.close();
 			} catch (IOException e) {
-				System.out.println("Properties loading from " + propertyFile +" failed");
+				System.out.println("Properties loading from " + propertyFile + " failed");
 				return;
 			}
 			loadParameters(properties);
@@ -56,7 +57,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 				properties.loadFromXML(inputStream);
 				inputStream.close();
 			} catch (IOException e) {
-				System.out.println("Properties loading  from " + propertyFile +" failed");
+				System.out.println("Properties loading  from " + propertyFile + " failed");
 				return;
 			}
 			loadParameters(properties);
@@ -65,23 +66,27 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 
 	public final void loadParameters(Properties properties) {
 		for (Field f : getAllSensorParameterFields()) {
+			try {
 			if (f.isAnnotationPresent(SensorParameter.class)) {
 				String propertyName = f.getAnnotation(SensorParameter.class).propertyName();
 				if (properties.containsKey(propertyName)) {
 					try {
 						Class<?> typeToParse = f.getType();
-						if (typeToParse == String.class)
-							f.set(this, properties.get(propertyName));
-						else if (typeToParse == Integer.class)
-							f.set(this, Integer.valueOf(properties.getProperty(propertyName)));
-						else if (typeToParse == Double.class)
-							f.set(this, Double.valueOf(properties.getProperty(propertyName)));
-						else if (typeToParse == Boolean.class)
-							f.set(this, Boolean.valueOf(properties.getProperty(propertyName)));
-					} catch (IllegalAccessException e){
-						e.printStackTrace();
+						f.set(this,
+								typeToParse.getMethod("valueOf", String.class).invoke(null, properties.get(propertyName)));
+					} catch (InvocationTargetException ignore) {
+						// probabilemte un problema di parsing dei numeri
+						System.out.println("Exception: " + ignore.getTargetException().getMessage());
+					} catch (NoSuchMethodException e) {
+						// non dovrebbe mai avvenire perchè tutti i
+						// campi di SensorParameter.validTypes
+						// hanno il metodo valueOf(String)
 					}
 				}
+			}
+			} catch (IllegalAccessException e) {
+				// Questa implementazione del sensore dichiara dei parametri non pubblici
+				e.printStackTrace();
 			}
 		}
 	}
@@ -104,7 +109,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 		}
 		return true;
 	}
-	
+
 	public final Field[] getAllSensorParameterFields() {
 		return Utils.concatenate(this.getClass().getFields(), this.getClass().getDeclaredFields());
 	}
