@@ -30,19 +30,8 @@ public class Temp2000 extends SensorServer implements TempSensor {
 	@SensorParameter(userDescription = "Delay between measures", propertyName = "delay")
 	public Integer delay;
 
-	public Temp2000() throws RemoteException {
-		this(Unit.KELVIN);
-	}
-
-	/**
-	 * Creates a new Temp2000 using the specified unit
-	 * 
-	 * @param unit
-	 * @throws RemoteException
-	 */
-	public Temp2000(Unit unit) throws RemoteException {
+	protected Temp2000() throws RemoteException {
 		super();
-		sensorUnit = unit;
 	}
 
 	private Double measure(Unit unit) {
@@ -51,7 +40,6 @@ public class Temp2000 extends SensorServer implements TempSensor {
 		try {
 			Thread.sleep(r.nextInt(5000) + 1000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return Unit.convert(r.nextDouble() * r.nextInt(500), sensorUnit, unit);
@@ -74,6 +62,7 @@ public class Temp2000 extends SensorServer implements TempSensor {
 		if (!allParametersFilledUp()) {
 			isSetUp = false;
 		} else {
+			sensorUnit = Unit.KELVIN;
 			r = new Random();
 			executor = Executors.newFixedThreadPool(1);
 			isSetUp = true;
@@ -84,66 +73,6 @@ public class Temp2000 extends SensorServer implements TempSensor {
 	public void tearDown() {
 		// nothing to do here
 		System.out.println("Temp2000 stopped");
-	}
-
-	// java -Djava.security.policy=rmi.policy implementations.Temp2000
-	// 192.168.0.12
-	public static void main(String[] args) {
-		int providerPort = 1099;
-		String serviceName = "ProviderRMI";
-
-		if (args.length < 1 || args.length > 2) {
-			System.out.println("Usage: Temp2000 providerHost [providerPort]");
-			System.exit(1);
-		}
-
-		String providerHost = args[0];
-		if (args.length == 2) {
-			try {
-				providerPort = Integer.parseInt(args[1]);
-			} catch (NumberFormatException e) {
-				System.out.println("Usage: Temp2000 providerHost [providerPort]");
-				System.exit(2);
-			}
-			if (providerPort < 1024 || providerPort > 65535) {
-				System.out.println("Port out of range");
-				System.exit(3);
-			}
-		}
-
-		// Impostazione del SecurityManager
-		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new SecurityManager());
-		}
-
-		// Avvia un server http affinchè altri possano scaricare gli stub di
-		// questa classe
-		// da questo codebase in maniera dinamica quando serve
-		// (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
-		String currentHostname;
-		try {
-			currentHostname = IpUtils.getCurrentIp().getHostAddress();
-			RmiClassServer rmiClassServer = new RmiClassServer();
-			rmiClassServer.start();
-			System.setProperty("java.rmi.server.hostname", currentHostname);
-			System.setProperty("java.rmi.server.codebase",
-					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
-		} catch (SocketException | UnknownHostException e) {
-			System.out.println("Unable to get the local address");
-			e.printStackTrace();
-			System.exit(1);
-		}
-
-		try {
-			// Ricerca del provider e registrazione
-			String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
-			Provider p = (Provider) Naming.lookup(completeName);
-			p.register("test_room", "Temp2000", new Temp2000());
-			System.out.println("Temp2000 registrato");
-		} catch (MalformedURLException | RemoteException | NotBoundException e) {
-			System.out.println("Impossible to register sensor");
-			e.printStackTrace();
-		}
 	}
 
 	@Override
