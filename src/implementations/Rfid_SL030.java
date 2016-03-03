@@ -1,9 +1,14 @@
 package implementations;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -13,18 +18,27 @@ import com.pi4j.io.gpio.GpioPinDigitalInput;
 import com.pi4j.io.gpio.Pin;
 import com.pi4j.io.gpio.PinPullResistance;
 import com.pi4j.io.gpio.PinState;
+import com.pi4j.io.gpio.RaspiPin;
 import com.pi4j.io.gpio.event.GpioPinDigitalStateChangeEvent;
 import com.pi4j.io.gpio.event.GpioPinListenerDigital;
 import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CDevice;
 import com.pi4j.io.i2c.I2CFactory;
 
+import http.IpUtils;
+import http.RmiClassServer;
+import provider.Provider;
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
 import sensor.RfidSensor;
+import sensor.SensorParameter;
 
-public class Rfid_SL030 extends UnicastRemoteObject implements RfidSensor {
-	
+public class Rfid_SL030 extends SensorServer implements RfidSensor {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4894977624049261879L;
 
 	// Raspberry Pi's I2C bus
 	private static final int i2cBus = 1;
@@ -39,59 +53,94 @@ public class Rfid_SL030 extends UnicastRemoteObject implements RfidSensor {
 	// I2C bus
 	I2CBus bus;
 
+	@SensorParameter(userDescription = "Trigger pin", propertyName = "trigger")
+	public Integer triggerPinNumber;
+
 	private GpioPinDigitalInput trigger;
-	private ArrayList<FutureResultImpl<String>> queue;
+
+	private List<FutureResultImpl<String>> queue;
 
 	// Device object
 	private static I2CDevice sl030;
 
-	public Rfid_SL030(Pin triggerPin) throws RemoteException {
-		
-		queue = new ArrayList<>();
+	public Rfid_SL030() throws RemoteException {
+		queue = new LinkedList<>();
 
-		final GpioController gpio = GpioFactory.getInstance();
+	}
 
-		// provision gpio pin #02 as an input pin with its internal pull down
-		// resistor enabled
-		trigger = gpio.provisionDigitalInputPin(triggerPin,
-				PinPullResistance.PULL_DOWN);
-		trigger.setDebounce(1000);
+	@Override
+	public void setUp() throws Exception {
 
-		try {
-			bus = I2CFactory.getInstance(I2CBus.BUS_1);
-			System.out.println("Connected to bus OK!!!");
-
-			// get device itself
-			sl030 = bus.getDevice(DEVICE_ADDRESS);
-
-			System.out.println("Connected to device OK!!!");
-			// Small delay before starting
-		} catch (IOException e) {
-			System.out.println("Exception: " + e.getMessage());
+		if (!allParametersFilledUp()) {
+			isSetUp = false;
 		}
-		
-		trigger.addListener(new GpioPinListenerDigital() {
-			@Override
-			public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
-				if (!queue.isEmpty() && event.getState() == PinState.LOW) { // c'è qualcosa da leggere
-					String rfid = null;
-					try {
-						rfid = readRfid();
-						System.out.println("Letto RFID " + rfid);
-						for (FutureResultImpl<String> f : queue) {
-							f.set(rfid);
-						}
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
 
-				}
+		else {
+			final GpioController gpio = GpioFactory.getInstance();
+
+			System.out.println(triggerPinNumber);
+			Pin triggerPin = RaspiPin.getPinByName("GPIO " + triggerPinNumber);
+			System.out.println(triggerPin);
+			// provision gpio pin #02 as an input pin with its internal pull
+			// down
+			// resistor enabled
+			trigger = gpio.provisionDigitalInputPin(triggerPin, PinPullResistance.PULL_DOWN);
+			trigger.setDebounce(1000);
+
+			try {
+				bus = I2CFactory.getInstance(I2CBus.BUS_1);
+				System.out.println("Connected to bus OK!!!");
+
+				// get device itself
+				sl030 = bus.getDevice(DEVICE_ADDRESS);
+
+				System.out.println("Connected to device OK!!!");
+				// Small delay before starting
+			} catch (IOException e) {
+				System.out.println("Exception: " + e.getMessage());
 			}
 
-		});
+			trigger.addListener(new GpioPinListenerDigital() {
+				@Override
+				public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
+					if (!queue.isEmpty() && event.getState() == PinState.LOW) {
+						// something to read
+						String rfid = null;
+						try {
+							rfid = readRfid();
+							System.out.println("Letto RFID " + rfid);
+							if (!rfid.equals("NO-TAG"))
+								synchronized (queue) {
+									// scorre tutta la lista prendendo la testa e settando il risultato
+									// TODO usare una FIFO
+									while(!queue.isEmpty())
+										queue.remove(0).set(rfid);									
+								}
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+
+					}
+				}
+
+			});
+
+			isSetUp = true;
+		}
+
+	}
+	
+
+	@Override
+	public void tearDown() {
+		// TODO Auto-generated method stub
+
 	}
 
 	public String readRfid() throws IOException {
+
+		if (isSetUp == false)
+			throw new IllegalStateException("Sensor setup incomplete");
 
 		byte[] writeBuffer = new byte[2];
 		String result = "NO-TAG";
@@ -168,8 +217,70 @@ public class Rfid_SL030 extends UnicastRemoteObject implements RfidSensor {
 	@Override
 	public FutureResult<String> readTagAsync() throws RemoteException {
 		FutureResultImpl<String> result = new FutureResultImpl<>();
-		queue.add(result);
+		synchronized (queue) {
+			queue.add(result);			
+		}
 		return result;
+	}
+
+	// java -Djava.security.policy=rmi.policy implementations.Rfid_SL030
+	// 192.168.0.12
+	public static void main(String[] args) {
+		int providerPort = 1099;
+		String serviceName = "ProviderRMI";
+
+		if (args.length < 1 || args.length > 2) {
+			System.out.println("Usage: Rfid_SL030 providerHost [providerPort]");
+			System.exit(1);
+		}
+
+		String providerHost = args[0];
+		if (args.length == 2) {
+			try {
+				providerPort = Integer.parseInt(args[1]);
+			} catch (NumberFormatException e) {
+				System.out.println("Usage: Rfid_SL030 providerHost [providerPort]");
+				System.exit(2);
+			}
+			if (providerPort < 1024 || providerPort > 65535) {
+				System.out.println("Port out of range");
+				System.exit(3);
+			}
+		}
+
+		// Impostazione del SecurityManager
+		if (System.getSecurityManager() == null) {
+			System.setSecurityManager(new SecurityManager());
+		}
+
+		// Avvia un server http affinchè altri possano scaricare gli stub di
+		// questa classe
+		// da questo codebase in maniera dinamica quando serve
+		// (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
+		String currentHostname;
+		try {
+			currentHostname = IpUtils.getCurrentIp().getHostAddress();
+			RmiClassServer rmiClassServer = new RmiClassServer();
+			rmiClassServer.start();
+			System.setProperty("java.rmi.server.hostname", currentHostname);
+			System.setProperty("java.rmi.server.codebase",
+					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
+		} catch (SocketException | UnknownHostException e) {
+			System.out.println("Unable to get the local address");
+			e.printStackTrace();
+			System.exit(1);
+		}
+
+		try {
+			// Ricerca del provider e registrazione
+			String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
+			Provider p = (Provider) Naming.lookup(completeName);
+			p.register("test_room", "Rfid_SL030", new Rfid_SL030());
+			System.out.println("Rfid_SL030 registrato");
+		} catch (MalformedURLException | RemoteException | NotBoundException e) {
+			System.out.println("Impossible to register sensor");
+			e.printStackTrace();
+		}
 	}
 
 }

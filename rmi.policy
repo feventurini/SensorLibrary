@@ -1,0 +1,25 @@
+grant {
+	permission java.security.AllPermission;
+
+	// This class is for runtime permissions. A RuntimePermission contains a name (also referred to as a "target name") 
+	// but no actions list; you either have the named permission or you don't.
+	permission java.lang.RuntimePermission "getClassLoader";
+	// http://docs.oracle.com/javase/1.5.0/docs/api/java/lang/reflect/ReflectPermission.html
+	permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+	
+	permission java.util.PropertyPermission "java.rmi.server.codebase", "read, write";
+	permission java.util.PropertyPermission "java.rmi.server.hostname", "read, write";
+	
+	permission java.net.NetPermission "getNetworkInformation";
+	
+	permission java.net.SocketPermission "*:1024-65535", "connect, accept, resolve";
+	permission java.net.SocketPermission "*:80", "connect, accept, resolve";
+	permission java.net.SocketPermission "localhost:5000", "listen, connect, accept, resolve";
+	permission java.net.SocketPermission "230.0.0.1", "connect, accept, resolve";
+};
+
+grant codeBase "http://192.168.0.18/" {
+    permission java.security.AllPermission;
+    permission java.net.SocketPermission ":1099-", "listen, connect, resolve";
+	permission java.net.SocketPermission "*:80", "connect";
+};

@@ -24,7 +24,6 @@ import http.IpUtils;
 import http.RmiClassServer;
 import implementations.SensorServer;
 import provider.Provider;
-import sensor.Sensor;
 import sensor.SensorParameter;
 
 public class SensorStationCli {
@@ -266,7 +265,7 @@ public class SensorStationCli {
 	 */
 	public static List<Class<? extends SensorServer>> getServersList() {
 		// https://code.google.com/archive/p/reflections/
-		Reflections reflections = new Reflections("implementations");
+		Reflections reflections = new Reflections("");
 		Set<Class<? extends SensorServer>> subTypes = reflections.getSubTypesOf(SensorServer.class);
 		return new ArrayList<>(subTypes);
 	}
