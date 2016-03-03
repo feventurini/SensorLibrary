@@ -231,9 +231,9 @@ public class SensorStationCli {
 							System.out.println(f.getName() + ":\t" + f.get(s));
 						else {
 							// TODO while loop to avoid empty parameters
-							System.out.print(f.getName() + "? ");
-							String value = console.readLine().trim();
 							Class<?> typeToParse = f.getType();
+							System.out.print(f.getName() + " (" + typeToParse + ")? ");
+							String value = console.readLine().trim();
 							if (typeToParse == String.class)
 								f.set(s, value);
 							else if (typeToParse == Integer.class)

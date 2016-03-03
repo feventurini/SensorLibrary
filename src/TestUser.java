@@ -14,7 +14,7 @@ import sensor.TempSensor.Unit;
 
 public class TestUser {
 
-	public static void main1(String[] args)
+	public static void provaRfid(String[] args)
 			throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
 		int providerPort = 1099;
 		String serviceName = "ProviderRMI";
@@ -40,15 +40,15 @@ public class TestUser {
 
 		// Impostazione del SecurityManager
 		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new RMISecurityManager());
+			System.setSecurityManager(new SecurityManager());
 		}
 
 		String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
 		Provider p = (Provider) Naming.lookup(completeName);
 
 		// Ricerca e uso del sensore
-		RfidSensor t = (RfidSensor) p.find("test_room", "Rfid_SL030");
-		System.out.println("Set up ok");
+		RfidSensor t = (RfidSensor) p.find("cucina", "rfid");
+		System.out.println("Set up ok, inizio misure");
 
 		System.out.println("Sync " + t.readTag());
 		System.out.println("SINCRONO");
@@ -74,7 +74,7 @@ public class TestUser {
 		Thread.sleep(10000);
 	}
 
-	public static void main(String[] args)
+	public static void provaTemp(String[] args)
 			throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
 		int providerPort = 1099;
 		String serviceName = "ProviderRMI";
@@ -100,7 +100,7 @@ public class TestUser {
 
 		// Impostazione del SecurityManager
 		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new RMISecurityManager());
+			System.setSecurityManager(new SecurityManager());
 		}
 
 		String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
@@ -132,5 +132,9 @@ public class TestUser {
 			}).start();
 		});
 		Thread.sleep(10000);
+	}
+	
+	public static void main(String[] args) throws RemoteException, MalformedURLException, InterruptedException, NotBoundException {
+		provaRfid(args);
 	}
 }

@@ -147,4 +147,18 @@ public class Temp2000 extends SensorServer implements TempSensor {
 			e.printStackTrace();
 		}
 	}
+
+	@Override
+	public String getState() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Sensor " + this.getClass().getSimpleName() + "\n");
+		if (isSetUp) {
+			sb.append("\tstate: running\n");
+			sb.append("\tunit of measure:" + sensorUnit + "\n");
+			sb.append("\tdelay between measures:" + delay + "\n");
+		} else {
+			sb.append("\tstate: not set up\n");
+		}
+		return sb.toString();
+	}
 }
