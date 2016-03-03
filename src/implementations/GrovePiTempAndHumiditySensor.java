@@ -17,8 +17,7 @@ import sensor.SensorParameter;
 import sensor.SensorState.State;
 import sensor.TempSensor;
 
-public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSensor,
-		HumiditySensor {
+public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSensor, HumiditySensor {
 	private static final long serialVersionUID = -5353227817012312834L;
 	private GroveTemperatureAndHumiditySensor sensor;
 	private GroveTemperatureAndHumidityValue lastMeasure;
@@ -38,6 +37,7 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 				lastMeasure = sensor.get();
 			} catch (IOException e) {
 				state.setState(State.FAULT);
+				state.setComment("A measure failed");
 				return;
 			}
 			lastMeasureTime = System.currentTimeMillis();
@@ -62,41 +62,38 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 				throw new IllegalStateException("Sensor fault");
 			case SHUTDOWN:
 				throw new IllegalStateException("Sensor shutdown");
-			case RUNNING:
-				if (System.currentTimeMillis() - lastMeasureTime < invalidateResultAfter)
-					return;
-				else
-					executor.submit(measurer);
-				break;
 			case MEASURING:
 				try {
 					state.wait();
 				} catch (InterruptedException ignore) {
 					ignore.printStackTrace();
 				}
+			case RUNNING:
+				if (System.currentTimeMillis() - lastMeasureTime < invalidateResultAfter)
+					return;
+				else
+					executor.submit(measurer);
+				break;
 			}
 		}
 	}
 
 	@Override
-	public synchronized Double readTemperature(Unit unit)
-			throws RemoteException {
+	public synchronized Double readTemperature(Unit unit) throws RemoteException {
 		return readTemperatureAsync(unit).get();
 	}
 
 	@Override
-	public synchronized FutureResult<Double> readTemperatureAsync(Unit unit)
-			throws RemoteException {
+	public synchronized FutureResult<Double> readTemperatureAsync(Unit unit) throws RemoteException {
 		FutureResultImpl<Double> result = new FutureResultImpl<>();
-		(CompletableFuture.supplyAsync(() -> {
+		CompletableFuture.supplyAsync(() -> {
 			measure();
 			if (state.getState() == State.FAULT) {
 				result.raiseException(new IOException("Measure Failed"));
 				return 0.0;
 			}
-			return Unit.convert(lastMeasure.getTemperature(), Unit.CELSIUS,
-					unit);
-		}, executor)).thenAccept((value) -> result.set(value));
+			return Unit.convert(lastMeasure.getTemperature(), Unit.CELSIUS, unit);
+		} , executor).thenAccept((value) -> result.set(value));
 		return result;
 	}
 
@@ -115,7 +112,7 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 				return 0.0;
 			}
 			return lastMeasure.getHumidity();
-		}, executor)).thenAccept((value) -> result.set(value));
+		} , executor)).thenAccept((value) -> result.set(value));
 		return result;
 
 	}
@@ -126,22 +123,21 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 			state.setState(State.SETUP);
 		} else {
 			try {
-				this.sensor = new GroveTemperatureAndHumiditySensor(
-						new GrovePi4J(), 2,
+				this.sensor = new GroveTemperatureAndHumiditySensor(new GrovePi4J(), 2,
 						GroveTemperatureAndHumiditySensor.Type.DHT11);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			executor = Executors.newFixedThreadPool(1);
 			state.setState(State.RUNNING);
+			lastMeasureTime = -1;
 			measurer = new Measurer();
 		}
 	}
 
 	@Override
 	public void tearDown() {
-		// TODO Auto-generated method stub
-
+		state.setState(State.SHUTDOWN);
 	}
 
 }
