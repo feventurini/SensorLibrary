@@ -71,7 +71,7 @@ public class Temp2000 extends SensorServer implements TempSensor {
 
 	@Override
 	public void tearDown() {
-		// nothing to do here
+		executor.shutdown();
 		System.out.println("Temp2000 stopped");
 	}
 
