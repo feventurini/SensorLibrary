@@ -115,7 +115,7 @@ public class Temp2000 extends SensorServer implements TempSensor {
 
 		// Impostazione del SecurityManager
 		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new RMISecurityManager());
+			System.setSecurityManager(new SecurityManager());
 		}
 
 		// Avvia un server http affinchè altri possano scaricare gli stub di
