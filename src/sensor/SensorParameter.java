@@ -24,7 +24,7 @@ public @interface SensorParameter {
 	 * typeToParse.getMethod("valueOf", String.class).invoke(value.trim());<br>
 	 * </code>
 	 */
-	Set<Class<?>> validTypes = new HashSet<>(Arrays.asList(String.class, Integer.class, Double.class, Boolean.class));
+	Set<Class<?>> validTypes = new HashSet<>(Arrays.asList(String.class, Integer.class, Double.class, Boolean.class, Long.class));
 
 	// NB: si poteva usare il nome del field per recuperare il valore nei file di property,
 	// si sceglie invece di definire una key ulteriore per tenere disaccoppiati i file di property

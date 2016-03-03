@@ -31,6 +31,7 @@ import sensor.FutureResult;
 import sensor.FutureResultImpl;
 import sensor.RfidSensor;
 import sensor.SensorParameter;
+import sensor.SensorState.State;
 
 public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
@@ -71,7 +72,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 	public void setUp() throws Exception {
 
 		if (!allParametersFilledUp()) {
-			isSetUp = false;
+			state.setState(State.SETUP);
 		}
 
 		else {
@@ -121,7 +122,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
 			});
 
-			isSetUp = true;
+			state.setState(State.RUNNING);
 		}
 
 	}
@@ -135,8 +136,16 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
 	public String readRfid() throws IOException {
 
-		if (isSetUp == false)
+		switch (state.getState()) {
+		case SETUP:
 			throw new IllegalStateException("Sensor setup incomplete");
+		case FAULT:
+			throw new IllegalStateException("Sensor fault");
+		case SHUTDOWN:
+			throw new IllegalStateException("Sensor shutdown");
+		default:
+			break;
+		}
 
 		byte[] writeBuffer = new byte[2];
 		String result = "NO-TAG";
@@ -275,19 +284,5 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			System.out.println("Impossible to register sensor");
 			e.printStackTrace();
 		}
-	}
-
-	@Override
-	public String getState() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Sensor " + this.getClass().getSimpleName() + "\n");
-		if (isSetUp) {
-			sb.append("\tstate: running\n");
-			sb.append("\ttrigger pin:" + trigger + "\n");
-			sb.append("\tawaiting requests:" + queue.size() + "\n");
-		} else {
-			sb.append("\tstate: not set up\n");
-		}
-		return sb.toString();
 	}
 }
