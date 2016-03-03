@@ -7,8 +7,7 @@ import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -58,13 +57,13 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
 	private GpioPinDigitalInput trigger;
 
-	private List<FutureResultImpl<String>> queue;
+	private ConcurrentLinkedQueue<FutureResultImpl<String>> queue;
 
 	// Device object
 	private static I2CDevice sl030;
 
 	public Rfid_SL030() throws RemoteException {
-		queue = new LinkedList<>();
+		queue = new ConcurrentLinkedQueue<>();
 
 	}
 
@@ -110,12 +109,9 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 							rfid = readRfid();
 							System.out.println("Letto RFID " + rfid);
 							if (!rfid.equals("NO-TAG"))
-								synchronized (queue) {
-									// scorre tutta la lista prendendo la testa e settando il risultato
-									// TODO usare una FIFO
 									while(!queue.isEmpty())
-										queue.remove(0).set(rfid);									
-								}
+										queue.poll().set(rfid);									
+								
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -217,9 +213,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 	@Override
 	public FutureResult<String> readTagAsync() throws RemoteException {
 		FutureResultImpl<String> result = new FutureResultImpl<>();
-		synchronized (queue) {
-			queue.add(result);			
-		}
+		queue.add(result);			
 		return result;
 	}
 
@@ -283,4 +277,17 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 		}
 	}
 
+	@Override
+	public String getState() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Sensor " + this.getClass().getSimpleName() + "\n");
+		if (isSetUp) {
+			sb.append("\tstate: running\n");
+			sb.append("\ttrigger pin:" + trigger + "\n");
+			sb.append("\tawaiting requests:" + queue.size() + "\n");
+		} else {
+			sb.append("\tstate: not set up\n");
+		}
+		return sb.toString();
+	}
 }
