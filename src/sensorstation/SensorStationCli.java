@@ -54,8 +54,8 @@ public class SensorStationCli {
 
 		try {
 			initRmi();
-		} catch (SocketException | UnknownHostException e) {
-			System.out.println("Unable to get the local address");
+		} catch (SocketException | UnknownHostException | MalformedURLException | RemoteException | NotBoundException e) {
+			System.out.println("Impossible to register sensor");
 			e.printStackTrace();
 			System.exit(2);
 		}
@@ -96,16 +96,7 @@ public class SensorStationCli {
 				return;
 			}
 
-			System.out.print("File da cui caricare i parametri? ");
-			String propertyFile;
-			try {
-				propertyFile = console.readLine().trim();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return;
-			}
-
-			SensorServer s = initSensor(list.get(choice), new File(propertyFile));
+			SensorServer s = initSensor(list.get(choice));
 			if (s == null) {
 				System.out.println("Errore di inizializzazione");
 				return;
@@ -140,7 +131,7 @@ public class SensorStationCli {
 		}
 	}
 
-	private void initRmi() throws SocketException, UnknownHostException {
+	private void initRmi() throws SocketException, UnknownHostException, MalformedURLException, RemoteException, NotBoundException {
 		// Impostazione del SecurityManager
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new SecurityManager());
@@ -159,15 +150,10 @@ public class SensorStationCli {
 		System.setProperty("java.rmi.server.codebase",
 				"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
 
-		try {
-			// Ricerca del providerHost e registrazione
-			String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + "ProviderRMI";
-			provider = (Provider) Naming.lookup(completeName);
-			System.out.println("Connessione al ProviderRMI completata");
-		} catch (MalformedURLException | RemoteException | NotBoundException e) {
-			System.out.println("Impossible to register sensor");
-			e.printStackTrace();
-		}
+		// Ricerca del providerHost e registrazione
+		String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + "ProviderRMI";
+		provider = (Provider) Naming.lookup(completeName);
+		System.out.println("Connessione al ProviderRMI completata");
 	}
 
 	private void askForParameters() throws IOException {
@@ -208,7 +194,16 @@ public class SensorStationCli {
 		System.out.println("providerPort: " + providerPort);
 	}
 
-	private SensorServer initSensor(Class<? extends SensorServer> sensorClass, File properyFile) {
+	/**
+	 * Performs all the necessary operations to init a sensor: loading its
+	 * parameters, asking the user for missing parameters, calling setUp() on
+	 * the sensor
+	 * 
+	 * @param sensorClass
+	 * @param properyFile
+	 * @return a functioning sensor or null if something went wrong
+	 */
+	private SensorServer initSensor(Class<? extends SensorServer> sensorClass) {
 		assert sensorClass != null;
 
 		SensorServer s;
@@ -217,11 +212,20 @@ public class SensorStationCli {
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
 				| NoSuchMethodException | SecurityException e1) {
 			e1.printStackTrace();
+			System.out.println("Impossibile instanziare un sensore");
 			return null;
 		}
 
-		if (properyFile != null)
-			s.loadParametersFromFile(properyFile);
+		System.out.print("File da cui caricare i parametri? ");
+		try {
+			String fileName = console.readLine().trim();
+			if (!fileName.trim().isEmpty())
+				s.loadParametersFromFile(new File(fileName));
+		} catch (IOException e) {
+			// errore di lettura da console
+			e.printStackTrace();
+			return null;
+		}
 
 		for (Field f : s.getAllSensorParameterFields())
 			try {
@@ -239,12 +243,16 @@ public class SensorStationCli {
 						String value;
 						boolean retry = true;
 						do {
-							System.out.print(f.getAnnotation(SensorParameter.class).userDescription() + " (" + typeToParse + ")? ");
+							System.out.print(f.getAnnotation(SensorParameter.class).userDescription() + " ("
+									+ typeToParse.getSimpleName() + ")? ");
 							value = console.readLine().trim();
 							if (!value.isEmpty())
 								try {
-									typeToParse.getMethod("valueOf", String.class).invoke(value.trim());
+									typeToParse.getMethod("valueOf", String.class).invoke(null, value.trim());
+									retry = false;
 								} catch (InvocationTargetException ignore) {
+									// probabilemte un problema di parsing dei
+									// numeri
 									System.out.println("Exception: " + ignore.getTargetException().getMessage());
 									retry = true;
 								} catch (NoSuchMethodException e) {
