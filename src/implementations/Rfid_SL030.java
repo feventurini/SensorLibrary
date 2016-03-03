@@ -110,8 +110,11 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 							rfid = readRfid();
 							System.out.println("Letto RFID " + rfid);
 							if (!rfid.equals("NO-TAG"))
-								for (FutureResultImpl<String> f : queue) {
-									f.set(rfid);
+								synchronized (queue) {
+									// scorre tutta la lista prendendo la testa e settando il risultato
+									// TODO usare una FIFO
+									while(!queue.isEmpty())
+										queue.remove(0).set(rfid);									
 								}
 						} catch (IOException e) {
 							e.printStackTrace();
