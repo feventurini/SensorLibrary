@@ -16,6 +16,9 @@ import http.IpUtils;
 import sensor.Sensor;
 
 public interface Provider extends Remote {
+	public static final String PROVIDER_NAME = "ProviderRMI";
+	public static final int PROVIDER_PORT = 1099;
+
 	/**
 	 * If possible finds the sensor registered with the name and location
 	 * provided
@@ -69,8 +72,16 @@ public interface Provider extends Remote {
 	 *             if the unregistration was not possible
 	 */
 	public void unregister(String location, String name) throws RemoteException;
+	
+	public static String buildProviderUrl(String host) {
+		return buildProviderUrl(host, 1099);
+	}
+	
+	public static String buildProviderUrl(String host, int port) {
+		return "rmi://" + host + ":" + port + "/" + PROVIDER_NAME;
+	}
 
-	public static String findProviderHost() throws IOException {
+	public static String findProviderUrl() throws IOException {
 		// multicast socket to send requests (e non datagramsocket su
 		// 192.168.0.255)
 		InetAddress group = InetAddress.getByName("230.0.0.1");
@@ -121,6 +132,8 @@ public interface Provider extends Remote {
 		ms.leaveGroup(group);
 		ms.close();
 		ds.close();
-		return "rmi://" + providerHost.getHostAddress() + ":" + providerPort + "/ProviderRMI";
+		return buildProviderUrl(providerHost.getHostAddress(), providerPort);
 	}
+	
+	
 }

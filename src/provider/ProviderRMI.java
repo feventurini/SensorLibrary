@@ -85,7 +85,6 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	public static void main(String[] args) {
 		int registryPort = 1099;
 		String registryHost = "localhost";
-		String serviceName = "ProviderRMI";
 
 		if (args.length == 1) {
 			try {
@@ -136,11 +135,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		}
 
 		// Registrazione del servizio RMI
-		String completeName = "//" + registryHost + ":" + registryPort + "/" + serviceName;
+		String completeName = "//" + registryHost + ":" + registryPort + "/" + PROVIDER_NAME;
 		try {
 			ProviderRMI serverRMI = new ProviderRMI();
 			Naming.rebind(completeName, serverRMI);
-			System.out.println("Servizio " + serviceName + " registrato");
+			System.out.println("Servizio " + PROVIDER_NAME + " registrato");
 		} catch (RemoteException | MalformedURLException e) {
 			e.printStackTrace();
 			System.exit(3);

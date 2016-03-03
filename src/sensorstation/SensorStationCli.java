@@ -28,18 +28,38 @@ import sensor.SensorParameter;
 
 public class SensorStationCli {
 	private String stationName;
-	private String providerHost;
-	private int providerPort;
 	private BufferedReader console;
 	private Provider provider;
+	private String providerUrl;
 
 	public SensorStationCli(String[] args) {
+
+		// la riga di comando ha precedenza sulla ricerca in multicast
+		providerUrl = null;
+		if (args.length == 1)
+			providerUrl = Provider.buildProviderUrl(args[0]);
+		if (args.length == 2) {
+			try {
+				providerUrl = Provider.buildProviderUrl(args[0], Integer.parseInt(args[1]));
+			} catch (Exception e) {
+				System.out.println("Unable to parse the provider address from the command line");
+				System.exit(2);
+			}
+		}
 
 		try {
 			loadStationParameters("station.properties");
 		} catch (IOException e) {
 			System.out.println("Parameters loading from station.properties failed");
 			e.printStackTrace();
+		}
+
+		if (providerUrl == null) {
+			try {
+				providerUrl = Provider.findProviderUrl();
+			} catch (IOException e) {
+				System.out.println("Unable to get the provider address using multicast");
+			}
 		}
 
 		console = new BufferedReader(new InputStreamReader(System.in));
@@ -54,7 +74,8 @@ public class SensorStationCli {
 
 		try {
 			initRmi();
-		} catch (SocketException | UnknownHostException | MalformedURLException | RemoteException | NotBoundException e) {
+		} catch (SocketException | UnknownHostException | MalformedURLException | RemoteException
+				| NotBoundException e) {
 			System.out.println("Impossible to register sensor");
 			e.printStackTrace();
 			System.exit(2);
@@ -131,7 +152,8 @@ public class SensorStationCli {
 		}
 	}
 
-	private void initRmi() throws SocketException, UnknownHostException, MalformedURLException, RemoteException, NotBoundException {
+	private void initRmi()
+			throws SocketException, UnknownHostException, MalformedURLException, RemoteException, NotBoundException {
 		// Impostazione del SecurityManager
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new SecurityManager());
@@ -151,23 +173,26 @@ public class SensorStationCli {
 				"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
 
 		// Ricerca del providerHost e registrazione
-		String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + "ProviderRMI";
-		provider = (Provider) Naming.lookup(completeName);
+		provider = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Connessione al ProviderRMI completata");
 	}
 
 	private void askForParameters() throws IOException {
-		while (stationName == null || providerHost.isEmpty()) {
+		while (stationName == null || stationName.isEmpty()) {
 			System.out.print("Station name? ");
 			stationName = console.readLine().trim();
 		}
-		while (providerHost == null || providerHost.isEmpty()) {
-			System.out.print("Provider address? ");
-			providerHost = console.readLine().trim();
-		}
-		while (providerPort < 1 || providerPort > 65535) {
-			System.out.print("Provider port? ");
-			providerPort = Integer.parseInt(console.readLine().trim());
+
+		while (providerUrl == null) {
+			System.out.print("Provider host? ");
+			String providerHost = console.readLine().trim();
+			System.out.print("Provider port (enter for 1099)? ");
+			int providerPort = 1099;
+			try {
+				providerPort = Integer.parseInt(console.readLine().trim());
+			} catch (NumberFormatException ignore) {
+			}
+			providerUrl = Provider.buildProviderUrl(providerHost, providerPort);
 		}
 	}
 
@@ -188,10 +213,14 @@ public class SensorStationCli {
 
 		stationName = properties.getProperty("stationName", "");
 		System.out.println("stationName: " + stationName);
-		providerHost = properties.getProperty("providerIp", "");
-		System.out.println("providerHost: " + providerHost);
-		providerPort = Integer.parseInt(properties.getProperty("providerPort", "0"));
-		System.out.println("providerPort: " + providerPort);
+
+		if (providerUrl == null) {
+			String providerHost = properties.getProperty("providerIp", "");
+			System.out.println("providerHost: " + providerHost);
+			int providerPort = Integer.parseInt(properties.getProperty("providerPort", "1099"));
+			System.out.println("providerPort: " + providerPort);
+			providerUrl = Provider.buildProviderUrl(providerHost, providerPort);
+		}
 	}
 
 	/**
@@ -216,7 +245,7 @@ public class SensorStationCli {
 			return null;
 		}
 
-		System.out.print("File da cui caricare i parametri? ");
+		System.out.print("File da cui caricare i parametri (enter for no file)? ");
 		try {
 			String fileName = console.readLine().trim();
 			if (!fileName.trim().isEmpty())

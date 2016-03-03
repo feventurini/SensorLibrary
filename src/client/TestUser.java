@@ -1,5 +1,6 @@
 package client;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -14,28 +15,33 @@ import sensor.TempSensor;
 import sensor.TempSensor.Unit;
 
 public class TestUser {
+	
+	private Provider p;
 
-	public static void provaRfid(String[] args)
-			throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
-		int providerPort = 1099;
-		String serviceName = "ProviderRMI";
-
-		if (args.length < 1 || args.length > 2) {
-			System.out.println("Usage: Client providerHost [providerPort]");
+	public TestUser(String[] args) throws Exception{
+		if (args.length > 2) {
+			System.out.println("Usage: TestUser [providerHost [providerPort]]");
 			System.exit(1);
 		}
 
-		String providerHost = args[0];
+		// la riga di comando ha precedenza sulla ricerca in multicast
+		String providerUrl = null;
+		if (args.length == 0) {
+			try {
+				providerUrl = Provider.findProviderUrl();
+			} catch (IOException e) {
+				System.out.println("Unable to get the provider address");
+				System.exit(1);
+			}
+		}
+		if (args.length == 1)
+			providerUrl = Provider.buildProviderUrl(args[0]);
 		if (args.length == 2) {
 			try {
-				providerPort = Integer.parseInt(args[1]);
-			} catch (NumberFormatException e) {
-				System.out.println("Usage: Client providerHost [providerPort]");
+				providerUrl = Provider.buildProviderUrl(args[0], Integer.parseInt(args[1]));
+			} catch (Exception e) {
+				System.out.println("Unable to parse the provider address from the command line");
 				System.exit(2);
-			}
-			if (providerPort < 1024 || providerPort > 65535) {
-				System.out.println("Port out of range");
-				System.exit(3);
 			}
 		}
 
@@ -44,9 +50,12 @@ public class TestUser {
 			System.setSecurityManager(new SecurityManager());
 		}
 
-		String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
-		Provider p = (Provider) Naming.lookup(completeName);
+		p = (Provider) Naming.lookup(providerUrl);
+		System.out.println("Provider trovato");
+	}
 
+	public void provaRfid(String[] args)
+			throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
 		// Ricerca e uso del sensore
 		RfidSensor t = (RfidSensor) p.find("cucina", "rfid");
 		System.out.println("Set up ok, inizio misure");
@@ -75,38 +84,8 @@ public class TestUser {
 		Thread.sleep(10000);
 	}
 
-	public static void provaTemp(String[] args)
-			throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
-		int providerPort = 1099;
-		String serviceName = "ProviderRMI";
-
-		if (args.length < 1 || args.length > 2) {
-			System.out.println("Usage: Client providerHost [providerPort]");
-			System.exit(1);
-		}
-
-		String providerHost = args[0];
-		if (args.length == 2) {
-			try {
-				providerPort = Integer.parseInt(args[1]);
-			} catch (NumberFormatException e) {
-				System.out.println("Usage: Client providerHost [providerPort]");
-				System.exit(2);
-			}
-			if (providerPort < 1024 || providerPort > 65535) {
-				System.out.println("Port out of range");
-				System.exit(3);
-			}
-		}
-
-		// Impostazione del SecurityManager
-		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new SecurityManager());
-		}
-
-		String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
-		Provider p = (Provider) Naming.lookup(completeName);
-
+	public void provaTemp(String[] args)
+			throws Exception {
 		// Ricerca e uso del sensore
 		TempSensor t = (TempSensor) p.find("test_room", "Temp2000");
 		System.out.println("Set up ok");
@@ -134,8 +113,9 @@ public class TestUser {
 		});
 		Thread.sleep(10000);
 	}
-	
-	public static void main(String[] args) throws RemoteException, MalformedURLException, InterruptedException, NotBoundException {
-		provaRfid(args);
+
+	public static void main(String[] args)
+			throws Exception {
+		new TestUser(args);
 	}
 }
