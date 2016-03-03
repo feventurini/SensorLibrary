@@ -12,15 +12,17 @@ import java.util.Properties;
 
 import sensor.Sensor;
 import sensor.SensorParameter;
+import sensor.SensorState;
+import sensor.SensorState.State;
 import utils.Utils;
 
 public abstract class SensorServer extends UnicastRemoteObject implements Sensor {
 	private static final long serialVersionUID = 8455786461927369862L;
-	protected boolean isSetUp;
+	protected final SensorState state;
 
 	protected SensorServer() throws RemoteException {
 		super();
-		isSetUp = false;
+		this.state = new SensorState(State.SETUP, "Set up");	
 	}
 
 	/**
@@ -30,7 +32,9 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	 */
 	public abstract void setUp() throws Exception;
 
-	public abstract String getState();
+	public synchronized final SensorState getState() throws RemoteException {
+		return state;
+	}
 
 	public abstract void tearDown();
 
