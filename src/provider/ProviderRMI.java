@@ -13,7 +13,6 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
-import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.server.RMIClassLoader;
 import java.rmi.server.UnicastRemoteObject;
@@ -110,7 +109,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			System.setSecurityManager(new SecurityManager());
 		}
 
-		// TODO: un giorno proviamo se rmiregistry si può far partire da qua
+		// TODO un giorno proviamo se rmiregistry si può far partire da qua
 		// try {
 		// LocateRegistry.createRegistry(registryPort);
 		// } catch (RemoteException e) {
@@ -128,7 +127,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			RmiClassServer rmiClassServer = new RmiClassServer();
 			rmiClassServer.start();
 			System.setProperty("java.rmi.server.hostname", currentHostname);
-			System.setProperty("java.rmi.server.codebase", "http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
+			System.setProperty("java.rmi.server.codebase",
+					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
 		} catch (SocketException | UnknownHostException e) {
 			System.out.println("Unable to get the local address");
 			e.printStackTrace();
@@ -149,6 +149,16 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		new MulticastProvider(currentHostname, registryPort).start();
 	}
 
+	/**
+	 * Thread che attiva un servizio di discovery del provider in multicast.
+	 * 
+	 * Sfrutta due porte Datagram, una multicast (indirizzo 230.0.0.1 porta
+	 * 5000) e una datagram, la prima per ricevere le richieste di discovery dai
+	 * clienti e la seconda per inviare le risposte ai singoli.<br>
+	 * Le richieste devono rappresentare l'indirizzo ip e la porta a cui inviare
+	 * la risposta nel formato stringa + intero. Le risposte contengono
+	 * indirizzo ip + porta del provider nello stesso formato.
+	 */
 	public static class MulticastProvider extends Thread {
 		private String currentHostname;
 		private int registryPort;
