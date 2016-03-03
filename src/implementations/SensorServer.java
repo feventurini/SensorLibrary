@@ -28,6 +28,8 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	 * Sensor Stations to abort the registration of the sensor
 	 */
 	public abstract void setUp() throws Exception;
+	
+	public abstract String getState();
 
 	public abstract void tearDown();
 

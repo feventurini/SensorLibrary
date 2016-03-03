@@ -34,7 +34,7 @@ public class SensorStationCli {
 	private Provider provider;
 
 	public SensorStationCli(String[] args) {
-		
+
 		try {
 			loadStationParameters("station.properties");
 		} catch (IOException e) {
@@ -146,7 +146,6 @@ public class SensorStationCli {
 			System.setSecurityManager(new SecurityManager());
 		}
 
-
 		String currentHostname = IpUtils.getCurrentIp().getHostAddress();
 		System.out.println("currentHostName: " + currentHostname);
 
@@ -157,7 +156,8 @@ public class SensorStationCli {
 		RmiClassServer rmiClassServer = new RmiClassServer();
 		rmiClassServer.start();
 		System.setProperty("java.rmi.server.hostname", currentHostname);
-		System.setProperty("java.rmi.server.codebase", "http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
+		System.setProperty("java.rmi.server.codebase",
+				"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
 
 		try {
 			// Ricerca del providerHost e registrazione
@@ -171,16 +171,15 @@ public class SensorStationCli {
 	}
 
 	private void askForParameters() throws IOException {
-		// TODO: while loop to prevent empty strings
-		if (stationName == null) {
+		while (stationName == null || providerHost.isEmpty()) {
 			System.out.print("Station name? ");
 			stationName = console.readLine().trim();
 		}
-		if (providerHost == null) {
+		while (providerHost == null || providerHost.isEmpty()) {
 			System.out.print("Provider address? ");
 			providerHost = console.readLine().trim();
 		}
-		if (providerPort == 0) {
+		while (providerPort < 1 || providerPort > 65535) {
 			System.out.print("Provider port? ");
 			providerPort = Integer.parseInt(console.readLine().trim());
 		}
@@ -221,32 +220,45 @@ public class SensorStationCli {
 			return null;
 		}
 
-		if (properyFile != null) {
+		if (properyFile != null)
 			s.loadParametersFromFile(properyFile);
-			for (Field f : s.getAllSensorParameterFields())
-				try {
-					if (f.isAnnotationPresent(SensorParameter.class))
-						if (f.get(s) != null)
-							System.out.println(f.getName() + ":\t" + f.get(s));
-						else {
-							// TODO while loop to avoid empty parameters
-							System.out.print(f.getName() + "? ");
-							String value = console.readLine().trim();
-							Class<?> typeToParse = f.getType();
-							if (typeToParse == String.class)
-								f.set(s, value);
-							else if (typeToParse == Integer.class)
-								f.set(s, Integer.valueOf(value));
-							else if (typeToParse == Double.class)
-								f.set(s, Double.valueOf(value));
-							else if (typeToParse == Boolean.class)
-								f.set(s, Boolean.valueOf(value));
+
+		for (Field f : s.getAllSensorParameterFields())
+			try {
+				if (f.isAnnotationPresent(SensorParameter.class))
+					if (f.get(s) != null)
+						System.out.println(f.getAnnotation(SensorParameter.class).userDescription() + ":\t" + f.get(s));
+					else {
+						Class<?> typeToParse = f.getType();
+						if (!SensorParameter.validTypes.contains(typeToParse)) {
+							System.out.println("Sensor contains a parameter field that is not of types "
+									+ SensorParameter.validTypes);
+							return null;
 						}
-				} catch (IllegalAccessException | IOException e) {
-					e.printStackTrace();
-					return null;
-				}
-		}
+
+						String value;
+						boolean retry = true;
+						do {
+							System.out.print(f.getAnnotation(SensorParameter.class).userDescription() + " (" + typeToParse + ")? ");
+							value = console.readLine().trim();
+							if (!value.isEmpty())
+								try {
+									typeToParse.getMethod("valueOf", String.class).invoke(value.trim());
+								} catch (InvocationTargetException ignore) {
+									System.out.println("Exception: " + ignore.getTargetException().getMessage());
+									retry = true;
+								} catch (NoSuchMethodException e) {
+									// non dovrebbe mai avvenire perchè tutti i
+									// campi di SensorParameter.validTypes
+									// hanno il metodo valueOf(String)
+									return null;
+								}
+						} while (retry);
+					}
+			} catch (IllegalAccessException | IOException e) {
+				e.printStackTrace();
+				return null;
+			}
 
 		try {
 			s.setUp();
