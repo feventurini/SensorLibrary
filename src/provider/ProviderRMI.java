@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -24,8 +25,7 @@ import http.RmiClassServer;
 import sensor.Sensor;
 
 public class ProviderRMI extends UnicastRemoteObject implements Provider {
-	private static final long serialVersionUID = 1L;
-
+	private static final long serialVersionUID = -299631912733255270L;
 	private final Map<String, Sensor> bindings;
 
 	private ProviderRMI() throws RemoteException {
@@ -104,6 +104,12 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		}
 
 		// Impostazione del SecurityManager
+		if (!new File("rmi.policy").canRead()) {
+			System.out.println(
+					"Unable to load security policy, assure that you have rmi.policy in the directory you launched ProviderRMI in");
+			System.exit(-3);
+		}
+		System.setProperty("java.security.policy", "rmi.policy");
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new SecurityManager());
 		}
@@ -125,6 +131,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			currentHostname = IpUtils.getCurrentIp().getHostAddress();
 			RmiClassServer rmiClassServer = new RmiClassServer();
 			rmiClassServer.start();
+			System.setProperty("java.rmi.server.useCodebaseOnly", "false");
 			System.setProperty("java.rmi.server.hostname", currentHostname);
 			System.setProperty("java.rmi.server.codebase",
 					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
@@ -135,11 +142,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		}
 
 		// Registrazione del servizio RMI
-		String completeName = "//" + registryHost + ":" + registryPort + "/" + PROVIDER_NAME;
 		try {
+			String completeName = Provider.buildProviderUrl(registryHost, registryPort);
 			ProviderRMI serverRMI = new ProviderRMI();
 			Naming.rebind(completeName, serverRMI);
-			System.out.println("Servizio " + PROVIDER_NAME + " registrato");
+			System.out.println(PROVIDER_NAME + " registered on the rmiregistry");
 		} catch (RemoteException | MalformedURLException e) {
 			e.printStackTrace();
 			System.exit(3);
@@ -193,7 +200,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 				providerIp = baos.toByteArray();
 				dos.close();
 				baos.close();
-				System.out.println("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port);
+				System.out.println("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port
+						+ ", will send " + currentHostname + ":" + registryPort);
 			} catch (IOException e) {
 				System.out.println("MulticastDiscoveryServer not started");
 				e.printStackTrace();

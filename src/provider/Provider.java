@@ -73,11 +73,11 @@ public interface Provider extends Remote {
 	 */
 	public void unregister(String location, String name) throws RemoteException;
 	
-	public static String buildProviderUrl(String host) {
+	public static String buildProviderUrl(String host) throws RemoteException {
 		return buildProviderUrl(host, 1099);
 	}
 	
-	public static String buildProviderUrl(String host, int port) {
+	public static String buildProviderUrl(String host, int port) throws RemoteException {
 		return "rmi://" + host + ":" + port + "/" + PROVIDER_NAME;
 	}
 

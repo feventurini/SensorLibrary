@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -31,13 +32,17 @@ public class SensorStationCli {
 	private BufferedReader console;
 	private Provider provider;
 	private String providerUrl;
+	private List<SensorServer> activeSensors;
 
 	public SensorStationCli(String[] args) {
-
 		// la riga di comando ha precedenza sulla ricerca in multicast
 		providerUrl = null;
 		if (args.length == 1)
-			providerUrl = Provider.buildProviderUrl(args[0]);
+			try {
+				providerUrl = Provider.buildProviderUrl(args[0]);
+			} catch (RemoteException ignore) {
+				// never thrown
+			}
 		if (args.length == 2) {
 			try {
 				providerUrl = Provider.buildProviderUrl(args[0], Integer.parseInt(args[1]));
@@ -59,6 +64,9 @@ public class SensorStationCli {
 				providerUrl = Provider.findProviderUrl();
 			} catch (IOException e) {
 				System.out.println("Unable to get the provider address using multicast");
+				if (e instanceof BindException)
+					System.out.println(
+							"Got BindException, maybe the provider is on this machine and has already taken 230.0.0.1");
 			}
 		}
 
@@ -76,10 +84,12 @@ public class SensorStationCli {
 			initRmi();
 		} catch (SocketException | UnknownHostException | MalformedURLException | RemoteException
 				| NotBoundException e) {
-			System.out.println("Impossible to register sensor");
+			System.out.println("Impossible to find provider");
 			e.printStackTrace();
 			System.exit(2);
 		}
+
+		activeSensors = new ArrayList<>();
 
 		while (true)
 			mainMenu();
@@ -91,6 +101,7 @@ public class SensorStationCli {
 		System.out.println("2.\tStato sensore");
 		System.out.println("3.\tFerma sensore");
 		System.out.print("> ");
+
 		int choice = 0;
 		try {
 			choice = Integer.parseInt(console.readLine());
@@ -98,6 +109,8 @@ public class SensorStationCli {
 			e.printStackTrace();
 			return;
 		}
+
+		// TODO questo case fa schifo -> cambiare!
 		switch (choice) {
 		case 1:
 			List<Class<? extends SensorServer>> list = getServersList();
@@ -106,12 +119,12 @@ public class SensorStationCli {
 				break;
 			}
 			for (int j = 0; j < list.size(); j++) {
-				System.out.println(j + ".\t" + list.get(j).getSimpleName());
+				System.out.println((j + 1) + ".\t" + list.get(j).getSimpleName());
 			}
 
 			System.out.print("> ");
 			try {
-				choice = Integer.parseInt(console.readLine());
+				choice = Integer.parseInt(console.readLine()) - 1;
 			} catch (IOException | NumberFormatException e) {
 				e.printStackTrace();
 				return;
@@ -136,11 +149,41 @@ public class SensorStationCli {
 				provider.register(stationName, sensorName, s);
 			} catch (RemoteException e) {
 				System.out.println("Errore di registrazione");
+				s.tearDown();
 				e.printStackTrace();
 				return;
 			}
+
+			activeSensors.add(s);
 			break;
 		case 2:
+			if (activeSensors.isEmpty()) {
+				System.out.println("No active sensors");
+				return;
+			}
+			for (int i = 0; i < activeSensors.size(); i++) {
+				System.out.println((i + 1) + ".\t" + activeSensors.get(i));
+			}
+			System.out.print("> ");
+
+			choice = 0;
+			try {
+				choice = Integer.parseInt(console.readLine()) - 1;
+			} catch (IOException | NumberFormatException e) {
+				e.printStackTrace();
+				return;
+			}
+			if (choice < 0 || choice > activeSensors.size()) {
+				System.out.println("Scelta non in lista");
+				return;
+			}
+
+			try {
+				System.out.println(activeSensors.get(choice).getState().toString());
+			} catch (RemoteException ignore) {
+				// tanto non succede
+				System.out.println(ignore.getMessage());
+			}
 
 			break;
 		case 3:
@@ -155,6 +198,13 @@ public class SensorStationCli {
 	private void initRmi()
 			throws SocketException, UnknownHostException, MalformedURLException, RemoteException, NotBoundException {
 		// Impostazione del SecurityManager
+		// Impostazione del SecurityManager
+		if (!new File("rmi.policy").canRead()) {
+			System.out.println(
+					"Unable to load security policy, assure that you have rmi.policy in the directory you launched ProviderRMI in");
+			System.exit(-3);
+		}
+		System.setProperty("java.security.policy", "rmi.policy");
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new SecurityManager());
 		}
@@ -214,9 +264,11 @@ public class SensorStationCli {
 		stationName = properties.getProperty("stationName", "");
 		System.out.println("stationName: " + stationName);
 
-		if (providerUrl == null) {
+		// checks if the file specifics a provider host+port
+		if (providerUrl == null && properties.containsKey("providerIp")) {
 			String providerHost = properties.getProperty("providerIp", "");
 			System.out.println("providerHost: " + providerHost);
+			// providerPort property is optional
 			int providerPort = Integer.parseInt(properties.getProperty("providerPort", "1099"));
 			System.out.println("providerPort: " + providerPort);
 			providerUrl = Provider.buildProviderUrl(providerHost, providerPort);

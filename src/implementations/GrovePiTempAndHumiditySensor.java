@@ -27,7 +27,7 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 	private ExecutorService executor;
 
 	@SensorParameter(userDescription = "Amount of time after which a new measurement is needed", propertyName = "InvalidateResultAfter")
-	private Long invalidateResultAfter;
+	public Long invalidateResultAfter;
 
 	private class Measurer implements Runnable {
 
