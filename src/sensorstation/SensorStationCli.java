@@ -198,7 +198,6 @@ public class SensorStationCli {
 	private void initRmi()
 			throws SocketException, UnknownHostException, MalformedURLException, RemoteException, NotBoundException {
 		// Impostazione del SecurityManager
-		// Impostazione del SecurityManager
 		if (!new File("rmi.policy").canRead()) {
 			System.out.println(
 					"Unable to load security policy, assure that you have rmi.policy in the directory you launched ProviderRMI in");
@@ -223,6 +222,7 @@ public class SensorStationCli {
 				"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
 
 		// Ricerca del providerHost e registrazione
+		System.out.println("Looking up provider on: " + providerUrl);
 		provider = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Connessione al ProviderRMI completata");
 	}

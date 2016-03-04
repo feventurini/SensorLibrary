@@ -1,6 +1,8 @@
 package client;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -15,10 +17,10 @@ import sensor.TempSensor;
 import sensor.TempSensor.Unit;
 
 public class TestUser {
-	
+
 	private Provider p;
 
-	public TestUser(String[] args) throws Exception{
+	public TestUser(String[] args) throws Exception {
 		if (args.length > 2) {
 			System.out.println("Usage: TestUser [providerHost [providerPort]]");
 			System.exit(1);
@@ -30,13 +32,14 @@ public class TestUser {
 			try {
 				providerUrl = Provider.findProviderUrl();
 			} catch (IOException e) {
-				System.out.println("Unable to get the provider address");
-				System.exit(1);
+				System.out.println("Unable to get the provider address using multicast");
+				if (e instanceof BindException)
+					System.out.println(
+							"Got BindException, maybe the provider is on this machine and has already taken 230.0.0.1");
 			}
-		}
-		if (args.length == 1)
+		} else if (args.length == 1) {
 			providerUrl = Provider.buildProviderUrl(args[0]);
-		if (args.length == 2) {
+		} else if (args.length == 2) {
 			try {
 				providerUrl = Provider.buildProviderUrl(args[0], Integer.parseInt(args[1]));
 			} catch (Exception e) {
@@ -46,10 +49,15 @@ public class TestUser {
 		}
 
 		// Impostazione del SecurityManager
+		if (!new File("rmi.policy").canRead()) {
+			System.out.println(
+					"Unable to load security policy, assure that you have rmi.policy in the directory you launched ProviderRMI in");
+			System.exit(-3);
+		}
+		System.setProperty("java.security.policy", "rmi.policy");
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new SecurityManager());
 		}
-
 		p = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Provider trovato");
 	}
@@ -84,8 +92,7 @@ public class TestUser {
 		Thread.sleep(10000);
 	}
 
-	public void provaTemp(String[] args)
-			throws Exception {
+	public void provaTemp(String[] args) throws Exception {
 		// Ricerca e uso del sensore
 		TempSensor t = (TempSensor) p.find("test_room", "Temp2000");
 		System.out.println("Set up ok");
@@ -114,8 +121,7 @@ public class TestUser {
 		Thread.sleep(10000);
 	}
 
-	public static void main(String[] args)
-			throws Exception {
+	public static void main(String[] args) throws Exception {
 		new TestUser(args);
 	}
 }
