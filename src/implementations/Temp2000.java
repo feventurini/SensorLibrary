@@ -18,7 +18,7 @@ public class Temp2000 extends SensorServer implements TempSensor {
 	private ExecutorService executor;
 
 	@SensorParameter(userDescription = "Unit of measure", propertyName = "unit")
-	public Unit sensorUnit;
+	public String sensorUnit;
 
 	@SensorParameter(userDescription = "Delay between measures", propertyName = "delay")
 	public Integer delay;
@@ -44,7 +44,7 @@ public class Temp2000 extends SensorServer implements TempSensor {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		return Unit.convert(r.nextDouble() * r.nextInt(500), sensorUnit, unit);
+		return Unit.convert(r.nextDouble() * r.nextInt(500), Unit.valueOf(sensorUnit), unit);
 	}
 
 	@Override
@@ -69,7 +69,7 @@ public class Temp2000 extends SensorServer implements TempSensor {
 			state.setComment("Set up");
 
 		} else {
-			sensorUnit = Unit.KELVIN;
+			sensorUnit = "KELVIN";
 			r = new Random();
 			executor = Executors.newFixedThreadPool(1);
 			state.setState(State.RUNNING);

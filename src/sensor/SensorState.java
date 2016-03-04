@@ -1,7 +1,11 @@
 package sensor;
 
-public class SensorState {
-	public enum State {
+import java.io.Serializable;
+
+public class SensorState implements Serializable{
+	private static final long serialVersionUID = 2419411720859312714L;
+
+	public enum State implements Serializable {
 		SETUP,
 		RUNNING,
 		MEASURING,

@@ -52,7 +52,6 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
 	public Rfid_SL030() throws RemoteException {
 		queue = new ConcurrentLinkedQueue<>();
-
 	}
 
 	@Override
@@ -102,8 +101,9 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
 	@Override
 	public void tearDown() {
-		state.setState(State.SHUTDOWN);
-		trigger.removeAllListeners();
+		super.tearDown();
+		if (trigger != null)
+			trigger.removeAllListeners();
 	}
 
 	public String readRfid() throws IOException {

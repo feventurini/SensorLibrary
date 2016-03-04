@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.SocketException;
@@ -315,12 +316,10 @@ public class SensorStationCli {
 						System.out.println(f.getAnnotation(SensorParameter.class).userDescription() + ":\t" + f.get(s));
 					else {
 						Class<?> typeToParse = f.getType();
-						if (!SensorParameter.validTypes.contains(typeToParse)) {
-							System.out.println("Sensor contains a parameter field that is not of types "
-									+ SensorParameter.validTypes);
+						if (!isValidType(typeToParse)) {
+							System.out.println("Sensor contains a parameter field that is not parsable from cli input");
 							return null;
 						}
-
 						String value;
 						boolean retry = true;
 						do {
@@ -328,23 +327,33 @@ public class SensorStationCli {
 									+ typeToParse.getSimpleName() + ")? ");
 							value = console.readLine().trim();
 							if (!value.isEmpty())
-								try {
-									typeToParse.getMethod("valueOf", String.class).invoke(null, value.trim());
+								if (typeToParse == String.class) {
+									f.set(s, value);
 									retry = false;
-								} catch (InvocationTargetException ignore) {
-									// probabilemte un problema di parsing dei
-									// numeri
-									System.out.println("Exception: " + ignore.getTargetException().getMessage());
-									retry = true;
-								} catch (NoSuchMethodException e) {
-									// non dovrebbe mai avvenire perchè tutti i
-									// campi di SensorParameter.validTypes
-									// hanno il metodo valueOf(String)
-									return null;
+								} else {
+									try {
+										Method valueOf = typeToParse.getMethod("valueOf", String.class);
+										Object obj = valueOf.invoke(null, value.trim());
+										f.set(s, obj);
+										retry = false;
+									} catch (InvocationTargetException ignore) {
+										// probabilemte un problema di parsing
+										// dei
+										// numeri
+										System.out.println("Exception: " + ignore.getTargetException().getMessage());
+										retry = true;
+									} catch (NoSuchMethodException e) {
+										// non dovrebbe mai avvenire perchè
+										// tutti i
+										// campi di SensorParameter.validTypes
+										// hanno il metodo valueOf(String)
+										return null;
+									}
 								}
 						} while (retry);
 					}
 			} catch (IllegalAccessException | IOException e) {
+				System.out.println("Eccezione durante la lettura dei parametri: " + e.getMessage());
 				e.printStackTrace();
 				return null;
 			}
@@ -352,6 +361,7 @@ public class SensorStationCli {
 		try {
 			s.setUp();
 		} catch (Exception e) {
+			System.out.println("Eccezione durante il setUp del sensore: " + e.getMessage());
 			e.printStackTrace();
 			return null;
 		}
@@ -371,6 +381,18 @@ public class SensorStationCli {
 		return new ArrayList<>(subTypes);
 	}
 
+
+	private boolean isValidType(Class<?>klass) {
+		if(klass==String.class)
+			return true;
+		else try { 
+			klass.getMethod("valueOf",String.class);
+		} catch(NoSuchMethodException e) {
+			return false;
+		}
+		return true;
+	}
+	
 	public static void main(String[] args) {
 		new SensorStationCli(args);
 	}

@@ -21,7 +21,7 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 	private static final long serialVersionUID = -5353227817012312834L;
 	private GroveTemperatureAndHumiditySensor sensor;
 	private GroveTemperatureAndHumidityValue lastMeasure;
-	private long lastMeasureTime;
+	private Long lastMeasureTime;
 	private Measurer measurer;
 
 	private ExecutorService executor;
@@ -35,16 +35,20 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 			state.setState(State.MEASURING);
 			try {
 				lastMeasure = sensor.get();
+				System.out.println("Measure done: " + lastMeasure);
 			} catch (IOException e) {
+				System.out.println("A measure failed");
 				state.setState(State.FAULT);
 				state.setComment("A measure failed");
 				return;
 			}
 			lastMeasureTime = System.currentTimeMillis();
 			state.setState(State.RUNNING);
+			System.out.println("Measure updated");
 			synchronized (state) {
 				state.notifyAll();
 			}
+			System.out.println("Threads notified");
 		}
 
 	}
@@ -54,7 +58,6 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 	}
 
 	private void measure() {
-		synchronized (state) {
 			switch (state.getState()) {
 			case SETUP:
 				throw new IllegalStateException("Sensor setup incomplete");
@@ -64,18 +67,23 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 				throw new IllegalStateException("Sensor shutdown");
 			case MEASURING:
 				try {
-					state.wait();
+					System.out.println("Requested a measure while already measuring");
+					synchronized (state) {						
+						state.wait();
+					}
 				} catch (InterruptedException ignore) {
 					ignore.printStackTrace();
 				}
 			case RUNNING:
-				if (System.currentTimeMillis() - lastMeasureTime < invalidateResultAfter)
+				if (System.currentTimeMillis() - lastMeasureTime < invalidateResultAfter){
+					System.out.println("Last measure still valid");
 					return;
-				else
-					executor.submit(measurer);
+				} else {
+					System.out.println("Redo measure");
+					new Thread(measurer).start();
+				}
 				break;
 			}
-		}
 	}
 
 	@Override
@@ -105,14 +113,14 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 	@Override
 	public FutureResult<Double> readHumidityAsync() throws RemoteException {
 		FutureResultImpl<Double> result = new FutureResultImpl<>();
-		(CompletableFuture.supplyAsync(() -> {
+		CompletableFuture.supplyAsync(() -> {
 			measure();
 			if (state.getState() == State.FAULT) {
 				result.raiseException(new IOException("Measure Failed"));
 				return 0.0;
 			}
 			return lastMeasure.getHumidity();
-		} , executor)).thenAccept((value) -> result.set(value));
+		} , executor).thenAccept((value) -> result.set(value));
 		return result;
 
 	}
@@ -128,9 +136,9 @@ public class GrovePiTempAndHumiditySensor extends SensorServer implements TempSe
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			executor = Executors.newFixedThreadPool(1);
+			executor = Executors.newFixedThreadPool(5);
 			state.setState(State.RUNNING);
-			lastMeasureTime = -1;
+			lastMeasureTime = -1L;
 			measurer = new Measurer();
 		}
 	}

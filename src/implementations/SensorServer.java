@@ -36,7 +36,9 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 		return state;
 	}
 
-	public abstract void tearDown();
+	public synchronized void tearDown() {
+		state.setState(State.SHUTDOWN);
+	}
 
 	public final void loadParametersFromFile(File propertyFile) {
 		if (propertyFile != null) {

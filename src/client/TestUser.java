@@ -9,6 +9,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import provider.Provider;
 import sensor.FutureResult;
@@ -60,13 +61,15 @@ public class TestUser {
 		}
 		p = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Provider trovato");
+
+		provaTemp();
+		// provaRfid();
 	}
 
-	public void provaRfid(String[] args)
-			throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
+	public void provaRfid() throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
 		// Ricerca e uso del sensore
-		RfidSensor t = (RfidSensor) p.find("cucina", "rfid");
-		System.out.println("Set up ok, inizio misure");
+		RfidSensor t = (RfidSensor) p.find("camera", "rfid");
+		System.out.println("Trovato sensore, inizio misure");
 
 		System.out.println("Sync " + t.readTag());
 		System.out.println("SINCRONO");
@@ -92,23 +95,26 @@ public class TestUser {
 		Thread.sleep(10000);
 	}
 
-	public void provaTemp(String[] args) throws Exception {
+	public void provaTemp() throws Exception {
 		// Ricerca e uso del sensore
-		TempSensor t = (TempSensor) p.find("test_room", "Temp2000");
-		System.out.println("Set up ok");
+		TempSensor t = (TempSensor) p.find("camera", "temp");
+		System.out.println("Trovato sensore, inizio misure");
 
-		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
-		System.out.println("SINCRONO");
-		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
-		System.out.println("SINCRONO");
-		System.out.println("Sync " + t.readTemperature(Unit.CELSIUS));
-		System.out.println("SINCRONO");
+		System.out.println(
+				"Mando 3 richieste sincrone e aspetto (la prima ci mette un po' perchè deve misurare, le altre due sono immediate perchè la misura è ancora fresca)");
+		System.out.print("Sync ");
+		System.out.println(t.readTemperature(Unit.CELSIUS));
+		System.out.print("Sync ");
+		System.out.println(t.readTemperature(Unit.CELSIUS));
+		System.out.print("Sync ");
+		System.out.println(t.readTemperature(Unit.CELSIUS));
 
+		System.out.println("Mando 10 richieste asincrone e faccio altro");
 		List<FutureResult<Double>> results = new ArrayList<>();
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 10; i++)
 			results.add(t.readTemperatureAsync(Unit.CELSIUS));
-			System.out.println("ASINCRONO SHALALALALALA");
-		}
+
+		System.out.println("Per ogni future result faccio partire un thread che quando ha il risultato lo stampa"); 
 		results.forEach((futureResult) -> {
 			new Thread(() -> {
 				try {
