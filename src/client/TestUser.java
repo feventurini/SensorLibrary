@@ -9,7 +9,6 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import provider.Provider;
 import sensor.FutureResult;
@@ -62,21 +61,33 @@ public class TestUser {
 		p = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Provider trovato");
 
-		provaTemp();
-		// provaRfid();
+		//provaTemp();
+		provaRfid();
 	}
 
 	public void provaRfid() throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
 		// Ricerca e uso del sensore
 		RfidSensor t = (RfidSensor) p.find("camera", "rfid");
+//		RgbLcdDisplay d = (RgbLcdDisplay) p.find("camera", "display");
 		System.out.println("Trovato sensore, inizio misure");
 
-		System.out.println("Sync " + t.readTag());
+		String v;
+		
+		v = t.readTag();
+		System.out.println("Sync " + v);
 		System.out.println("SINCRONO");
-		System.out.println("Sync " + t.readTag());
+//		d.display(""+v, 10000);
+
+		v = t.readTag();
+		System.out.println("Sync " + v);
 		System.out.println("SINCRONO");
-		System.out.println("Sync " + t.readTag());
+//		d.display(""+v, 10000);
+
+		v = t.readTag();
+		System.out.println("Sync " + v);
 		System.out.println("SINCRONO");
+//		d.display(""+v, 0);
+
 
 		List<FutureResult<String>> results = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
@@ -98,6 +109,8 @@ public class TestUser {
 	public void provaTemp() throws Exception {
 		// Ricerca e uso del sensore
 		TempSensor t = (TempSensor) p.find("camera", "temp");
+//		RgbLcdDisplay d = (RgbLcdDisplay) p.find("camera", "display");
+		
 		System.out.println("Trovato sensore, inizio misure");
 
 		System.out.println(
@@ -107,7 +120,9 @@ public class TestUser {
 		System.out.print("Sync ");
 		System.out.println(t.readTemperature(Unit.CELSIUS));
 		System.out.print("Sync ");
-		System.out.println(t.readTemperature(Unit.CELSIUS));
+		double v = t.readTemperature(Unit.CELSIUS);
+		System.out.println(v);
+//		d.display(""+v, 10000);
 
 		System.out.println("Mando 10 richieste asincrone e faccio altro");
 		List<FutureResult<Double>> results = new ArrayList<>();
@@ -126,6 +141,7 @@ public class TestUser {
 		});
 		Thread.sleep(10000);
 	}
+	
 
 	public static void main(String[] args) throws Exception {
 		new TestUser(args);
