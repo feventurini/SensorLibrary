@@ -16,7 +16,9 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -33,7 +35,7 @@ public class SensorStationCli {
 	private BufferedReader console;
 	private Provider provider;
 	private String providerUrl;
-	private List<SensorServer> activeSensors;
+	private LinkedHashMap<String, SensorServer> activeSensors;
 
 	public SensorStationCli(String[] args) {
 		// la riga di comando ha precedenza sulla ricerca in multicast
@@ -90,7 +92,18 @@ public class SensorStationCli {
 			System.exit(2);
 		}
 
-		activeSensors = new ArrayList<>();
+		activeSensors = new LinkedHashMap<>();
+		
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			activeSensors.forEach((n, s) -> { 
+				s.tearDown();
+				try {
+					provider.unregister(stationName, n);
+				} catch (Exception e) {
+					System.out.println("Error unregistering " + n);
+					e.printStackTrace();
+				}});
+		}));
 
 		while (true)
 			mainMenu();
@@ -155,40 +168,68 @@ public class SensorStationCli {
 				return;
 			}
 
-			activeSensors.add(s);
+			activeSensors.put(sensorName, s);
 			break;
+
 		case 2:
 			if (activeSensors.isEmpty()) {
 				System.out.println("No active sensors");
 				return;
 			}
-			for (int i = 0; i < activeSensors.size(); i++) {
-				System.out.println((i + 1) + ".\t" + activeSensors.get(i));
-			}
-			System.out.print("> ");
 
-			choice = 0;
+			activeSensors.forEach((n, ss) -> System.out.println(n + "\t" + ss.getClass().getSimpleName()));
+
+			System.out.print("> ");
+			String key = null;
 			try {
-				choice = Integer.parseInt(console.readLine()) - 1;
-			} catch (IOException | NumberFormatException e) {
+				key = console.readLine();
+			} catch (IOException e) {
 				e.printStackTrace();
 				return;
 			}
-			if (choice < 0 || choice > activeSensors.size()) {
+			if (!activeSensors.containsKey(key)) {
 				System.out.println("Scelta non in lista");
 				return;
 			}
 
 			try {
-				System.out.println(activeSensors.get(choice).getState().toString());
+				System.out.println(activeSensors.get(key).getState().toString());
+			} catch (RemoteException ignore) {
+				// tanto non succede
+				System.out.println(ignore.getMessage());
+			}
+			break;
+		case 3:
+			activeSensors.forEach((n, ss) -> System.out.println(n + "\t" + ss.getClass().getSimpleName()));
+
+			System.out.print("> ");
+			String key2 = null;
+			try {
+				key2 = console.readLine();
+			} catch (IOException e) {
+				e.printStackTrace();
+				return;
+			}
+			if (!activeSensors.containsKey(key2)) {
+				System.out.println("Scelta non in lista");
+				return;
+			}
+
+			try {
+				System.out.println(activeSensors.get(key2).getState().toString());
 			} catch (RemoteException ignore) {
 				// tanto non succede
 				System.out.println(ignore.getMessage());
 			}
 
-			break;
-		case 3:
-
+			try {
+				SensorServer ss = activeSensors.remove(key2);
+				ss.tearDown();
+				provider.unregister(stationName, key2);
+			} catch (RemoteException ignore) {
+				// tanto non succede
+				System.out.println(ignore.getMessage());
+			}
 			break;
 		default:
 			System.out.println("Scelta non riconosciuta: " + choice);
@@ -381,18 +422,18 @@ public class SensorStationCli {
 		return new ArrayList<>(subTypes);
 	}
 
-
-	private boolean isValidType(Class<?>klass) {
-		if(klass==String.class)
+	private boolean isValidType(Class<?> klass) {
+		if (klass == String.class)
 			return true;
-		else try { 
-			klass.getMethod("valueOf",String.class);
-		} catch(NoSuchMethodException e) {
-			return false;
-		}
+		else
+			try {
+				klass.getMethod("valueOf", String.class);
+			} catch (NoSuchMethodException e) {
+				return false;
+			}
 		return true;
 	}
-	
+
 	public static void main(String[] args) {
 		new SensorStationCli(args);
 	}

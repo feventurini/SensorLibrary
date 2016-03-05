@@ -3,8 +3,10 @@ package implementations;
 import java.rmi.RemoteException;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
@@ -17,6 +19,23 @@ public class Temp4000 extends SensorServer implements TempSensor {
 	private Random r;
 	private ExecutorService executor;
 	private FutureResultImpl<Double> result;
+	private Supplier<Double> m = new Supplier<Double>() {
+		@Override
+		public Double get() {
+			state.setState(State.MEASURING);
+			try {
+				Thread.sleep(r.nextInt(5000) + 1000);
+				System.out.println("Measure done");
+				state.setState(State.RUNNING);
+				return r.nextDouble() * 1000;
+			} catch (InterruptedException e) {
+				System.out.println("A measure failed");
+				state.setState(State.FAULT);
+				state.setComment("A measure failed");
+				throw new CompletionException(e);
+			}
+		}
+	};
 	private Runnable measurer = new Runnable() {
 		@Override
 		public void run() {
@@ -65,7 +84,15 @@ public class Temp4000 extends SensorServer implements TempSensor {
 		// everyone requesting, it will be updated as soon as the measure ends
 		if (result == null) {
 			result = new FutureResultImpl<>();
-			CompletableFuture.runAsync(measurer, executor).thenRunAsync(invalidator,executor);
+			
+			// CON UN SUPPLIER CHE LANCIA ECCEZIONI
+			CompletableFuture.supplyAsync(m, executor).exceptionally((ex) -> {
+				result.raiseException((Exception) ex.getCause());
+				return -1.0; // questo valore verrà ignorato
+			}).thenAccept((temp) -> result.set(temp));
+
+			// CON DUE RUNNABLE
+			// CompletableFuture.runAsync(measurer, executor).thenRunAsync(invalidator, executor);
 		}
 		return result;
 
