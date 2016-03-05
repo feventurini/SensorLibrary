@@ -13,6 +13,7 @@ import java.util.List;
 import provider.Provider;
 import sensor.FutureResult;
 import sensor.RfidSensor;
+import sensor.RgbLcdDisplay;
 import sensor.TempSensor;
 import sensor.TempSensor.Unit;
 
@@ -61,33 +62,33 @@ public class TestUser {
 		p = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Provider trovato");
 
-		//provaTemp();
+		provaTemp();
 		provaRfid();
 	}
 
 	public void provaRfid() throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
 		// Ricerca e uso del sensore
 		RfidSensor t = (RfidSensor) p.find("camera", "rfid");
-//		RgbLcdDisplay d = (RgbLcdDisplay) p.find("camera", "display");
+		RgbLcdDisplay d = (RgbLcdDisplay) p.find("camera", "display");
 		System.out.println("Trovato sensore, inizio misure");
 
-		String v;
+		String tag = t.readTag();
+		System.out.println("Sync " + tag);
+		System.out.println("SINCRONO");
+		d.setRGB(0, 0, 255);
+		d.display(tag, 5);
 		
-		v = t.readTag();
-		System.out.println("Sync " + v);
+		tag = t.readTag();
+		System.out.println("Sync " + tag);
 		System.out.println("SINCRONO");
-//		d.display(""+v, 10000);
-
-		v = t.readTag();
-		System.out.println("Sync " + v);
+		d.setRGB(0, 255, 0);
+		d.display(tag, 6);
+		
+		tag = t.readTag();
+		System.out.println("Sync " + tag);
 		System.out.println("SINCRONO");
-//		d.display(""+v, 10000);
-
-		v = t.readTag();
-		System.out.println("Sync " + v);
-		System.out.println("SINCRONO");
-//		d.display(""+v, 0);
-
+		d.setRGB(255, 0, 0);
+		d.display(tag, 10);
 
 		List<FutureResult<String>> results = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
@@ -104,25 +105,39 @@ public class TestUser {
 			}).start();
 		});
 		Thread.sleep(10000);
+		d.setRGB(0, 0, 0);
+		d.display("", 0);
 	}
 
 	public void provaTemp() throws Exception {
 		// Ricerca e uso del sensore
 		TempSensor t = (TempSensor) p.find("camera", "temp");
-//		RgbLcdDisplay d = (RgbLcdDisplay) p.find("camera", "display");
-		
+		RgbLcdDisplay d = (RgbLcdDisplay) p.find("camera", "display");
 		System.out.println("Trovato sensore, inizio misure");
 
+		double temp;
+		
 		System.out.println(
 				"Mando 3 richieste sincrone e aspetto (la prima ci mette un po' perchè deve misurare, le altre due sono immediate perchè la misura è ancora fresca)");
 		System.out.print("Sync ");
-		System.out.println(t.readTemperature(Unit.CELSIUS));
+		temp=t.readTemperature(Unit.CELSIUS);
+		System.out.println(temp);
+		d.setRGB(255, 0, 0);
+		d.display(""+temp, 5);
+		Thread.sleep(2000);
+		
 		System.out.print("Sync ");
-		System.out.println(t.readTemperature(Unit.CELSIUS));
+		temp=t.readTemperature(Unit.CELSIUS);
+		System.out.println(temp);
+		d.setRGB(0, 255, 0);
+		d.display(""+temp, 5);
+
+		Thread.sleep(10000);
 		System.out.print("Sync ");
-		double v = t.readTemperature(Unit.CELSIUS);
-		System.out.println(v);
-//		d.display(""+v, 10000);
+		temp=t.readTemperature(Unit.CELSIUS);
+		System.out.println(temp);
+		d.setRGB(0, 0, 255);
+		d.display(""+temp, 10);
 
 		System.out.println("Mando 10 richieste asincrone e faccio altro");
 		List<FutureResult<Double>> results = new ArrayList<>();
@@ -140,10 +155,13 @@ public class TestUser {
 			}).start();
 		});
 		Thread.sleep(10000);
+		d.setRGB(0, 0, 0);
+		d.display("", 0);
 	}
 	
 
 	public static void main(String[] args) throws Exception {
 		new TestUser(args);
+		System.exit(0);
 	}
 }

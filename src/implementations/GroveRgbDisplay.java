@@ -16,8 +16,9 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 
 	private GroveRgbLcd display;
 	private ScheduledThreadPoolExecutor executor;
+
 	private Runnable clearer = new Runnable() {
-		
+
 		@Override
 		public void run() {
 			try {
@@ -45,9 +46,15 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 			throw new IllegalStateException("Sensor shutdown");
 		default:
 			try {
+				executor.shutdownNow();
+				executor = new ScheduledThreadPoolExecutor(1);  // sicuramente c'è un modo migliore
+				// executor.remove(clearer); // if someone was waiting to clear the
+											// display, prevents the thread to
+											// act
+				System.out.println("Text to display: " + text);
 				display.setText(text);
-				if (time != 0)
-					executor.schedule(clearer, time, TimeUnit.MILLISECONDS);
+				if (time != 0) // 0 means infinite, no need to clear
+					executor.schedule(clearer, time, TimeUnit.SECONDS);
 			} catch (IOException e) {
 				state.setState(State.FAULT);
 				e.printStackTrace();
@@ -65,7 +72,7 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 		case SHUTDOWN:
 			throw new IllegalStateException("Sensor shutdown");
 		default:
-	
+
 			try {
 				display.setRGB(r, g, b);
 			} catch (IOException e) {
@@ -78,15 +85,15 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 	@Override
 	public void setUp() {
 		if (!allParametersFilledUp()) {
+			state.setState(State.SETUP);
+			state.setComment("Set up");
+		} else {
 			try {
 				display = new GroveRgbLcdPi4J();
 			} catch (IOException e) {
 				state.setState(State.FAULT);
 			}
 			executor = new ScheduledThreadPoolExecutor(1);
-			state.setState(State.SETUP);
-			state.setComment("Set up");
-		} else {
 			state.setState(State.RUNNING);
 			state.setComment("Running");
 		}
@@ -94,6 +101,12 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 
 	@Override
 	public void tearDown() {
+		try {
+			display.setRGB(0, 0, 0);
+			display.setText("");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		state.setState(State.SHUTDOWN);
 		state.setComment("Shutdown");
 		System.out.println("GroveRGBDisplay stopped");

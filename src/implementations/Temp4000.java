@@ -89,7 +89,7 @@ public class Temp4000 extends SensorServer implements TempSensor {
 			CompletableFuture.supplyAsync(m, executor).exceptionally((ex) -> {
 				result.raiseException((Exception) ex.getCause());
 				return -1.0; // questo valore verrà ignorato
-			}).thenAccept((temp) -> result.set(temp));
+			}).thenAccept((temp) -> result.set(temp)).thenRunAsync(invalidator, executor);
 
 			// CON DUE RUNNABLE
 			// CompletableFuture.runAsync(measurer, executor).thenRunAsync(invalidator, executor);

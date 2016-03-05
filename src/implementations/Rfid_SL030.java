@@ -1,11 +1,6 @@
 package implementations;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -24,9 +19,6 @@ import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CDevice;
 import com.pi4j.io.i2c.I2CFactory;
 
-import http.IpUtils;
-import http.RmiClassServer;
-import provider.Provider;
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
 import sensor.RfidSensor;
@@ -41,9 +33,12 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 	// I2C bus
 	private I2CBus bus;
 	private GpioPinDigitalInput trigger;
+	private int errorCounter;
+	private final int errorTreshold = 10;
 
 	@SensorParameter(userDescription = "Trigger pin", propertyName = "trigger")
 	public Integer triggerPinNumber;
+
 
 	private ConcurrentLinkedQueue<FutureResultImpl<String>> queue;
 
@@ -52,6 +47,8 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
 	public Rfid_SL030() throws RemoteException {
 		queue = new ConcurrentLinkedQueue<>();
+		errorCounter = 0;
+
 	}
 
 	@Override
@@ -168,10 +165,14 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			String uid = DatatypeConverter.printHexBinary(uidByte);
 
 			System.out.println("Tag read: " + uid);
+			errorCounter = 0; // reset error counter
 			return uid.trim();
 		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
 			System.out.println("Error: " + e.getMessage());
-			state.setState(State.FAULT);
+			errorCounter++;
+			if (errorCounter >= errorTreshold)
+				state.setState(State.FAULT);
 			return "NO-TAG";
 		}
 	}
@@ -186,65 +187,5 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 		FutureResultImpl<String> result = new FutureResultImpl<>();
 		queue.add(result);
 		return result;
-	}
-
-	// java -Djava.security.policy=rmi.policy implementations.Rfid_SL030
-	// 192.168.0.12
-	public static void main(String[] args) {
-		int providerPort = 1099;
-		String serviceName = "ProviderRMI";
-
-		if (args.length < 1 || args.length > 2) {
-			System.out.println("Usage: Rfid_SL030 providerHost [providerPort]");
-			System.exit(1);
-		}
-
-		String providerHost = args[0];
-		if (args.length == 2) {
-			try {
-				providerPort = Integer.parseInt(args[1]);
-			} catch (NumberFormatException e) {
-				System.out.println("Usage: Rfid_SL030 providerHost [providerPort]");
-				System.exit(2);
-			}
-			if (providerPort < 1024 || providerPort > 65535) {
-				System.out.println("Port out of range");
-				System.exit(3);
-			}
-		}
-
-		// Impostazione del SecurityManager
-		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new SecurityManager());
-		}
-
-		// Avvia un server http affinchè altri possano scaricare gli stub di
-		// questa classe
-		// da questo codebase in maniera dinamica quando serve
-		// (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
-		String currentHostname;
-		try {
-			currentHostname = IpUtils.getCurrentIp().getHostAddress();
-			RmiClassServer rmiClassServer = new RmiClassServer();
-			rmiClassServer.start();
-			System.setProperty("java.rmi.server.hostname", currentHostname);
-			System.setProperty("java.rmi.server.codebase",
-					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
-		} catch (SocketException | UnknownHostException e) {
-			System.out.println("Unable to get the local address");
-			e.printStackTrace();
-			System.exit(1);
-		}
-
-		try {
-			// Ricerca del provider e registrazione
-			String completeName = "rmi://" + providerHost + ":" + providerPort + "/" + serviceName;
-			Provider p = (Provider) Naming.lookup(completeName);
-			p.register("test_room", "Rfid_SL030", new Rfid_SL030());
-			System.out.println("Rfid_SL030 registrato");
-		} catch (MalformedURLException | RemoteException | NotBoundException e) {
-			System.out.println("Impossible to register sensor");
-			e.printStackTrace();
-		}
 	}
 }

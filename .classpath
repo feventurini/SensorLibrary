@@ -18,6 +18,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry exported="true" kind="lib" path="lib/grovepi-pi4j.jar" sourcepath="lib/grovepi-pi4j.jar"/>
+	<classpathentry kind="lib" path="target/dependency/grovepi-pi4j.jar" sourcepath="/home/fede/git/SensorLibrary/target/dependency/grovepi-pi4j.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

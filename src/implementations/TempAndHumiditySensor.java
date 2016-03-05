@@ -3,8 +3,10 @@ package implementations;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 
 import org.iot.raspberry.grovepi.devices.GroveTemperatureAndHumiditySensor;
 import org.iot.raspberry.grovepi.devices.GroveTemperatureAndHumidityValue;
@@ -28,24 +30,21 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 	@SensorParameter(userDescription = "Amount of time after which a new measurement is needed", propertyName = "InvalidateResultAfter")
 	public Long invalidateResultAfter;
 
-	private Runnable measurer = new Runnable() {
+	private Supplier<GroveTemperatureAndHumidityValue> measurer = new Supplier<GroveTemperatureAndHumidityValue>() {
 		@Override
-		public void run() {
+		public GroveTemperatureAndHumidityValue get() {
 			state.setState(State.MEASURING);
 			try {
 				GroveTemperatureAndHumidityValue value = sensor.get();
-				resultTemp.set(value.getTemperature());
-				resultHumid.set(value.getHumidity());
 				System.out.println("Measure done: " + value);
+				state.setState(State.RUNNING);
+				return value;
 			} catch (IOException e) {
 				System.out.println("A measure failed");
 				state.setState(State.FAULT);
 				state.setComment("A measure failed");
-				resultTemp.raiseException(e);
-				resultHumid.raiseException(e);
+				throw new CompletionException(e);
 			}
-			state.setState(State.RUNNING);
-
 		}
 	};
 
@@ -96,7 +95,10 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 		default:
 			if (resultTemp == null) {
 				resultTemp = new FutureResultImpl<>();
-				CompletableFuture.runAsync(measurer, executor).thenRunAsync(invalidator, executor);
+				CompletableFuture.supplyAsync(measurer, executor).exceptionally((ex) -> {
+					resultTemp.raiseException((Exception) ex.getCause());
+					return null; // questo valore verrà ignorato
+				}).thenAccept((temp) -> resultTemp.set(temp.getTemperature())).thenRunAsync(invalidator, executor);
 			}
 			return resultTemp;
 		}
@@ -130,7 +132,10 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 		default:
 			if (resultHumid == null) {
 				resultHumid = new FutureResultImpl<>();
-				CompletableFuture.runAsync(measurer, executor).thenRunAsync(invalidator, executor);
+				CompletableFuture.supplyAsync(measurer, executor).exceptionally((ex) -> {
+					resultHumid.raiseException((Exception) ex.getCause());
+					return null; // questo valore verrà ignorato
+				}).thenAccept((temp) -> resultTemp.set(temp.getHumidity())).thenRunAsync(invalidator, executor);
 			}
 			return resultHumid;
 		}
