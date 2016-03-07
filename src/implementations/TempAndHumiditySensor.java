@@ -27,7 +27,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 
 	private ExecutorService executor;
 
-	@SensorParameter(userDescription = "Amount of time after which a new measurement is needed", propertyName = "InvalidateResultAfter")
+	@SensorParameter(userDescription = "Amount of seconds after which a new measurement is needed", propertyName = "InvalidateResultAfter")
 	public Long invalidateResultAfter;
 
 	private Supplier<GroveTemperatureAndHumidityValue> measurer = new Supplier<GroveTemperatureAndHumidityValue>() {

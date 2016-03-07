@@ -20,9 +20,6 @@ public class Temp2000 extends SensorServer implements TempSensor {
 	@SensorParameter(userDescription = "Unit of measure", propertyName = "unit")
 	public String sensorUnit;
 
-	@SensorParameter(userDescription = "Delay between measures", propertyName = "delay")
-	public Integer delay;
-
 	public Temp2000() throws RemoteException {
 		super();
 	}

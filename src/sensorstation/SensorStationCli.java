@@ -92,16 +92,17 @@ public class SensorStationCli {
 		}
 
 		activeSensors = new LinkedHashMap<>();
-		
+
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			activeSensors.forEach((n, s) -> { 
+			activeSensors.forEach((n, s) -> {
 				s.tearDown();
 				try {
 					provider.unregister(stationName, n);
 				} catch (Exception e) {
 					System.out.println("Error unregistering " + n);
 					e.printStackTrace();
-				}});
+				}
+			});
 		}));
 
 		while (true)
@@ -338,15 +339,16 @@ public class SensorStationCli {
 			return null;
 		}
 
-		System.out.print("File da cui caricare i parametri (enter for no file)? ");
+		System.out
+				.print("File da cui caricare i parametri (enter for " + sensorClass.getSimpleName() + ".properties)? ");
 		try {
 			String fileName = console.readLine().trim();
 			if (!fileName.trim().isEmpty())
 				s.loadParametersFromFile(new File(fileName));
-		} catch (IOException e) {
-			// errore di lettura da console
-			e.printStackTrace();
-			return null;
+			else
+				s.loadParametersFromFile(new File(sensorClass.getSimpleName() + ".properties"));
+		} catch (IOException ignore) {
+			ignore.printStackTrace();
 		}
 
 		for (Field f : s.getAllSensorParameterFields())
