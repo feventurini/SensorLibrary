@@ -12,26 +12,24 @@ public class IpUtils {
 	 * Questa funzione permette al server di avere sempre associato l'ip giusto
 	 * nella LAN e non 127.0.0.1 come a volte restituisce
 	 * {@link InetAddress#getLocalHost()}
-	 * 
+	 *
 	 * @return
 	 * @throws SocketException
-	 * @throws UnknownHostException 
+	 * @throws UnknownHostException
 	 */
 	public static InetAddress getCurrentIp() throws SocketException, UnknownHostException {
 		InetAddress address = InetAddress.getLocalHost();
-		if (!address.isLinkLocalAddress() && !address.isLoopbackAddress() && address instanceof Inet4Address) {
+		if (!address.isLinkLocalAddress() && !address.isLoopbackAddress() && address instanceof Inet4Address)
 			return address;
-		}
 
 		Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
 		while (networkInterfaces.hasMoreElements()) {
-			NetworkInterface ni = (NetworkInterface) networkInterfaces.nextElement();
+			NetworkInterface ni = networkInterfaces.nextElement();
 			Enumeration<InetAddress> nias = ni.getInetAddresses();
 			while (nias.hasMoreElements()) {
-				InetAddress ia = (InetAddress) nias.nextElement();
-				if (!ia.isLinkLocalAddress() && !ia.isLoopbackAddress() && ia instanceof Inet4Address) {
+				InetAddress ia = nias.nextElement();
+				if (!ia.isLinkLocalAddress() && !ia.isLoopbackAddress() && ia instanceof Inet4Address)
 					return ia;
-				}
 			}
 		}
 		return null; // se non c'e un IPv4 di LAN disponibile

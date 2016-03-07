@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package implementations;
 
@@ -35,13 +35,13 @@ public class Temp4000Test {
 		t = new Temp4000();
 		assertEquals(t.getState().getState(), State.SETUP);
 		assertFalse(t.allParametersFilledUp());
-		
+
 		Properties p = new Properties();
 		p.setProperty("InvalidateResultAfter", "5");
 		t.loadParameters(p);
 		assertTrue(t.allParametersFilledUp());
 		assertEquals(t.invalidateResultAfter, (Long) 5L);
-		
+
 		t.setUp();
 		assertEquals(t.getState().getState(), State.RUNNING);
 	}
@@ -57,7 +57,8 @@ public class Temp4000Test {
 	}
 
 	/**
-	 * Test method for {@link implementations.Temp4000#readTemperature(sensor.TempSensor.Unit)}. 
+	 * Test method for
+	 * {@link implementations.Temp4000#readTemperature(sensor.TempSensor.Unit)}.
 	 */
 	@Test
 	public void testReadTemperature() throws RemoteException {
@@ -65,7 +66,9 @@ public class Temp4000Test {
 	}
 
 	/**
-	 * Test method for {@link implementations.Temp4000#readTemperatureAsync(sensor.TempSensor.Unit)}. 
+	 * Test method for
+	 * {@link implementations.Temp4000#readTemperatureAsync(sensor.TempSensor.Unit)}
+	 * .
 	 */
 	@Test
 	public void testReadTemperatureAsync() throws RemoteException {

@@ -7,7 +7,7 @@ public interface RgbLcdDisplay extends Sensor {
 	/**
 	 * Display a text for a given time. If time is 0, the text is displayed
 	 * until it is changed
-	 * 
+	 *
 	 * @param text
 	 *            the text to display
 	 * @param time
@@ -16,9 +16,10 @@ public interface RgbLcdDisplay extends Sensor {
 	 * @throws RemoteException
 	 */
 	public void display(String text, int time) throws RemoteException;
-	
+
 	/**
 	 * Set RGB color to the display
+	 * 
 	 * @param r
 	 * @param g
 	 * @param b

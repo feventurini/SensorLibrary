@@ -20,132 +20,110 @@ import java.util.regex.Pattern;
  * @author jessewilson
  */
 public class MiniHttpServer {
-  private static final Logger LOGGER = Logger.getLogger(MiniHttpServer.class.getName());
+	/**
+	 * Lightweight but naive implementation of HTTP 1.1.
+	 */
+	private class ConnectionHandler implements Runnable {
+		private final Socket connection;
+		private final BufferedReader reader;
+		private String currentLine;
 
-  private final ExecutorService executorService;
-  private final Handler handler;
-  private ServerSocket serverSocket;
+		private ConnectionHandler(Socket connection) throws IOException {
+			this.connection = connection;
+			reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "ISO-8859-1"));
+		}
 
-  public MiniHttpServer(ExecutorService executorService, Handler handler) {
-    this.executorService = executorService;
-    this.handler = handler;
-  }
+		void nextLine() throws IOException {
+			currentLine = reader.readLine();
+		}
 
-  /**
-   * Startup the server and handle requests indefinitely. This method returns
-   * after the server has been bound but before any requests have been served.
-   */
-  void start() throws IOException {
-    checkState(this.serverSocket == null);
-    this.serverSocket = new ServerSocket(0);
+		String readUntil(String pattern) throws IOException {
+			Matcher matcher = Pattern.compile(pattern).matcher(currentLine);
+			checkState(matcher.find());
+			String found = currentLine.substring(0, matcher.start());
+			currentLine = currentLine.substring(matcher.end());
+			return found;
+		}
 
-    executorService.execute(new Runnable() {
-      public void run() {
-        try {
-          while (true) {
-            executorService.execute(new ConnectionHandler(serverSocket.accept()));
-          }
-        } catch (IOException e) {
-          LOGGER.warning(e.getMessage());
-        }
-      }
-    });
-  }
+		@Override
+		public void run() {
+			try {
+				nextLine();
+				readUntil("GET\\s+");
+				String url = readUntil("\\s+HTTP/1.1");
 
-  /**
-   * Lightweight but naive implementation of HTTP 1.1.
-   */
-  private class ConnectionHandler implements Runnable {
-    private final Socket connection;
-    private final BufferedReader reader;
-    private String currentLine;
+				do {
+					nextLine();
+				} while (readUntil("$").length() > 0);
 
-    private ConnectionHandler(Socket connection) throws IOException {
-      this.connection = connection;
-      this.reader = new BufferedReader(new InputStreamReader(
-          connection.getInputStream(), "ISO-8859-1"));
-    }
+				InputStream responseData = handler.getResponse(url);
+				if (responseData != null) {
+					write("HTTP/1.1 200 OK\r\n\r\n");
+					int b;
+					// TODO migliorare l'efficienza
+					while ((b = responseData.read()) != -1) {
+						connection.getOutputStream().write(b);
+					}
 
-    public void run() {
-      try {
-        nextLine();
-        readUntil("GET\\s+");
-        String url = readUntil("\\s+HTTP/1.1");
+				} else {
+					write("HTTP/1.1 404 Not Found\r\n\r\n");
+					write("404 Not Found: " + url);
 
-        do {
-          nextLine();
-        } while (readUntil("$").length() > 0);
+				}
 
-        InputStream responseData = handler.getResponse(url);
-        if (responseData != null) {
-          write("HTTP/1.1 200 OK\r\n\r\n");
-          int b;
-          // TODO migliorare l'efficienza
-          while ((b = responseData.read()) != -1) {
-            connection.getOutputStream().write(b);
-          }
+				connection.close();
+			} catch (IOException e) {
+				LOGGER.info(e.getMessage());
+			}
+		}
 
-        } else {
-          write("HTTP/1.1 404 Not Found\r\n\r\n");
-          write("404 Not Found: " + url);
+		private void write(String data) throws IOException {
+			connection.getOutputStream().write(data.getBytes("ISO-8859-1"));
+		}
+	}
 
-        }
+	/**
+	 * Handler for incoming HTTP requests.
+	 */
+	public interface Handler {
 
-        connection.close();
-      } catch (IOException e) {
-        LOGGER.info(e.getMessage());
-      }
-    }
+		/**
+		 * Responds to an HTTP request for the specified url.
+		 *
+		 * @param url
+		 *            a non-null URL-encoded String starting with "/".
+		 * @return an InputStream that the response data can be read from, or
+		 *         {@code null} if there is no data at {@code url}.
+		 */
+		InputStream getResponse(String url) throws IOException;
+	}
 
-    private void write(String data) throws IOException {
-      connection.getOutputStream().write(data.getBytes("ISO-8859-1"));
-    }
+	private static final Logger LOGGER = Logger.getLogger(MiniHttpServer.class.getName());
 
-    String readUntil(String pattern) throws IOException {
-      Matcher matcher = Pattern.compile(pattern).matcher(currentLine);
-      checkState(matcher.find());
-      String found = currentLine.substring(0, matcher.start());
-      currentLine = currentLine.substring(matcher.end());
-      return found;
-    }
+	public static void main(String[] args) throws IOException {
+		Handler handler = url -> new ByteArrayInputStream(("You requested " + url).getBytes("ISO-8859-1"));
 
-    void nextLine() throws IOException {
-      currentLine = reader.readLine();
-    }
-  }
-  
-  private void checkState(boolean condition) {
-    if (!condition) {
-      throw new IllegalStateException();
-    }
-  }
+		MiniHttpServer server = new MiniHttpServer(Executors.newFixedThreadPool(3), handler);
+		server.start();
+		System.out
+				.println("MiniHttpServer started on: http://" + server.getAddress() + ":" + server.getHttpPort() + "/");
+	}
 
-  /**
-   * Handler for incoming HTTP requests.
-   */
-  public interface Handler {
+	private final ExecutorService executorService;
 
-    /**
-     * Responds to an HTTP request for the specified url.
-     *
-     * @param url a non-null URL-encoded String starting with "/".
-     * @return an InputStream that the response data can be read from, or
-     *      {@code null} if there is no data at {@code url}.
-     */
-    InputStream getResponse(String url) throws IOException;
-  }
+	private final Handler handler;
 
-  public static void main(String[] args) throws IOException {
-    Handler handler = new Handler() {
-      public InputStream getResponse(String url) throws IOException {
-        return new ByteArrayInputStream(("You requested " + url).getBytes("ISO-8859-1"));
-      }
-    };
+	private ServerSocket serverSocket;
 
-    MiniHttpServer server = new MiniHttpServer(Executors.newFixedThreadPool(3), handler);
-    server.start();
-    System.out.println("MiniHttpServer started on: http://" + server.getAddress() + ":" + server.getHttpPort() + "/");
-  }
+	public MiniHttpServer(ExecutorService executorService, Handler handler) {
+		this.executorService = executorService;
+		this.handler = handler;
+	}
+
+	private void checkState(boolean condition) {
+		if (!condition)
+			throw new IllegalStateException();
+	}
 
 	public String getAddress() {
 		return serverSocket.getInetAddress().getHostAddress();
@@ -157,5 +135,24 @@ public class MiniHttpServer {
 	public int getHttpPort() {
 		checkState(serverSocket != null);
 		return serverSocket.getLocalPort();
+	}
+
+	/**
+	 * Startup the server and handle requests indefinitely. This method returns
+	 * after the server has been bound but before any requests have been served.
+	 */
+	void start() throws IOException {
+		checkState(serverSocket == null);
+		serverSocket = new ServerSocket(0);
+
+		executorService.execute(() -> {
+			try {
+				while (true) {
+					executorService.execute(new ConnectionHandler(serverSocket.accept()));
+				}
+			} catch (IOException e) {
+				LOGGER.warning(e.getMessage());
+			}
+		});
 	}
 }

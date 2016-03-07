@@ -12,10 +12,19 @@ public class FutureResultImpl<T> extends UnicastRemoteObject implements FutureRe
 		super();
 	}
 
-
-	public synchronized void set(T result) {
-		this.result = result;
-		this.notify();
+	@Override
+	public synchronized T get() throws RemoteException {
+		while (result == null && e == null) {
+			try {
+				this.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		if (e != null)
+			throw new RemoteException(e.getMessage(), e);
+		else
+			return result;
 	}
 
 	public synchronized void raiseException(Exception e) {
@@ -23,16 +32,8 @@ public class FutureResultImpl<T> extends UnicastRemoteObject implements FutureRe
 		this.notify();
 	}
 
-	public synchronized T get() throws RemoteException {
-		while (result == null && e == null)
-			try {
-				this.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		if (e != null)
-			throw new RemoteException(e.getMessage(), e);
-		else
-			return result;
+	public synchronized void set(T result) {
+		this.result = result;
+		this.notify();
 	}
 }

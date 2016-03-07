@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * All parameters types must have the method valueOf(String) so you can  use.<br>
+ * All parameters types must have the method valueOf(String) so you can use.<br>
  * <code>
  * typeToParse.getMethod("valueOf", String.class).invoke(value.trim());<br>
  * </code>

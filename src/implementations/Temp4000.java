@@ -16,61 +16,37 @@ import sensor.TempSensor;
 
 public class Temp4000 extends SensorServer implements TempSensor {
 	private static final long serialVersionUID = -9066863232278842877L;
+	@SensorParameter(userDescription = "Amount of time in seconds after which a new measurement is needed", propertyName = "InvalidateResultAfter")
+	public Long invalidateResultAfter;
 	private Random r;
 	private ExecutorService executor;
 	private FutureResultImpl<Double> result;
-	private Supplier<Double> m = new Supplier<Double>() {
-		@Override
-		public Double get() {
-			state.setState(State.MEASURING);
-			try {
-				Thread.sleep(r.nextInt(5000) + 1000);
-				System.out.println("Measure done");
-				state.setState(State.RUNNING);
-				return r.nextDouble() * 1000;
-			} catch (InterruptedException e) {
-				System.out.println("A measure failed");
-				state.setState(State.FAULT);
-				state.setComment("A measure failed");
-				throw new CompletionException(e);
-			}
+	private Supplier<Double> measurer = () -> {
+		state.setState(State.MEASURING);
+		try {
+			Thread.sleep(r.nextInt(5000) + 1000);
+			System.out.println("Measure done");
+			state.setState(State.RUNNING);
+			return r.nextDouble() * 1000;
+		} catch (InterruptedException e) {
+			System.out.println("A measure failed");
+			state.setState(State.FAULT);
+			state.setComment("A measure failed");
+			throw new CompletionException(e);
 		}
 	};
-	private Runnable measurer = new Runnable() {
-		@Override
-		public void run() {
-			state.setState(State.MEASURING);
-			try {
-				Thread.sleep(r.nextInt(5000) + 1000);
-				result.set(r.nextDouble() * 1000);
-				System.out.println("Measure done");
-				state.setState(State.RUNNING);
-			} catch (InterruptedException e) {
-				System.out.println("A measure failed");
-				state.setState(State.FAULT);
-				state.setComment("A measure failed");
-				result.raiseException(e);
-			}
+	private Runnable invalidator = () -> {
+		try {
+			Thread.sleep(invalidateResultAfter * 1000);
+		} catch (InterruptedException ignore) {
 		}
+		result = null;
+		System.out.println("Measure invalidated");
 	};
-	private Runnable invalidator = new Runnable() {
-		@Override
-		public void run() {
-			try {
-				Thread.sleep(invalidateResultAfter * 1000);
-			} catch (InterruptedException ignore) {
-			}
-			result = null;
-			System.out.println("Measure invalidated");
-		}
-	};
-
-	@SensorParameter(userDescription = "Amount of time in seconds after which a new measurement is needed", propertyName = "InvalidateResultAfter")
-	public Long invalidateResultAfter;
 
 	public Temp4000() throws RemoteException {
 		super();
-		this.result = null;
+		result = null;
 	}
 
 	@Override
@@ -84,15 +60,16 @@ public class Temp4000 extends SensorServer implements TempSensor {
 		// everyone requesting, it will be updated as soon as the measure ends
 		if (result == null) {
 			result = new FutureResultImpl<>();
-			
+
 			// CON UN SUPPLIER CHE LANCIA ECCEZIONI
-			CompletableFuture.supplyAsync(m, executor).exceptionally((ex) -> {
+			CompletableFuture.supplyAsync(measurer, executor).exceptionally((ex) -> {
 				result.raiseException((Exception) ex.getCause());
 				return -1.0; // questo valore verrà ignorato
 			}).thenAccept((temp) -> result.set(temp)).thenRunAsync(invalidator, executor);
 
 			// CON DUE RUNNABLE
-			// CompletableFuture.runAsync(measurer, executor).thenRunAsync(invalidator, executor);
+			// CompletableFuture.runAsync(measurer,
+			// executor).thenRunAsync(invalidator, executor);
 		}
 		return result;
 

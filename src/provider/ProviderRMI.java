@@ -28,86 +28,83 @@ import http.RmiClassServer;
 import sensor.Sensor;
 
 public class ProviderRMI extends UnicastRemoteObject implements Provider {
-	private static final long serialVersionUID = -299631912733255270L;
-	private final Map<String, Sensor> bindings;
-
-	private ProviderRMI() throws RemoteException {
-		super();
-		bindings = new HashMap<>();
-	}
-
-	@Override
-	public synchronized Sensor find(String location, String name) throws RemoteException {
-		if (location == null || name == null || location.isEmpty() || name.isEmpty())
-			throw new RemoteException("Argument error");
-		String fullName = name + "@" + location;
-		Sensor sensor = bindings.get(fullName);
-		if (sensor == null)
-			throw new RemoteException("Sensor " + fullName + " not found");
-		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
-		System.out.println("Requested: " + fullName + " (client will load " + sensor.getClass().getName() + " from "
-				+ annotation + ")");
-		return sensor;
-	}
-
 	/**
-	 * @param location or "" for any location
-	 * @param name or "" for any location
-	 * @return
-	 * @throws RemoteException
+	 * Thread che attiva un servizio di discovery del provider in multicast.
+	 *
+	 * Sfrutta due porte Datagram, una multicast (indirizzo 230.0.0.1 porta
+	 * 5000) e una datagram, la prima per ricevere le richieste di discovery dai
+	 * clienti e la seconda per inviare le risposte ai singoli.<br>
+	 * Le richieste devono rappresentare l'indirizzo ip e la porta a cui inviare
+	 * la risposta nel formato stringa + intero. Le risposte contengono
+	 * indirizzo ip + porta del provider nello stesso formato.
 	 */
-	@Override
-	public synchronized List<Sensor> findAll(String location, String name) throws RemoteException {
-		if (location == null || name == null)
-			throw new RemoteException("Argument error");
+	public static class MulticastProvider extends Thread {
+		private String currentHostname;
+		private int registryPort;
 
-		List<Sensor> result = new LinkedList<Sensor>();
-		if (!location.isEmpty() && !name.isEmpty()) {
-			String fullName = name + "@" + location;
-			bindings.forEach((n, s) -> {
-				if (n.equals(fullName))
-					result.add(s);
-			});
-		} else if (!location.isEmpty()) {
-			bindings.forEach((n, s) -> {
-				if (n.substring(n.indexOf('@')).equals(location))
-					result.add(s);
-			});
-		} else if (!name.isEmpty()) {
-			bindings.forEach((n, s) -> {
-				if (n.substring(n.indexOf('@')).equals(location))
-					result.add(s);
-			});
-		} else {
-			result.addAll(bindings.values());
+		public MulticastProvider(String currentHostname, int registryPort) {
+			this.currentHostname = currentHostname;
+			this.registryPort = registryPort;
 		}
-		return result;
+
+		@Override
+		public void run() {
+			InetAddress group;
+			int port;
+			MulticastSocket ms;
+			DatagramSocket ds;
+			DatagramPacket response;
+			DatagramPacket request;
+			byte[] responsePayload = null;
+
+			// setup
+			try {
+				// multicast socket to receive requests
+				group = InetAddress.getByName("230.0.0.1");
+				port = 5000;
+				ms = new MulticastSocket(port);
+				ms.joinGroup(group);
+				// datagram socket to send responses
+				ds = new DatagramSocket();
+				// preparing the response with provider ip + provide port
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				DataOutputStream dos = new DataOutputStream(baos);
+				dos.writeUTF(currentHostname);
+				dos.writeInt(registryPort);
+				responsePayload = baos.toByteArray();
+				dos.close();
+				baos.close();
+				System.out.println("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port
+						+ ", will send " + currentHostname + ":" + registryPort);
+			} catch (IOException e) {
+				System.out.println("MulticastDiscoveryServer not started");
+				e.printStackTrace();
+				return;
+			}
+
+			while (true) {
+				try {
+					request = new DatagramPacket(new byte[20], 20);
+					ms.receive(request);
+					// reading requestor address
+					ByteArrayInputStream bias = new ByteArrayInputStream(request.getData());
+					DataInputStream dis = new DataInputStream(bias);
+					InetAddress requestor = InetAddress.getByName(dis.readUTF());
+					int requestorPort = dis.readInt();
+					dis.close();
+					bias.close();
+					// sending response
+					response = new DatagramPacket(responsePayload, responsePayload.length, requestor, requestorPort);
+					ds.send(response);
+				} catch (IOException e) {
+					System.out.println("Error during broadcast");
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
-	@Override
-	public synchronized void register(String location, String name, Sensor sensor) throws RemoteException {
-		if (location == null || name == null || sensor == null || location.isEmpty() || name.isEmpty())
-			throw new RemoteException("Argument error");
-
-		String fullName = name + "@" + location;
-		if (bindings.containsKey(fullName))
-			throw new RemoteException("Sensor " + fullName + " already registered");
-		bindings.put(fullName, sensor);
-
-		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
-		System.out.println(
-				"Registered: " + fullName + " (" + sensor.getClass().getName() + " loaded from " + annotation + ")");
-	}
-
-	@Override
-	public synchronized void unregister(String location, String name) throws RemoteException {
-		if (location == null || name == null || location.isEmpty() || name.isEmpty())
-			throw new RemoteException("Argument error");
-
-		String fullName = name + "@" + location;
-		bindings.remove(fullName);
-		System.out.println("Unregistered: " + fullName);
-	}
+	private static final long serialVersionUID = -299631912733255270L;
 
 	// Avvio del Server RMI
 	// java -Djava.security.policy=rmi.policy provider.ProviderRMI
@@ -183,78 +180,88 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		new MulticastProvider(currentHostname, registryPort).start();
 	}
 
+	private final Map<String, Sensor> bindings;
+
+	private ProviderRMI() throws RemoteException {
+		super();
+		bindings = new HashMap<>();
+	}
+
+	@Override
+	public synchronized Sensor find(String location, String name) throws RemoteException {
+		if (location == null || name == null || location.isEmpty() || name.isEmpty())
+			throw new RemoteException("Argument error");
+		String fullName = name + "@" + location;
+		Sensor sensor = bindings.get(fullName);
+		if (sensor == null)
+			throw new RemoteException("Sensor " + fullName + " not found");
+		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
+		System.out.println("Requested: " + fullName + " (client will load " + sensor.getClass().getName() + " from "
+				+ annotation + ")");
+		return sensor;
+	}
+
 	/**
-	 * Thread che attiva un servizio di discovery del provider in multicast.
-	 * 
-	 * Sfrutta due porte Datagram, una multicast (indirizzo 230.0.0.1 porta
-	 * 5000) e una datagram, la prima per ricevere le richieste di discovery dai
-	 * clienti e la seconda per inviare le risposte ai singoli.<br>
-	 * Le richieste devono rappresentare l'indirizzo ip e la porta a cui inviare
-	 * la risposta nel formato stringa + intero. Le risposte contengono
-	 * indirizzo ip + porta del provider nello stesso formato.
+	 * @param location
+	 *            or "" for any location
+	 * @param name
+	 *            or "" for any location
+	 * @return
+	 * @throws RemoteException
 	 */
-	public static class MulticastProvider extends Thread {
-		private String currentHostname;
-		private int registryPort;
+	@Override
+	public synchronized List<Sensor> findAll(String location, String name) throws RemoteException {
+		if (location == null || name == null)
+			throw new RemoteException("Argument error");
 
-		public MulticastProvider(String currentHostname, int registryPort) {
-			this.currentHostname = currentHostname;
-			this.registryPort = registryPort;
-		}
-
-		@Override
-		public void run() {
-			InetAddress group;
-			int port;
-			MulticastSocket ms;
-			DatagramSocket ds;
-			DatagramPacket response;
-			DatagramPacket request;
-			byte[] responsePayload = null;
-
-			// setup
-			try {
-				// multicast socket to receive requests
-				group = InetAddress.getByName("230.0.0.1");
-				port = 5000;
-				ms = new MulticastSocket(port);
-				ms.joinGroup(group);
-				// datagram socket to send responses
-				ds = new DatagramSocket();
-				// preparing the response with provider ip + provide port
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				DataOutputStream dos = new DataOutputStream(baos);
-				dos.writeUTF(currentHostname);
-				dos.writeInt(registryPort);
-				responsePayload = baos.toByteArray();
-				dos.close();
-				baos.close();
-				System.out.println("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port
-						+ ", will send " + currentHostname + ":" + registryPort);
-			} catch (IOException e) {
-				System.out.println("MulticastDiscoveryServer not started");
-				e.printStackTrace();
-				return;
-			}
-
-			while (true)
-				try {
-					request = new DatagramPacket(new byte[20], 20);
-					ms.receive(request);
-					// reading requestor address
-					ByteArrayInputStream bias = new ByteArrayInputStream(request.getData());
-					DataInputStream dis = new DataInputStream(bias);
-					InetAddress requestor = InetAddress.getByName(dis.readUTF());
-					int requestorPort = dis.readInt();
-					dis.close();
-					bias.close();
-					// sending response
-					response = new DatagramPacket(responsePayload, responsePayload.length, requestor, requestorPort);
-					ds.send(response);
-				} catch (IOException e) {
-					System.out.println("Error during broadcast");
-					e.printStackTrace();
+		List<Sensor> result = new LinkedList<Sensor>();
+		if (!location.isEmpty() && !name.isEmpty()) {
+			String fullName = name + "@" + location;
+			bindings.forEach((n, s) -> {
+				if (n.equals(fullName)) {
+					result.add(s);
 				}
+			});
+		} else if (!location.isEmpty()) {
+			bindings.forEach((n, s) -> {
+				if (n.substring(n.indexOf('@')).equals(location)) {
+					result.add(s);
+				}
+			});
+		} else if (!name.isEmpty()) {
+			bindings.forEach((n, s) -> {
+				if (n.substring(n.indexOf('@')).equals(location)) {
+					result.add(s);
+				}
+			});
+		} else {
+			result.addAll(bindings.values());
 		}
+		return result;
+	}
+
+	@Override
+	public synchronized void register(String location, String name, Sensor sensor) throws RemoteException {
+		if (location == null || name == null || sensor == null || location.isEmpty() || name.isEmpty())
+			throw new RemoteException("Argument error");
+
+		String fullName = name + "@" + location;
+		if (bindings.containsKey(fullName))
+			throw new RemoteException("Sensor " + fullName + " already registered");
+		bindings.put(fullName, sensor);
+
+		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
+		System.out.println(
+				"Registered: " + fullName + " (" + sensor.getClass().getName() + " loaded from " + annotation + ")");
+	}
+
+	@Override
+	public synchronized void unregister(String location, String name) throws RemoteException {
+		if (location == null || name == null || location.isEmpty() || name.isEmpty())
+			throw new RemoteException("Argument error");
+
+		String fullName = name + "@" + location;
+		bindings.remove(fullName);
+		System.out.println("Unregistered: " + fullName);
 	}
 }
