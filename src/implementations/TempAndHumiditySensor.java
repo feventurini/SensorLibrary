@@ -69,16 +69,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 
 	@Override
 	public synchronized Double readTemperature(Unit unit) throws RemoteException {
-		switch (state.getState()) {
-		case SETUP:
-			throw new IllegalStateException("Sensor setup incomplete");
-		case FAULT:
-			throw new IllegalStateException("Sensor fault");
-		case SHUTDOWN:
-			throw new IllegalStateException("Sensor shutdown");
-		default:
 			return readTemperatureAsync(unit).get();
-		}
 	}
 
 	@Override
@@ -106,16 +97,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 
 	@Override
 	public Double readHumidity() throws RemoteException {
-		switch (state.getState()) {
-		case SETUP:
-			throw new IllegalStateException("Sensor setup incomplete");
-		case FAULT:
-			throw new IllegalStateException("Sensor fault");
-		case SHUTDOWN:
-			throw new IllegalStateException("Sensor shutdown");
-		default:
 			return readHumidityAsync().get();
-		}
 	}
 
 	@Override
