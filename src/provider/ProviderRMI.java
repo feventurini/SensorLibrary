@@ -15,6 +15,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RMIClassLoader;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
@@ -114,13 +115,12 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			System.setSecurityManager(new SecurityManager());
 		}
 
-		// TODO un giorno proviamo se rmiregistry si può far partire da qua
-		// try {
-		// LocateRegistry.createRegistry(registryPort);
-		// } catch (RemoteException e) {
-		// e.printStackTrace();
-		// System.exit(-1);
-		// }
+		try {
+			LocateRegistry.createRegistry(registryPort);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
 
 		// Avvia un server http affinchè altri possano scaricare gli stub di
 		// questa classe
@@ -182,7 +182,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			DatagramSocket ds;
 			DatagramPacket response;
 			DatagramPacket request;
-			byte[] providerIp = null;
+			byte[] responsePayload = null;
+			
 			// setup
 			try {
 				// multicast socket to receive requests
@@ -192,12 +193,12 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 				ms.joinGroup(group);
 				// datagram socket to send responses
 				ds = new DatagramSocket();
-				// response to send with provider ip
+				// preparing the response with provider ip + provide port
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				DataOutputStream dos = new DataOutputStream(baos);
 				dos.writeUTF(currentHostname);
 				dos.writeInt(registryPort);
-				providerIp = baos.toByteArray();
+				responsePayload = baos.toByteArray();
 				dos.close();
 				baos.close();
 				System.out.println("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port
@@ -220,9 +221,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 					dis.close();
 					bias.close();
 					// sending response
-					response = new DatagramPacket(providerIp, providerIp.length, requestor, requestorPort);
+					response = new DatagramPacket(responsePayload, responsePayload.length, requestor, requestorPort);
 					ds.send(response);
-
 				} catch (IOException e) {
 					System.out.println("Error during broadcast");
 					e.printStackTrace();
