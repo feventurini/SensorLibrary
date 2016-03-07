@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Load destinations
-PROVIDER_NAME=fede
-PROVIDER_HOST=192.168.1.107
+PROVIDER_NAME=pi
+PROVIDER_HOST=192.168.0.27
 
 STATION_NAME=pi
-STATION_HOST=192.168.1.110
+STATION_HOST=192.168.0.28
 
 CLIENT_NAME=fede
-CLIENT_HOST=192.168.1.107
+CLIENT_HOST=192.168.0.24
 
 # Shortcuts
 PROVIDER=$PROVIDER_NAME@$PROVIDER_HOST
@@ -65,6 +65,10 @@ scp -rp implementations $STATION:$BASE_DIR
 scp -rp sensorstation $STATION:$BASE_DIR
 scp -rp utils $STATION:$BASE_DIR
 scp -p station.properties $STATION:$BASE_DIR
+scp -p TempAndHumiditySensor.properties $STATION:$BASE_DIR
+scp -p Temp4000.properties $STATION:$BASE_DIR
+scp -p Temp2000.properties $STATION:$BASE_DIR
+scp -p Rfid_SL030.properties $STATION:$BASE_DIR
 scp -p rmi.policy $STATION:$BASE_DIR
 scp -rp ../dependency $STATION:$BASE_DIR
 

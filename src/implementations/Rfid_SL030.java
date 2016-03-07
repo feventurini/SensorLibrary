@@ -34,7 +34,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 	private I2CBus bus;
 	private GpioPinDigitalInput trigger;
 	private int errorCounter;
-	private final int errorTreshold = 10;
+	private final int errorTreshold = 20;
 
 	@SensorParameter(userDescription = "Trigger pin", propertyName = "trigger")
 	public Integer triggerPinNumber;
@@ -101,6 +101,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 		super.tearDown();
 		if (trigger != null)
 			trigger.removeAllListeners();
+		GpioFactory.getInstance().unprovisionPin(trigger);
 	}
 
 	public String readRfid() throws IOException {

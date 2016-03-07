@@ -51,7 +51,6 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 				// executor.remove(clearer); // if someone was waiting to clear the
 											// display, prevents the thread to
 											// act
-				System.out.println("Text to display: " + text);
 				display.setText(text);
 				if (time != 0) // 0 means infinite, no need to clear
 					executor.schedule(clearer, time, TimeUnit.SECONDS);
