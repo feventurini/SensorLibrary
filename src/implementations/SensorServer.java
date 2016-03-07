@@ -6,15 +6,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 import sensor.Sensor;
 import sensor.SensorParameter;
 import sensor.SensorState;
 import sensor.SensorState.State;
-import utils.Utils;
 
 public abstract class SensorServer extends UnicastRemoteObject implements Sensor {
 	private static final long serialVersionUID = 8455786461927369862L;
@@ -73,7 +75,6 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	public final void loadParameters(Properties properties) {
 		for (Field f : getAllSensorParameterFields()) {
 			try {
-			if (f.isAnnotationPresent(SensorParameter.class)) {
 				String propertyName = f.getAnnotation(SensorParameter.class).propertyName();
 				if (properties.containsKey(propertyName)) {
 					try {
@@ -89,10 +90,9 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 						// hanno il metodo valueOf(String)
 					}
 				}
-			}
-			} catch (IllegalAccessException e) {
-				// Questa implementazione del sensore dichiara dei parametri non pubblici
-				e.printStackTrace();
+			} catch (IllegalAccessException ignore) {
+				// already checked if the fields are public
+				ignore.printStackTrace();
 			}
 		}
 	}
@@ -107,16 +107,26 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	protected final boolean allParametersFilledUp() {
 		try {
 			for (Field f : getAllSensorParameterFields())
-				if (f.isAnnotationPresent(SensorParameter.class) && f.get(this) == null)
+				if (f.get(this) == null)
 					return false;
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-			return false;
+		} catch (IllegalAccessException ignore) {
+			// already checked if public
+			ignore.printStackTrace();
 		}
 		return true;
 	}
 
-	public final Field[] getAllSensorParameterFields() {
-		return Utils.concatenate(this.getClass().getFields(), this.getClass().getDeclaredFields());
+	/**
+	 * @return all the public fields annotated with {@link SensorParameter} of this sensor (declared or inherited)
+	 */
+	public final Set<Field> getAllSensorParameterFields() {
+		Set<Field> result = new HashSet<>();
+		for(Field f : this.getClass().getFields())
+			if (f.getModifiers() == Modifier.PUBLIC && f.isAnnotationPresent(SensorParameter.class))
+				result.add(f);
+		for(Field f : this.getClass().getDeclaredFields())
+			if (f.getModifiers() == Modifier.PUBLIC && f.isAnnotationPresent(SensorParameter.class))
+				result.add(f);
+		return result; 
 	}
 }

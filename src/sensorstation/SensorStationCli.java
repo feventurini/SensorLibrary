@@ -353,47 +353,46 @@ public class SensorStationCli {
 
 		for (Field f : s.getAllSensorParameterFields())
 			try {
-				if (f.isAnnotationPresent(SensorParameter.class))
-					if (f.get(s) != null)
-						System.out.println(f.getAnnotation(SensorParameter.class).userDescription() + ":\t" + f.get(s));
-					else {
-						Class<?> typeToParse = f.getType();
-						if (!isValidType(typeToParse)) {
-							System.out.println("Sensor contains a parameter field that is not parsable from cli input");
-							return null;
-						}
-						String value;
-						boolean retry = true;
-						do {
-							System.out.print(f.getAnnotation(SensorParameter.class).userDescription() + " ("
-									+ typeToParse.getSimpleName() + ")? ");
-							value = console.readLine().trim();
-							if (!value.isEmpty())
-								if (typeToParse == String.class) {
-									f.set(s, value);
-									retry = false;
-								} else {
-									try {
-										Method valueOf = typeToParse.getMethod("valueOf", String.class);
-										Object obj = valueOf.invoke(null, value.trim());
-										f.set(s, obj);
-										retry = false;
-									} catch (InvocationTargetException ignore) {
-										// probabilemte un problema di parsing
-										// dei
-										// numeri
-										System.out.println("Exception: " + ignore.getTargetException().getMessage());
-										retry = true;
-									} catch (NoSuchMethodException e) {
-										// non dovrebbe mai avvenire perchè
-										// tutti i
-										// campi di SensorParameter.validTypes
-										// hanno il metodo valueOf(String)
-										return null;
-									}
-								}
-						} while (retry);
+				if (f.get(s) != null)
+					System.out.println(f.getAnnotation(SensorParameter.class).userDescription() + ":\t" + f.get(s));
+				else {
+					Class<?> typeToParse = f.getType();
+					if (!isValidType(typeToParse)) {
+						System.out.println("Sensor contains a parameter field that is not parsable from cli input");
+						return null;
 					}
+					String value;
+					boolean retry = true;
+					do {
+						System.out.print(f.getAnnotation(SensorParameter.class).userDescription() + " ("
+								+ typeToParse.getSimpleName() + ")? ");
+						value = console.readLine().trim();
+						if (!value.isEmpty())
+							if (typeToParse == String.class) {
+								f.set(s, value);
+								retry = false;
+							} else {
+								try {
+									Method valueOf = typeToParse.getMethod("valueOf", String.class);
+									Object obj = valueOf.invoke(null, value.trim());
+									f.set(s, obj);
+									retry = false;
+								} catch (InvocationTargetException ignore) {
+									// probabilemte un problema di parsing
+									// dei
+									// numeri
+									System.out.println("Exception: " + ignore.getTargetException().getMessage());
+									retry = true;
+								} catch (NoSuchMethodException e) {
+									// non dovrebbe mai avvenire perchè
+									// tutti i
+									// campi di SensorParameter.validTypes
+									// hanno il metodo valueOf(String)
+									return null;
+								}
+							}
+					} while (retry);
+				}
 			} catch (IllegalAccessException | IOException e) {
 				System.out.println("Eccezione durante la lettura dei parametri: " + e.getMessage());
 				e.printStackTrace();

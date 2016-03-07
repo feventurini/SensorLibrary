@@ -91,7 +91,7 @@ public interface Provider extends Remote {
 
 		// datagram socket to receive a response
 		InetAddress localaddress = IpUtils.getCurrentIp();
-		DatagramSocket ds = new DatagramSocket(port, localaddress);
+		DatagramSocket ds = new DatagramSocket();
 		ds.setSoTimeout(5000);
 
 		// request containing the local address
@@ -99,14 +99,14 @@ public interface Provider extends Remote {
 		DataOutputStream dos = new DataOutputStream(baos);
 		dos.writeUTF(localaddress.getHostName());
 		dos.writeInt(ds.getLocalPort());
-		byte data[] = baos.toByteArray();
+		byte requestPayload[] = baos.toByteArray();
 		dos.close();
 		baos.close();
-		DatagramPacket request = new DatagramPacket(data, data.length, group, port);
+		DatagramPacket request = new DatagramPacket(requestPayload, requestPayload.length, group, port);
 
 		// packet for the response
-		data = new byte[20];
-		DatagramPacket packet = new DatagramPacket(data, data.length);
+		byte[] responsePayload = new byte[20];
+		DatagramPacket response = new DatagramPacket(responsePayload, responsePayload.length);
 
 		int attempts = 0;
 		InetAddress providerHost = null;
@@ -117,9 +117,8 @@ public interface Provider extends Remote {
 			System.out.println("Search for provider started on " + group.getHostAddress() + ":" + port);
 
 			// receiving response
-			packet.setData(data);
-			ds.receive(packet);
-			ByteArrayInputStream bias = new ByteArrayInputStream(packet.getData());
+			ds.receive(response);
+			ByteArrayInputStream bias = new ByteArrayInputStream(response.getData());
 			DataInputStream dis = new DataInputStream(bias);
 			try {
 				providerHost = InetAddress.getByName(dis.readUTF());

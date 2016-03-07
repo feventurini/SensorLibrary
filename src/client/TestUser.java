@@ -87,7 +87,7 @@ public class TestUser {
 		tag = t.readTag();
 		System.out.println("Sync " + tag);
 		System.out.println("SINCRONO");
-		d.setRGB(255, 0, 0);
+		d.setRGB(138, 43, 226);
 		d.display(tag, 10);
 
 		List<FutureResult<String>> results = new ArrayList<>();
