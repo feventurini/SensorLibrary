@@ -44,6 +44,7 @@ public class SensorStationCli {
 				providerUrl = Provider.buildProviderUrl(args[0]);
 			} catch (RemoteException ignore) {
 				// never thrown
+				ignore.printStackTrace();
 			}
 		if (args.length == 2) {
 			try {
@@ -123,118 +124,128 @@ public class SensorStationCli {
 			e.printStackTrace();
 			return;
 		}
-
-		// TODO questo case fa schifo -> cambiare!
+		
 		switch (choice) {
 		case 1:
-			List<Class<? extends SensorServer>> list = getServersList();
-			if (list.isEmpty()) {
-				System.out.println("No loadable sensor classes found");
+			startNewSensor();
 				break;
-			}
-			for (int j = 0; j < list.size(); j++) {
-				System.out.println((j + 1) + ".\t" + list.get(j).getSimpleName());
-			}
-
-			System.out.print("> ");
-			try {
-				choice = Integer.parseInt(console.readLine()) - 1;
-			} catch (IOException | NumberFormatException e) {
-				e.printStackTrace();
-				return;
-			}
-
-			SensorServer s = initSensor(list.get(choice));
-			if (s == null) {
-				System.out.println("Errore di inizializzazione");
-				return;
-			}
-
-			System.out.print("Nome del sensore? ");
-			String sensorName = null;
-			try {
-				sensorName = console.readLine().trim();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return;
-			}
-
-			try {
-				provider.register(stationName, sensorName, s);
-			} catch (RemoteException e) {
-				System.out.println("Errore di registrazione");
-				s.tearDown();
-				e.printStackTrace();
-				return;
-			}
-
-			activeSensors.put(sensorName, s);
-			break;
-
 		case 2:
-			if (activeSensors.isEmpty()) {
-				System.out.println("No active sensors");
-				return;
-			}
-
-			activeSensors.forEach((n, ss) -> System.out.println(n + "\t" + ss.getClass().getSimpleName()));
-
-			System.out.print("> ");
-			String key = null;
-			try {
-				key = console.readLine();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return;
-			}
-			if (!activeSensors.containsKey(key)) {
-				System.out.println("Scelta non in lista");
-				return;
-			}
-
-			try {
-				System.out.println(activeSensors.get(key).getState().toString());
-			} catch (RemoteException ignore) {
-				// tanto non succede
-				System.out.println(ignore.getMessage());
-			}
+			watchSensorStatus();
 			break;
 		case 3:
-			activeSensors.forEach((n, ss) -> System.out.println(n + "\t" + ss.getClass().getSimpleName()));
-
-			System.out.print("> ");
-			String key2 = null;
-			try {
-				key2 = console.readLine();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return;
-			}
-			if (!activeSensors.containsKey(key2)) {
-				System.out.println("Scelta non in lista");
-				return;
-			}
-
-			try {
-				System.out.println(activeSensors.get(key2).getState().toString());
-			} catch (RemoteException ignore) {
-				// tanto non succede
-				System.out.println(ignore.getMessage());
-			}
-
-			try {
-				SensorServer ss = activeSensors.remove(key2);
-				ss.tearDown();
-				provider.unregister(stationName, key2);
-			} catch (RemoteException ignore) {
-				// tanto non succede
-				System.out.println(ignore.getMessage());
-			}
+			stopSensor();
 			break;
 		default:
 			System.out.println("Scelta non riconosciuta: " + choice);
 			break;
 		}
+	}
+
+	private void stopSensor() {
+		activeSensors.forEach((n, ss) -> System.out.println(n + "\t" + ss.getClass().getSimpleName()));
+		System.out.print("> ");
+		String key = null;
+		try {
+			key = console.readLine();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
+		if (!activeSensors.containsKey(key)) {
+			System.out.println("Scelta non in lista");
+			return;
+		}
+
+		try {
+			System.out.println(activeSensors.get(key).getState().toString());
+		} catch (RemoteException ignore) {
+			// tanto non succede
+			System.out.println(ignore.getMessage());
+		}
+
+		try {
+			SensorServer ss = activeSensors.remove(key);
+			ss.tearDown();
+			provider.unregister(stationName, key);
+		} catch (RemoteException ignore) {
+			// tanto non succede
+			System.out.println(ignore.getMessage());
+		}
+	}
+
+	private void watchSensorStatus() {
+		if (activeSensors.isEmpty()) {
+			System.out.println("No active sensors");
+			return;
+		}
+
+		activeSensors.forEach((n, ss) -> System.out.println(n + "\t" + ss.getClass().getSimpleName()));
+
+		System.out.print("> ");
+		String key = null;
+		try {
+			key = console.readLine();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
+		if (!activeSensors.containsKey(key)) {
+			System.out.println("Scelta non in lista");
+			return;
+		}
+
+		try {
+			System.out.println(activeSensors.get(key).getState().toString());
+		} catch (RemoteException ignore) {
+			// tanto non succede
+			System.out.println(ignore.getMessage());
+		}
+	}
+
+	private void startNewSensor() {
+		List<Class<? extends SensorServer>> list = getServersList();
+		if (list.isEmpty()) {
+			System.out.println("No loadable sensor classes found");
+			return;
+		}
+		for (int j = 0; j < list.size(); j++) {
+			System.out.println((j + 1) + ".\t" + list.get(j).getSimpleName());
+		}
+
+		System.out.print("> ");
+		int choice = -1;
+		try {
+			choice = Integer.parseInt(console.readLine()) - 1;
+		} catch (IOException | NumberFormatException e) {
+			e.printStackTrace();
+			return;
+		}
+
+		SensorServer s = initSensor(list.get(choice));
+		if (s == null) {
+			System.out.println("Errore di inizializzazione");
+			return;
+		}
+
+		System.out.print("Nome del sensore? ");
+		String sensorName = null;
+		try {
+			sensorName = console.readLine().trim();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		}
+
+		try {
+			provider.register(stationName, sensorName, s);
+		} catch (RemoteException e) {
+			System.out.println("Errore di registrazione");
+			s.tearDown();
+			e.printStackTrace();
+			return;
+		}
+
+		activeSensors.put(sensorName, s);
 	}
 
 	private void initRmi()

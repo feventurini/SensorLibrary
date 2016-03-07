@@ -19,6 +19,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RMIClassLoader;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import http.IpUtils;
@@ -43,17 +45,43 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (sensor == null)
 			throw new RemoteException("Sensor " + fullName + " not found");
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
-		System.out.println(
-				"Requested: " + fullName + " (" + sensor.getClass().getName() + " loaded from " + annotation + ")");
+		System.out.println("Requested: " + fullName + " (client will load " + sensor.getClass().getName() + " from "
+				+ annotation + ")");
 		return sensor;
 	}
 
+	/**
+	 * @param location or "" for any location
+	 * @param name or "" for any location
+	 * @return
+	 * @throws RemoteException
+	 */
 	@Override
-	public synchronized Sensor[] findAll(String location, String name) throws RemoteException {
-		if (location == null || name == null || location.isEmpty() || name.isEmpty())
+	public synchronized List<Sensor> findAll(String location, String name) throws RemoteException {
+		if (location == null || name == null)
 			throw new RemoteException("Argument error");
 
-		return null;
+		List<Sensor> result = new LinkedList<Sensor>();
+		if (!location.isEmpty() && !name.isEmpty()) {
+			String fullName = name + "@" + location;
+			bindings.forEach((n, s) -> {
+				if (n.equals(fullName))
+					result.add(s);
+			});
+		} else if (!location.isEmpty()) {
+			bindings.forEach((n, s) -> {
+				if (n.substring(n.indexOf('@')).equals(location))
+					result.add(s);
+			});
+		} else if (!name.isEmpty()) {
+			bindings.forEach((n, s) -> {
+				if (n.substring(n.indexOf('@')).equals(location))
+					result.add(s);
+			});
+		} else {
+			result.addAll(bindings.values());
+		}
+		return result;
 	}
 
 	@Override
@@ -183,7 +211,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			DatagramPacket response;
 			DatagramPacket request;
 			byte[] responsePayload = null;
-			
+
 			// setup
 			try {
 				// multicast socket to receive requests

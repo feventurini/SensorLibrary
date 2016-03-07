@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.List;
 
 import http.IpUtils;
 import sensor.Sensor;
@@ -41,11 +42,11 @@ public interface Provider extends Remote {
 	 *            the location (null for any location)
 	 * @param name
 	 *            the name (null for any name)
-	 * @return an array of remote references to the sensors, possibly with 0
+	 * @return an list of remote references to the sensors, possibly with 0
 	 *         length
 	 * @throws RemoteException
 	 */
-	public Sensor[] findAll(String location, String name) throws RemoteException;
+	public List<Sensor> findAll(String location, String name) throws RemoteException;
 
 	/**
 	 * Register a new Sensor
