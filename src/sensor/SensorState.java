@@ -2,6 +2,14 @@ package sensor;
 
 import java.io.Serializable;
 
+/**
+ * All sensors must be able to provide information about their state by means of
+ * {@link Sensor#getState()}. A sensor state is represented by one of the
+ * following states: {@link State#SETUP}, {@link State#RUNNING},
+ * {@link State#MEASURING}, {@link State#FAULT}, {@link State#SHUTDOWN}.
+ * Moreover a string can be set on the SensorState to provide additional
+ * information.
+ */
 public class SensorState implements Serializable {
 	public enum State implements Serializable {
 		SETUP, RUNNING, MEASURING, FAULT, SHUTDOWN
@@ -18,7 +26,7 @@ public class SensorState implements Serializable {
 	}
 
 	/**
-	 * @return the comment
+	 * @return the comment if any, an empty string otherwise
 	 */
 	public synchronized String getComment() {
 		return comment;
@@ -32,6 +40,10 @@ public class SensorState implements Serializable {
 	}
 
 	/**
+	 * Sets the comment of the SensorState, calling {@link #setState(State)}
+	 * will erase the prevoius comment. So this method must be called after
+	 * setting the state.
+	 * 
 	 * @param comment
 	 *            the comment to set
 	 */
@@ -40,11 +52,14 @@ public class SensorState implements Serializable {
 	}
 
 	/**
+	 * Sets the state of the sensor, also erasing the previus comment.
+	 * 
 	 * @param state
 	 *            the state to set
 	 */
 	public synchronized void setState(State state) {
 		this.state = state;
+		this.comment = "";
 	}
 
 }

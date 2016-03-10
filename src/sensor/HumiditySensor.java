@@ -2,6 +2,10 @@ package sensor;
 
 import java.rmi.RemoteException;
 
+/**
+ * The public interface of a humidity sensor. Contains methods to read the
+ * humidity, both asynchronously and synchronously.
+ */
 public interface HumiditySensor extends Sensor {
 	/**
 	 * Reads the humidity synchronously

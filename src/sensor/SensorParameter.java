@@ -4,11 +4,14 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Properties;
 
 /**
- * All parameters types must have the method valueOf(String) so you can use.<br>
+ * All parameters types must have the static method valueOf(String) so that when
+ * initializing the sensor the following code can be used:<br>
  * <code>
- * typeToParse.getMethod("valueOf", String.class).invoke(value.trim());<br>
+ * String value = "1";<br>
+ * typeToParse.getMethod("valueOf", String.class).invoke(null, value.trim());<br>
  * </code>
  */
 @Retention(RetentionPolicy.RUNTIME)
@@ -23,7 +26,19 @@ public @interface SensorParameter {
 	// maggiore flessibilità
 	// potendo rinominare i field e le key in maniera indipendente
 
+	/**
+	 * The string to be used as key to retrieve the value of the parameter from
+	 * {@link Properties}
+	 * 
+	 * @return
+	 */
 	String propertyName();
 
+	/**
+	 * A user friendly description of what the parameter represents, can be used
+	 * during initialization to query the user for a value
+	 * 
+	 * @return
+	 */
 	String userDescription();
 }
