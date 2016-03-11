@@ -13,7 +13,8 @@ public class IpUtils {
 	 * nella LAN e non 127.0.0.1 come a volte restituisce
 	 * {@link InetAddress#getLocalHost()}
 	 *
-	 * @return
+	 * @return the first public {@link InetAddress}, or null if no one is found
+	 *         or the caller doesn't have the right permissions
 	 * @throws SocketException
 	 * @throws UnknownHostException
 	 */
@@ -32,6 +33,7 @@ public class IpUtils {
 					return ia;
 			}
 		}
-		return null; // se non c'e un IPv4 di LAN disponibile
+		return null; // se non c'e un IPv4 di LAN disponibile o non si hanno i
+						// permessi
 	}
 }

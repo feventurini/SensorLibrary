@@ -16,8 +16,6 @@ import java.util.regex.Pattern;
 /**
  * A very small HTTP server, designed to support only a single client, the Java
  * RMI URL Classloader.
- *
- * @author jessewilson
  */
 public class MiniHttpServer {
 	/**
@@ -60,7 +58,7 @@ public class MiniHttpServer {
 				if (responseData != null) {
 					write("HTTP/1.1 200 OK\r\n\r\n");
 					int b;
-					// TODO migliorare l'efficienza
+					// TODO migliorare l'efficienza, leggere e scrivere a blocchi
 					while ((b = responseData.read()) != -1) {
 						connection.getOutputStream().write(b);
 					}
@@ -85,6 +83,7 @@ public class MiniHttpServer {
 	/**
 	 * Handler for incoming HTTP requests.
 	 */
+	@FunctionalInterface
 	public interface Handler {
 
 		/**

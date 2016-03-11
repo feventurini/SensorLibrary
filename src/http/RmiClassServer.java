@@ -6,8 +6,6 @@ import java.util.concurrent.Executors;
 /**
  * Serves classes from the current classloader to remote clients for RMI. The
  * server should be started before any remote objects are bound.
- *
- * @author jessewilson
  */
 public class RmiClassServer {
 
