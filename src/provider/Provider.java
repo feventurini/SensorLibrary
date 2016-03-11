@@ -16,18 +16,49 @@ import java.util.List;
 import http.IpUtils;
 import sensor.Sensor;
 
+/**
+ * The public interface of a Provider. Contains methods to build the provider
+ * rmi url from its hostname (and port), to find the provider over the network
+ * using datagram packets sent to a multicast group. Moreover defines the public
+ * services that the provider offers: finding a sensor given its name and
+ * position, finding all the sensors matching a given name or location,
+ * registering and unregistering a sensor.
+ */
 public interface Provider extends Remote {
 	public static final String PROVIDER_NAME = "ProviderRMI";
 	public static final int PROVIDER_PORT = 1099;
 
+	/**
+	 * Builds the provider url in the form "rmi://host:port/name"
+	 * 
+	 * @param host
+	 * @return the providder url
+	 * @throws RemoteException
+	 */
 	public static String buildProviderUrl(String host) throws RemoteException {
 		return buildProviderUrl(host, 1099);
 	}
 
+	/**
+	 * Builds the provider url in the form "rmi://host:port/name"
+	 * 
+	 * @param host
+	 * @param port
+	 * @return the provider url
+	 * @throws RemoteException
+	 */
 	public static String buildProviderUrl(String host, int port) throws RemoteException {
 		return "rmi://" + host + ":" + port + "/" + PROVIDER_NAME;
 	}
 
+	/**
+	 * By means of a multicast request on 230.0.0.1:5000 attempts to locate the
+	 * provider, returning its url. The caller must have the permissions to know
+	 * its own ip address, to open a multicast socket and a datagram socket
+	 * 
+	 * @return the provider url in the form "rmi://host:port/name"
+	 * @throws IOException
+	 */
 	public static String findProviderUrl() throws IOException {
 		// multicast socket to send requests (e non datagramsocket su
 		// 192.168.0.255)
@@ -124,7 +155,7 @@ public interface Provider extends Remote {
 	public void register(String location, String name, Sensor sensor) throws RemoteException;
 
 	/**
-	 * Unregister a sensor
+	 * Unregister a Sensor
 	 *
 	 * @param location
 	 *            the location
