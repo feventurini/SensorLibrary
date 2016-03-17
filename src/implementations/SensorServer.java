@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -25,6 +26,10 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	protected SensorServer() throws RemoteException {
 		super();
 		state = new SensorState(State.SETUP, "Set up");
+		for (Field f : getAllSensorParameterFields())
+			if (!isValidType(f.getType()))
+				throw new RemoteException("", new IllegalClassFormatException(
+						f.getName() + " is not a valid parameter field for the sensor"));
 	}
 
 	/**
@@ -42,6 +47,19 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 		} catch (IllegalAccessException ignore) {
 			// already checked if public
 			ignore.printStackTrace();
+		}
+		return true;
+	}
+
+	private boolean isValidType(Class<?> klass) {
+		if (klass == String.class)
+			return true;
+		else {
+			try {
+				klass.getMethod("valueOf", String.class);
+			} catch (NoSuchMethodException e) {
+				return false;
+			}
 		}
 		return true;
 	}

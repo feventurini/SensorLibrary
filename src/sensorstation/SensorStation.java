@@ -5,10 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -16,6 +13,7 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Properties;
@@ -27,9 +25,8 @@ import http.IpUtils;
 import http.RmiClassServer;
 import implementations.SensorServer;
 import provider.Provider;
-import sensor.SensorParameter;
 
-public class SensorStationCli {
+public class SensorStation {
 	/**
 	 * Scans the classes through reflection to find all the subclasses of
 	 * {@link SensorServer}
@@ -44,7 +41,7 @@ public class SensorStationCli {
 	}
 
 	public static void main(String[] args) {
-		new SensorStationCli(args);
+		new SensorStation(args);
 	}
 
 	private String stationName;
@@ -55,18 +52,19 @@ public class SensorStationCli {
 
 	private LinkedHashMap<String, SensorServer> activeSensors;
 
-	public SensorStationCli(String[] args) {
-		if (args==null||args.length!=1){
+	public SensorStation(String[] args) {
+		if (args == null || args.length != 1) {
 			System.out.println("Usage: SensorStation propertyFile");
 			System.exit(-1);
-		}			
-		
+		}
+
 		providerUrl = null;
 		try {
 			loadStationParameters(args[0]);
 		} catch (IOException e) {
-			System.out.println("Parameters loading from station.properties failed");
+			System.out.println("Parameters loading from " + args[0] + " failed");
 			e.printStackTrace();
+			System.exit(-2);
 		}
 
 		if (providerUrl == null) {
@@ -77,23 +75,13 @@ public class SensorStationCli {
 			}
 		}
 
-		console = new BufferedReader(new InputStreamReader(System.in));
-
-		try {
-			askForParameters();
-		} catch (IOException e1) {
-			System.out.println("IOException while asking for parameters");
-			e1.printStackTrace();
-			System.exit(1);
-		}
-
 		try {
 			initRmi();
 		} catch (SocketException | UnknownHostException | MalformedURLException | RemoteException
 				| NotBoundException e) {
 			System.out.println("Impossible to find provider");
 			e.printStackTrace();
-			System.exit(2);
+			System.exit(-3);
 		}
 
 		activeSensors = new LinkedHashMap<>();
@@ -109,29 +97,6 @@ public class SensorStationCli {
 				}
 			});
 		}));
-
-		while (true) {
-			mainMenu();
-		}
-	}
-
-	private void askForParameters() throws IOException {
-		while (stationName == null || stationName.isEmpty()) {
-			System.out.print("Station name? ");
-			stationName = console.readLine().trim();
-		}
-
-		while (providerUrl == null) {
-			System.out.print("Provider host? ");
-			String providerHost = console.readLine().trim();
-			System.out.print("Provider port (enter for 1099)? ");
-			int providerPort = 1099;
-			try {
-				providerPort = Integer.parseInt(console.readLine().trim());
-			} catch (NumberFormatException ignore) {
-			}
-			providerUrl = Provider.buildProviderUrl(providerHost, providerPort);
-		}
 	}
 
 	private void initRmi()
@@ -175,8 +140,10 @@ public class SensorStationCli {
 	 * @param properyFile
 	 * @return a functioning sensor or null if something went wrong
 	 */
-	private SensorServer initSensor(Class<? extends SensorServer> sensorClass) {
-		assert sensorClass != null;
+	private void initSensor(Class<? extends SensorServer> sensorClass, Properties sensorParams) {
+		assert sensorClass != null && sensorParams != null;
+		if (!sensorParams.containsKey("name"))
+			throw new IllegalArgumentException("Sensor name not found");
 
 		SensorServer s;
 		try {
@@ -184,93 +151,29 @@ public class SensorStationCli {
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException
 				| NoSuchMethodException | SecurityException e1) {
 			e1.printStackTrace();
-			System.out.println("Impossibile instanziare un sensore");
-			return null;
+			System.out.println("Impossibile creare un'istanza di " + sensorClass.getName());
+			return;
 		}
-
-		System.out
-				.print("File da cui caricare i parametri (enter for " + sensorClass.getSimpleName() + ".properties)? ");
-		try {
-			String fileName = console.readLine().trim();
-			if (!fileName.trim().isEmpty()) {
-				s.loadParametersFromFile(new File(fileName));
-			} else {
-				s.loadParametersFromFile(new File(sensorClass.getSimpleName() + ".properties"));
-			}
-		} catch (IOException ignore) {
-			ignore.printStackTrace();
-		}
-
-		for (Field f : s.getAllSensorParameterFields()) {
-			try {
-				if (f.get(s) != null) {
-					System.out.println(f.getAnnotation(SensorParameter.class).userDescription() + ":\t" + f.get(s));
-				} else {
-					Class<?> typeToParse = f.getType();
-					if (!isValidType(typeToParse)) {
-						System.out.println("Sensor contains a parameter field that is not parsable from cli input");
-						return null;
-					}
-					String value;
-					boolean retry = true;
-					do {
-						System.out.print(f.getAnnotation(SensorParameter.class).userDescription() + " ("
-								+ typeToParse.getSimpleName() + ")? ");
-						value = console.readLine().trim();
-						if (!value.isEmpty())
-							if (typeToParse == String.class) {
-								f.set(s, value);
-								retry = false;
-							} else {
-								try {
-									Method valueOf = typeToParse.getMethod("valueOf", String.class);
-									Object obj = valueOf.invoke(null, value.trim());
-									f.set(s, obj);
-									retry = false;
-								} catch (InvocationTargetException ignore) {
-									// probabilemte un problema di parsing
-									// dei
-									// numeri
-									System.out.println("Exception: " + ignore.getTargetException().getMessage());
-									retry = true;
-								} catch (NoSuchMethodException e) {
-									// non dovrebbe mai avvenire perchè
-									// tutti i
-									// campi di SensorParameter.validTypes
-									// hanno il metodo valueOf(String)
-									return null;
-								}
-							}
-					} while (retry);
-				}
-			} catch (IllegalAccessException | IOException e) {
-				System.out.println("Eccezione durante la lettura dei parametri: " + e.getMessage());
-				e.printStackTrace();
-				return null;
-			}
-		}
+		s.loadParameters(sensorParams);
 
 		try {
 			s.setUp();
 		} catch (Exception e) {
 			System.out.println("Eccezione durante il setUp del sensore: " + e.getMessage());
 			e.printStackTrace();
-			return null;
+			return;
 		}
-		return s;
-	}
 
-	private boolean isValidType(Class<?> klass) {
-		if (klass == String.class)
-			return true;
-		else {
-			try {
-				klass.getMethod("valueOf", String.class);
-			} catch (NoSuchMethodException e) {
-				return false;
-			}
+		String sensorName = sensorParams.getProperty("name");
+		try {
+			provider.register(stationName, sensorName, s);
+		} catch (RemoteException e) {
+			System.out.println("Errore di registrazione: " + e.getMessage());
+			s.tearDown();
+			return;
 		}
-		return true;
+
+		activeSensors.put(sensorName, s);
 	}
 
 	public final void loadStationParameters(String propertyFile) throws IOException {
@@ -289,8 +192,27 @@ public class SensorStationCli {
 		}
 		inputStream.close();
 
-		stationName = properties.getProperty("stationName", "");
+		if (!properties.containsKey("stationName"))
+			throw new IOException("stationName not found in " + propertyFile);
+		if (!properties.containsKey("sensorsToLoad"))
+			throw new IOException("sensorsToLoad not found in " + propertyFile);
+
+		stationName = properties.getProperty("stationName");
 		System.out.println("stationName: " + stationName);
+
+		String sensorsToLoad = properties.getProperty("sensorsToLoad");
+		for (String sensor : sensorsToLoad.split(";")) {
+			String klass = sensor.substring(0, sensor.indexOf(',')).trim();
+			String paramFile = sensor.substring(sensor.indexOf(',') + 1).trim();
+			Properties p = new Properties();
+			p.load(new FileInputStream(paramFile));
+			try {
+				initSensor((Class<? extends SensorServer>) getClass().getClassLoader().loadClass(klass), p);
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 
 		// checks if the file specifics a provider host+port
 		if (providerUrl == null && properties.containsKey("providerIp")) {
@@ -301,84 +223,54 @@ public class SensorStationCli {
 			System.out.println("providerPort: " + providerPort);
 			providerUrl = Provider.buildProviderUrl(providerHost, providerPort);
 		}
+
 	}
 
-	private void mainMenu() {
-		System.out.println("Operazioni disponibili:");
-		System.out.println("1.\tAvvia sensore");
-		System.out.println("2.\tStato sensore");
-		System.out.println("3.\tFerma sensore");
-		System.out.print("> ");
-
-		int choice = 0;
-		try {
-			choice = Integer.parseInt(console.readLine());
-		} catch (IOException | NumberFormatException e) {
-			e.printStackTrace();
-			return;
-		}
-
-		switch (choice) {
-		case 1:
-			startNewSensor();
-			break;
-		case 2:
-			watchSensorStatus();
-			break;
-		case 3:
-			stopSensor();
-			break;
-		default:
-			System.out.println("Scelta non riconosciuta: " + choice);
-			break;
-		}
-	}
-
-	private void startNewSensor() {
-		List<Class<? extends SensorServer>> list = getServersList();
-		if (list.isEmpty()) {
-			System.out.println("No loadable sensor classes found");
-			return;
-		}
-		for (int j = 0; j < list.size(); j++) {
-			System.out.println(j + 1 + ".\t" + list.get(j).getSimpleName());
-		}
-
-		System.out.print("> ");
-		int choice = -1;
-		try {
-			choice = Integer.parseInt(console.readLine()) - 1;
-		} catch (IOException | NumberFormatException e) {
-			e.printStackTrace();
-			return;
-		}
-
-		SensorServer s = initSensor(list.get(choice));
-		if (s == null) {
-			System.out.println("Errore di inizializzazione");
-			return;
-		}
-
-		System.out.print("Nome del sensore? ");
-		String sensorName = null;
-		try {
-			sensorName = console.readLine().trim();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return;
-		}
-
-		try {
-			provider.register(stationName, sensorName, s);
-		} catch (RemoteException e) {
-			System.out.println("Errore di registrazione");
-			s.tearDown();
-			e.printStackTrace();
-			return;
-		}
-
-		activeSensors.put(sensorName, s);
-	}
+//	private void startNewSensor() {
+//		List<Class<? extends SensorServer>> list = getServersList();
+//		if (list.isEmpty()) {
+//			System.out.println("No loadable sensor classes found");
+//			return;
+//		}
+//		for (int j = 0; j < list.size(); j++) {
+//			System.out.println(j + 1 + ".\t" + list.get(j).getSimpleName());
+//		}
+//
+//		System.out.print("> ");
+//		int choice = -1;
+//		try {
+//			choice = Integer.parseInt(console.readLine()) - 1;
+//		} catch (IOException | NumberFormatException e) {
+//			e.printStackTrace();
+//			return;
+//		}
+//
+//		SensorServer s = initSensor(list.get(choice));
+//		if (s == null) {
+//			System.out.println("Errore di inizializzazione");
+//			return;
+//		}
+//
+//		System.out.print("Nome del sensore? ");
+//		String sensorName = null;
+//		try {
+//			sensorName = console.readLine().trim();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//			return;
+//		}
+//
+//		try {
+//			provider.register(stationName, sensorName, s);
+//		} catch (RemoteException e) {
+//			System.out.println("Errore di registrazione");
+//			s.tearDown();
+//			e.printStackTrace();
+//			return;
+//		}
+//
+//		activeSensors.put(sensorName, s);
+//	}
 
 	private void stopSensor() {
 		activeSensors.forEach((n, ss) -> System.out.println(n + "\t" + ss.getClass().getSimpleName()));

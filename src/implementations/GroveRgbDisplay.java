@@ -20,10 +20,13 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 	private Runnable clearer = () -> {
 		try {
 			display.setText("");
-		} catch (IOException e) {
+		} catch (IOException e)
+
+		{
 			state.setState(State.FAULT);
 			e.printStackTrace();
 		}
+
 	};
 
 	public GroveRgbDisplay() throws RemoteException {
@@ -82,20 +85,22 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 	}
 
 	@Override
-	public void setUp() {
+	public void setUp() throws IOException {
 		if (!allParametersFilledUp()) {
 			state.setState(State.SETUP);
 			state.setComment("Set up");
-		} else {
-			try {
-				display = new GroveRgbLcdPi4J();
-			} catch (IOException e) {
-				state.setState(State.FAULT);
-			}
-			executor = new ScheduledThreadPoolExecutor(1);
-			state.setState(State.RUNNING);
-			state.setComment("Running");
+			throw new IllegalStateException("Missing parameters: "
+					+ getAllSensorParameterFields().stream().filter((f) -> f == null).toString());
 		}
+		try {
+			display = new GroveRgbLcdPi4J();
+		} catch (IOException e) {
+			state.setState(State.FAULT);
+			throw e;
+		}
+		executor = new ScheduledThreadPoolExecutor(1);
+		state.setState(State.RUNNING);
+		state.setComment("Running");
 	}
 
 	@Override
