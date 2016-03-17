@@ -2,6 +2,7 @@ package sensorstation;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,33 +30,22 @@ import implementations.SensorServer;
 import provider.Provider;
 import sensor.SensorParameter;
 
-public class SensorStationCli {
+public class SensorStation {
 	private String stationName;
 	private BufferedReader console;
 	private Provider provider;
 	private String providerUrl;
 	private LinkedHashMap<String, SensorServer> activeSensors;
 
-	public SensorStationCli(String[] args) {
-		// la riga di comando ha precedenza sulla ricerca in multicast
+	public SensorStation(String[] args) {
+		if (args==null||args.length!=1){
+			System.out.println("Usage: SensorStation propertyFile");
+			System.exit(-1);
+		}			
+		
 		providerUrl = null;
-		if (args.length == 1)
-			try {
-				providerUrl = Provider.buildProviderUrl(args[0]);
-			} catch (RemoteException ignore) {
-				// never thrown
-			}
-		if (args.length == 2) {
-			try {
-				providerUrl = Provider.buildProviderUrl(args[0], Integer.parseInt(args[1]));
-			} catch (Exception e) {
-				System.out.println("Unable to parse the provider address from the command line");
-				System.exit(2);
-			}
-		}
-
 		try {
-			loadStationParameters("station.properties");
+			loadStationParameters(args[0]);
 		} catch (IOException e) {
 			System.out.println("Parameters loading from station.properties failed");
 			e.printStackTrace();
@@ -296,7 +286,7 @@ public class SensorStationCli {
 		if (propertyFile == null)
 			throw new IllegalArgumentException();
 		Properties properties = new Properties();
-		InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(propertyFile);
+		InputStream inputStream = new FileInputStream(propertyFile);
 		if (isXml)
 			properties.loadFromXML(inputStream);
 		else
@@ -308,12 +298,11 @@ public class SensorStationCli {
 
 		// checks if the file specifics a provider host+port
 		if (providerUrl == null && properties.containsKey("providerIp")) {
-			String providerHost = properties.getProperty("providerIp", "");
-			System.out.println("providerHost: " + providerHost);
+			String providerIp = properties.getProperty("providerIp", "");
 			// providerPort property is optional
 			int providerPort = Integer.parseInt(properties.getProperty("providerPort", "1099"));
-			System.out.println("providerPort: " + providerPort);
-			providerUrl = Provider.buildProviderUrl(providerHost, providerPort);
+			providerUrl = Provider.buildProviderUrl(providerIp, providerPort);
+			System.out.println("Provider url: " + providerUrl);
 		}
 	}
 
@@ -436,7 +425,7 @@ public class SensorStationCli {
 	}
 
 	public static void main(String[] args) {
-		new SensorStationCli(args);
+		new SensorStation(args);
 	}
 
 }
