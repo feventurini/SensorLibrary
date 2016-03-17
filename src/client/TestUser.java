@@ -69,8 +69,8 @@ public class TestUser {
 		System.out.println("Provider trovato");
 
 		provaReflection();
-		//provaTemp();
-		//provaRfid();
+		provaTemp();
+		provaRfid();
 	}
 
 	private void provaReflection() {
