@@ -2,18 +2,22 @@ package client;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.BindException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
+import org.reflections.Reflections;
 
 import provider.Provider;
 import sensor.FutureResult;
 import sensor.RfidSensor;
 import sensor.RgbLcdDisplay;
+import sensor.Sensor;
 import sensor.TempSensor;
 import sensor.TempSensor.Unit;
 
@@ -39,10 +43,6 @@ public class TestUser {
 				providerUrl = Provider.findProviderUrl();
 			} catch (IOException e) {
 				System.out.println("Unable to get the provider address using multicast");
-				if (e instanceof BindException) {
-					System.out.println(
-							"Got BindException, maybe the provider is on this machine and has already taken 230.0.0.1");
-				}
 			}
 		} else if (args.length == 1) {
 			providerUrl = Provider.buildProviderUrl(args[0]);
@@ -68,8 +68,32 @@ public class TestUser {
 		p = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Provider trovato");
 
-		provaTemp();
-		provaRfid();
+		provaReflection();
+		//provaTemp();
+		//provaRfid();
+	}
+
+	private void provaReflection() {
+		// https://code.google.com/archive/p/reflections/
+		Reflections reflections = new Reflections("");
+		Set<Class<? extends Sensor>> subTypes = reflections.getSubTypesOf(Sensor.class);
+
+		subTypes.stream().sorted((o1, o2) -> o1.getSimpleName().compareTo(o2.getSimpleName()))
+				.filter((interfaccia) -> interfaccia.isInterface()).forEach((interfaccia) -> {
+					StringBuilder sb = new StringBuilder();
+					sb.append(interfaccia.getSimpleName()).append("\n");
+					for (Method m : interfaccia.getDeclaredMethods()) {
+						sb.append("\t").append(m.getReturnType().getSimpleName()).append(" ").append(m.getName()).append("(");
+						if (m.getParameterCount() == 0)
+							sb.append(")\n");
+						else
+							for (int i = 0; i < m.getParameterCount(); i++)
+								sb.append(m.getParameterTypes()[i].getSimpleName()).append(" ")
+										.append(m.getParameters()[i].getName())
+										.append(i == m.getParameterCount() - 1 ? ")\n" : ", ");
+					}
+					System.out.println(sb.toString());
+				});
 	}
 
 	public void provaRfid() throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {

@@ -8,7 +8,6 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -87,10 +86,6 @@ public class SensorStationCli {
 				providerUrl = Provider.findProviderUrl();
 			} catch (IOException e) {
 				System.out.println("Unable to get the provider address using multicast");
-				if (e instanceof BindException) {
-					System.out.println(
-							"Got BindException, maybe the provider is on this machine and has already taken 230.0.0.1");
-				}
 			}
 		}
 
