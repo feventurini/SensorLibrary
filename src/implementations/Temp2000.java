@@ -45,17 +45,14 @@ public class Temp2000 extends SensorServer implements TempSensor {
 	}
 
 	@Override
-	public synchronized Double readTemperature(Unit unit)
-			throws RemoteException {
+	public synchronized Double readTemperature(Unit unit) throws RemoteException {
 		return readTemperatureAsync(unit).get();
 	}
 
 	@Override
-	public synchronized FutureResult<Double> readTemperatureAsync(Unit unit)
-			throws RemoteException {
+	public synchronized FutureResult<Double> readTemperatureAsync(Unit unit) throws RemoteException {
 		FutureResultImpl<Double> result = new FutureResultImpl<>();
-		(CompletableFuture.supplyAsync(() -> measure(unit), executor))
-				.thenAccept((value) -> result.set(value));
+		CompletableFuture.supplyAsync(() -> measure(unit), executor).thenAccept((value) -> result.set(value));
 		return result;
 	}
 

@@ -2,22 +2,31 @@ package client;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.BindException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
+import org.reflections.Reflections;
 
 import provider.Provider;
 import sensor.FutureResult;
 import sensor.RfidSensor;
 import sensor.RgbLcdDisplay;
+import sensor.Sensor;
 import sensor.TempSensor;
 import sensor.TempSensor.Unit;
 
 public class TestUser {
+
+	public static void main(String[] args) throws Exception {
+		new TestUser(args);
+		System.exit(0);
+	}
 
 	private Provider p;
 
@@ -34,9 +43,6 @@ public class TestUser {
 				providerUrl = Provider.findProviderUrl();
 			} catch (IOException e) {
 				System.out.println("Unable to get the provider address using multicast");
-				if (e instanceof BindException)
-					System.out.println(
-							"Got BindException, maybe the provider is on this machine and has already taken 230.0.0.1");
 			}
 		} else if (args.length == 1) {
 			providerUrl = Provider.buildProviderUrl(args[0]);
@@ -62,8 +68,32 @@ public class TestUser {
 		p = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Provider trovato");
 
+		provaReflection();
 		provaTemp();
 		provaRfid();
+	}
+
+	private void provaReflection() {
+		// https://code.google.com/archive/p/reflections/
+		Reflections reflections = new Reflections("");
+		Set<Class<? extends Sensor>> subTypes = reflections.getSubTypesOf(Sensor.class);
+
+		subTypes.stream().sorted((o1, o2) -> o1.getSimpleName().compareTo(o2.getSimpleName()))
+				.filter((interfaccia) -> interfaccia.isInterface()).forEach((interfaccia) -> {
+					StringBuilder sb = new StringBuilder();
+					sb.append(interfaccia.getSimpleName()).append("\n");
+					for (Method m : interfaccia.getDeclaredMethods()) {
+						sb.append("\t").append(m.getReturnType().getSimpleName()).append(" ").append(m.getName()).append("(");
+						if (m.getParameterCount() == 0)
+							sb.append(")\n");
+						else
+							for (int i = 0; i < m.getParameterCount(); i++)
+								sb.append(m.getParameterTypes()[i].getSimpleName()).append(" ")
+										.append(m.getParameters()[i].getName())
+										.append(i == m.getParameterCount() - 1 ? ")\n" : ", ");
+					}
+					System.out.println(sb.toString());
+				});
 	}
 
 	public void provaRfid() throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
@@ -77,17 +107,17 @@ public class TestUser {
 		System.out.println("SINCRONO");
 		d.setRGB(0, 0, 255);
 		d.display(tag, 5);
-		
+
 		tag = t.readTag();
 		System.out.println("Sync " + tag);
 		System.out.println("SINCRONO");
 		d.setRGB(0, 255, 0);
 		d.display(tag, 6);
-		
+
 		tag = t.readTag();
 		System.out.println("Sync " + tag);
 		System.out.println("SINCRONO");
-		d.setRGB(255, 0, 0);
+		d.setRGB(138, 43, 226);
 		d.display(tag, 10);
 
 		List<FutureResult<String>> results = new ArrayList<>();
@@ -116,35 +146,36 @@ public class TestUser {
 		System.out.println("Trovato sensore, inizio misure");
 
 		double temp;
-		
+
 		System.out.println(
 				"Mando 3 richieste sincrone e aspetto (la prima ci mette un po' perchè deve misurare, le altre due sono immediate perchè la misura è ancora fresca)");
 		System.out.print("Sync ");
-		temp=t.readTemperature(Unit.CELSIUS);
+		temp = t.readTemperature(Unit.CELSIUS);
 		System.out.println(temp);
 		d.setRGB(255, 0, 0);
-		d.display(""+temp, 5);
+		d.display("" + temp, 5);
 		Thread.sleep(2000);
-		
+
 		System.out.print("Sync ");
-		temp=t.readTemperature(Unit.CELSIUS);
+		temp = t.readTemperature(Unit.CELSIUS);
 		System.out.println(temp);
 		d.setRGB(0, 255, 0);
-		d.display(""+temp, 5);
+		d.display("" + temp, 5);
 
 		Thread.sleep(10000);
 		System.out.print("Sync ");
-		temp=t.readTemperature(Unit.CELSIUS);
+		temp = t.readTemperature(Unit.CELSIUS);
 		System.out.println(temp);
 		d.setRGB(0, 0, 255);
-		d.display(""+temp, 10);
+		d.display("" + temp, 10);
 
 		System.out.println("Mando 10 richieste asincrone e faccio altro");
 		List<FutureResult<Double>> results = new ArrayList<>();
-		for (int i = 0; i < 10; i++)
+		for (int i = 0; i < 10; i++) {
 			results.add(t.readTemperatureAsync(Unit.CELSIUS));
+		}
 
-		System.out.println("Per ogni future result faccio partire un thread che quando ha il risultato lo stampa"); 
+		System.out.println("Per ogni future result faccio partire un thread che quando ha il risultato lo stampa");
 		results.forEach((futureResult) -> {
 			new Thread(() -> {
 				try {
@@ -157,11 +188,5 @@ public class TestUser {
 		Thread.sleep(10000);
 		d.setRGB(0, 0, 0);
 		d.display("", 0);
-	}
-	
-
-	public static void main(String[] args) throws Exception {
-		new TestUser(args);
-		System.exit(0);
 	}
 }

@@ -17,16 +17,12 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 	private GroveRgbLcd display;
 	private ScheduledThreadPoolExecutor executor;
 
-	private Runnable clearer = new Runnable() {
-
-		@Override
-		public void run() {
-			try {
-				display.setText("");
-			} catch (IOException e) {
-				state.setState(State.FAULT);
-				e.printStackTrace();
-			}
+	private Runnable clearer = () -> {
+		try {
+			display.setText("");
+		} catch (IOException e) {
+			state.setState(State.FAULT);
+			e.printStackTrace();
 		}
 	};
 
@@ -47,14 +43,17 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 		default:
 			try {
 				executor.shutdownNow();
-				executor = new ScheduledThreadPoolExecutor(1);  // sicuramente c'è un modo migliore
-				// executor.remove(clearer); // if someone was waiting to clear the
-											// display, prevents the thread to
-											// act
-				System.out.println("Text to display: " + text);
+				executor = new ScheduledThreadPoolExecutor(1); // sicuramente
+																// c'è un modo
+																// migliore
+				// executor.remove(clearer); // if someone was waiting to clear
+				// the
+				// display, prevents the thread to
+				// act
 				display.setText(text);
-				if (time != 0) // 0 means infinite, no need to clear
+				if (time != 0) {
 					executor.schedule(clearer, time, TimeUnit.SECONDS);
+				}
 			} catch (IOException e) {
 				state.setState(State.FAULT);
 				e.printStackTrace();

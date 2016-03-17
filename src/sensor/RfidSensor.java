@@ -1,21 +1,25 @@
 package sensor;
 
 import java.rmi.RemoteException;
-import java.util.concurrent.Future;
 
+/**
+ * The public interface of an Rfid sensor. Contains methods to read a tag, both
+ * asynchronously and synchronously.
+ */
 public interface RfidSensor extends Sensor {
 	/**
 	 * Reads a tag synchronously
-	 * 
-	 * @return the tag read, null if not present
+	 *
+	 * @return the tag read
 	 */
-	//TODO: returns null or exception?
+	// TODO: returns null or exception?
 	public String readTag() throws RemoteException;
 
 	/**
 	 * Reads a tag asynchronously
-	 * 
-	 * @return a {@link Future} representing the tag that will be read when present
+	 *
+	 * @return a {@link FutureResult} representing the tag that will be read when
+	 *         available
 	 */
 	public FutureResult<String> readTagAsync() throws RemoteException;
 }

@@ -11,76 +11,54 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.List;
 
 import http.IpUtils;
 import sensor.Sensor;
 
+/**
+ * The public interface of a Provider. Contains methods to build the provider
+ * rmi url from its hostname (and port), to find the provider over the network
+ * using datagram packets sent to a multicast group. Moreover defines the public
+ * services that the provider offers: finding a sensor given its name and
+ * position, finding all the sensors matching a given name or location,
+ * registering and unregistering a sensor.
+ */
 public interface Provider extends Remote {
 	public static final String PROVIDER_NAME = "ProviderRMI";
 	public static final int PROVIDER_PORT = 1099;
 
 	/**
-	 * If possible finds the sensor registered with the name and location
-	 * provided
+	 * Builds the provider url in the form "rmi://host:port/name"
 	 * 
-	 * @param location
-	 *            the location
-	 * @param name
-	 *            the name
-	 * @return a remote reference to the sensor
-	 * @throws RemoteException
-	 *             if the sensor were not found
-	 */
-	public Sensor find(String location, String name) throws RemoteException;
-
-	/**
-	 * If possible finds the all the sensors registered with the name and
-	 * location provided
-	 * 
-	 * @param location
-	 *            the location (null for any location)
-	 * @param name
-	 *            the name (null for any name)
-	 * @return an array of remote references to the sensors, possibly with 0
-	 *         length
+	 * @param host
+	 * @return the providder url
 	 * @throws RemoteException
 	 */
-	public Sensor[] findAll(String location, String name) throws RemoteException;
-
-	/**
-	 * Register a new Sensor
-	 * 
-	 * @param location
-	 *            the location
-	 * @param name
-	 *            the name
-	 * @param sensor
-	 *            the sensor itself
-	 * @throws RemoteException
-	 *             if the registration was not possible
-	 */
-	public void register(String location, String name, Sensor sensor) throws RemoteException;
-
-	/**
-	 * Unregister a sensor
-	 * 
-	 * @param location
-	 *            the location
-	 * @param name
-	 *            the name
-	 * @throws RemoteException
-	 *             if the unregistration was not possible
-	 */
-	public void unregister(String location, String name) throws RemoteException;
-	
 	public static String buildProviderUrl(String host) throws RemoteException {
 		return buildProviderUrl(host, 1099);
 	}
-	
+
+	/**
+	 * Builds the provider url in the form "rmi://host:port/name"
+	 * 
+	 * @param host
+	 * @param port
+	 * @return the provider url
+	 * @throws RemoteException
+	 */
 	public static String buildProviderUrl(String host, int port) throws RemoteException {
 		return "rmi://" + host + ":" + port + "/" + PROVIDER_NAME;
 	}
 
+	/**
+	 * By means of a multicast request on 230.0.0.1:5000 attempts to locate the
+	 * provider, returning its url. The caller must have the permissions to know
+	 * its own ip address, to open a multicast socket and a datagram socket
+	 * 
+	 * @return the provider url in the form "rmi://host:port/name"
+	 * @throws IOException
+	 */
 	public static String findProviderUrl() throws IOException {
 		// multicast socket to send requests (e non datagramsocket su
 		// 192.168.0.255)
@@ -91,7 +69,7 @@ public interface Provider extends Remote {
 
 		// datagram socket to receive a response
 		InetAddress localaddress = IpUtils.getCurrentIp();
-		DatagramSocket ds = new DatagramSocket(port, localaddress);
+		DatagramSocket ds = new DatagramSocket();
 		ds.setSoTimeout(5000);
 
 		// request containing the local address
@@ -99,14 +77,14 @@ public interface Provider extends Remote {
 		DataOutputStream dos = new DataOutputStream(baos);
 		dos.writeUTF(localaddress.getHostName());
 		dos.writeInt(ds.getLocalPort());
-		byte data[] = baos.toByteArray();
+		byte requestPayload[] = baos.toByteArray();
 		dos.close();
 		baos.close();
-		DatagramPacket request = new DatagramPacket(data, data.length, group, port);
+		DatagramPacket request = new DatagramPacket(requestPayload, requestPayload.length, group, port);
 
 		// packet for the response
-		data = new byte[20];
-		DatagramPacket packet = new DatagramPacket(data, data.length);
+		byte[] responsePayload = new byte[20];
+		DatagramPacket response = new DatagramPacket(responsePayload, responsePayload.length);
 
 		int attempts = 0;
 		InetAddress providerHost = null;
@@ -117,9 +95,8 @@ public interface Provider extends Remote {
 			System.out.println("Search for provider started on " + group.getHostAddress() + ":" + port);
 
 			// receiving response
-			packet.setData(data);
-			ds.receive(packet);
-			ByteArrayInputStream bias = new ByteArrayInputStream(packet.getData());
+			ds.receive(response);
+			ByteArrayInputStream bias = new ByteArrayInputStream(response.getData());
 			DataInputStream dis = new DataInputStream(bias);
 			try {
 				providerHost = InetAddress.getByName(dis.readUTF());
@@ -134,6 +111,59 @@ public interface Provider extends Remote {
 		ds.close();
 		return buildProviderUrl(providerHost.getHostAddress(), providerPort);
 	}
-	
-	
+
+	/**
+	 * If possible finds the sensor registered with the name and location
+	 * provided
+	 *
+	 * @param location
+	 *            the location
+	 * @param name
+	 *            the name
+	 * @return a remote reference to the sensor
+	 * @throws RemoteException
+	 *             if the sensor were not found
+	 */
+	public Sensor find(String location, String name) throws RemoteException;
+
+	/**
+	 * If possible finds the all the sensors registered with the name and
+	 * location provided
+	 *
+	 * @param location
+	 *            the location (null for any location)
+	 * @param name
+	 *            the name (null for any name)
+	 * @return an list of remote references to the sensors, possibly with 0
+	 *         length
+	 * @throws RemoteException
+	 */
+	public List<Sensor> findAll(String location, String name) throws RemoteException;
+
+	/**
+	 * Register a new Sensor
+	 *
+	 * @param location
+	 *            the location
+	 * @param name
+	 *            the name
+	 * @param sensor
+	 *            the sensor itself
+	 * @throws RemoteException
+	 *             if the registration was not possible
+	 */
+	public void register(String location, String name, Sensor sensor) throws RemoteException;
+
+	/**
+	 * Unregister a Sensor
+	 *
+	 * @param location
+	 *            the location
+	 * @param name
+	 *            the name
+	 * @throws RemoteException
+	 *             if the unregistration was not possible
+	 */
+	public void unregister(String location, String name) throws RemoteException;
+
 }

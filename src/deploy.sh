@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Load destinations
-PROVIDER_NAME=fede
-PROVIDER_HOST=192.168.1.107
+PROVIDER_NAME=federico
+PROVIDER_HOST=192.168.43.91
 
 STATION_NAME=pi
-STATION_HOST=192.168.1.110
+STATION_HOST=192.168.43.
 
 CLIENT_NAME=fede
-CLIENT_HOST=192.168.1.107
+CLIENT_HOST=192.168.43.91
 
 # Shortcuts
 PROVIDER=$PROVIDER_NAME@$PROVIDER_HOST
@@ -23,7 +23,6 @@ CLIENT=$CLIENT_NAME@$CLIENT_HOST
 # - sensor/Sensor.class
 # - sensor/SensorState.class
 # - sensor/SensorState$State.class
-# - utils
 # - rmi.policy
 # - dependency
 
@@ -48,7 +47,6 @@ scp -rp ../dependency $PROVIDER:$BASE_DIR
 # - sensor
 # - implementations
 # - sensorstation
-# - utils
 # - station.properties
 # - rmi.policy
 # - dependency
@@ -63,8 +61,11 @@ scp -p provider/Provider.class $STATION:$BASE_DIR/provider
 scp -rp sensor $STATION:$BASE_DIR
 scp -rp implementations $STATION:$BASE_DIR
 scp -rp sensorstation $STATION:$BASE_DIR
-scp -rp utils $STATION:$BASE_DIR
 scp -p station.properties $STATION:$BASE_DIR
+scp -p TempAndHumiditySensor.properties $STATION:$BASE_DIR
+scp -p Temp4000.properties $STATION:$BASE_DIR
+scp -p Temp2000.properties $STATION:$BASE_DIR
+scp -p Rfid_SL030.properties $STATION:$BASE_DIR
 scp -p rmi.policy $STATION:$BASE_DIR
 scp -rp ../dependency $STATION:$BASE_DIR
 
