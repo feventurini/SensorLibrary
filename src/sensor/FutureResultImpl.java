@@ -32,6 +32,7 @@ public class FutureResultImpl<T> extends UnicastRemoteObject implements FutureRe
 				this.wait();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
+				throw new RemoteException(e.getMessage(), e);
 			}
 		}
 		if (e != null)

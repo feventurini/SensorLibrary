@@ -51,6 +51,7 @@ public class Temp4000 extends SensorServer implements TempSensor {
 
 	@Override
 	public synchronized Double readTemperature(Unit unit) throws RemoteException {
+		// è la get che è sospensiva, non la readtemperature, è il thread di rmi locale che si sospende
 		return readTemperatureAsync(unit).get();
 	}
 
