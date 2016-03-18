@@ -12,7 +12,7 @@ import sensor.FutureResult;
 import sensor.FutureResultImpl;
 import sensor.SensorParameter;
 import sensor.SensorServer;
-import sensor.SensorState.State;
+import sensor.SensorState;
 import sensor.interfaces.TempSensor;
 
 public class Temp4000 extends SensorServer implements TempSensor {
@@ -23,26 +23,30 @@ public class Temp4000 extends SensorServer implements TempSensor {
 	private ExecutorService executor;
 	private FutureResultImpl<Double> result;
 	private Supplier<Double> measurer = () -> {
-		state.setState(State.MEASURING);
 		try {
 			Thread.sleep(r.nextInt(5000) + 1000);
 			System.out.println("Measure done");
-			state.setState(State.RUNNING);
 			return r.nextDouble() * 1000;
-		} catch (InterruptedException e) {
+		} catch (InterruptedException e)
+
+		{
 			System.out.println("A measure failed");
-			state.setState(State.FAULT);
-			state.setComment("A measure failed");
+			state = SensorState.FAULT;
+			
 			throw new CompletionException(e);
 		}
 	};
+
 	private Runnable invalidator = () -> {
 		try {
 			Thread.sleep(invalidateResultAfter * 1000);
-		} catch (InterruptedException ignore) {
+		} catch (InterruptedException ignore)
+
+		{
 		}
 		result = null;
 		System.out.println("Measure invalidated");
+
 	};
 
 	public Temp4000() throws RemoteException {
@@ -77,23 +81,17 @@ public class Temp4000 extends SensorServer implements TempSensor {
 	}
 
 	@Override
-	public void setUp() {
-		if (!allParametersFilledUp()) {
-			state.setState(State.SETUP);
-			state.setComment("Set up");
-		} else {
-			r = new Random();
-			executor = Executors.newFixedThreadPool(1);
-			state.setState(State.RUNNING);
-			state.setComment("Running");
-		}
+	public void setUp() throws Exception {
+		super.setUp();
+		r = new Random();
+		executor = Executors.newFixedThreadPool(1);
+		state = SensorState.RUNNING;
+		
 	}
 
 	@Override
 	public void tearDown() {
-		executor.shutdown();
-		state.setState(State.SHUTDOWN);
-		state.setComment("Shutdown");
-		System.out.println("Tem42000 stopped");
+		super.tearDown();
+		executor.shutdown();		
 	}
 }

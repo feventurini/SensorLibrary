@@ -26,6 +26,7 @@ import java.util.Map;
 import http.IpUtils;
 import http.RmiClassServer;
 import sensor.Sensor;
+import station.Station;
 
 public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	/**
@@ -168,7 +169,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 		// Registrazione del servizio RMI
 		try {
-			String completeName = Provider.buildProviderUrl(registryHost, registryPort);
+			String completeName = ProviderUtils.buildProviderUrl(registryHost, registryPort);
 			ProviderRMI serverRMI = new ProviderRMI();
 			Naming.rebind(completeName, serverRMI);
 			System.out.println(PROVIDER_NAME + " registered on the rmiregistry");
@@ -180,11 +181,13 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		new MulticastProvider(currentHostname, registryPort).start();
 	}
 
-	private final Map<String, Sensor> bindings;
+	private final Map<String, Sensor> sensorMap;
+	private final Map<String, Station> stationMap;
 
 	private ProviderRMI() throws RemoteException {
 		super();
-		bindings = new HashMap<>();
+		sensorMap = new HashMap<>();
+		stationMap = new HashMap<>();
 	}
 
 	@Override
@@ -192,7 +195,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (location == null || name == null || location.isEmpty() || name.isEmpty())
 			throw new RemoteException("Argument error");
 		String fullName = name + "@" + location;
-		Sensor sensor = bindings.get(fullName);
+		Sensor sensor = sensorMap.get(fullName);
 		if (sensor == null)
 			throw new RemoteException("Sensor " + fullName + " not found");
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
@@ -217,25 +220,25 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		List<Sensor> result = new LinkedList<Sensor>();
 		if (!location.isEmpty() && !name.isEmpty()) {
 			String fullName = name + "@" + location;
-			bindings.forEach((n, s) -> {
+			sensorMap.forEach((n, s) -> {
 				if (n.equals(fullName)) {
 					result.add(s);
 				}
 			});
 		} else if (!location.isEmpty()) {
-			bindings.forEach((n, s) -> {
+			sensorMap.forEach((n, s) -> {
 				if (n.substring(n.indexOf('@')).equals(location)) {
 					result.add(s);
 				}
 			});
 		} else if (!name.isEmpty()) {
-			bindings.forEach((n, s) -> {
+			sensorMap.forEach((n, s) -> {
 				if (n.substring(n.indexOf('@')).equals(location)) {
 					result.add(s);
 				}
 			});
 		} else {
-			result.addAll(bindings.values());
+			result.addAll(sensorMap.values());
 		}
 		return result;
 	}
@@ -247,9 +250,9 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			throw new RemoteException("Argument error");
 
 		String fullName = name + "@" + location;
-		if (bindings.containsKey(fullName))
+		if (sensorMap.containsKey(fullName))
 			throw new RemoteException("Sensor " + fullName + " already registered");
-		bindings.put(fullName, sensor);
+		sensorMap.put(fullName, sensor);
 
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		System.out.println(
@@ -262,7 +265,31 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			throw new RemoteException("Argument error");
 
 		String fullName = name + "@" + location;
-		bindings.remove(fullName);
+		sensorMap.remove(fullName);
 		System.out.println("Unregistered: " + fullName);
+	}
+
+	@Override
+	public synchronized void registerStation(String stationName, Station station) throws RemoteException {
+		if (stationName == null || stationName.isEmpty())
+			throw new RemoteException("Argument error");
+
+		if (stationMap.containsKey(stationName))
+			throw new RemoteException("Station " + stationName + " already registered");
+		stationMap.put(stationName, station);
+
+		System.out.println("Registered station: " + stationName);
+
+	}
+
+	@Override
+	public synchronized void unregisterStation(String stationName) throws RemoteException {
+		if (stationName == null || stationName.isEmpty())
+			throw new RemoteException("Argument error");
+		if (!stationMap.containsKey(stationName))
+			throw new RemoteException("Station " + stationName + " not registered");
+		stationMap.remove(stationName);
+
+		System.out.println("Removed station: " + stationName);
 	}
 }

@@ -12,7 +12,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import sensor.SensorState.State;
 import sensor.implementations.Temp4000;
 import sensor.interfaces.TempSensor.Unit;
 
@@ -26,7 +25,7 @@ public class Temp4000Test {
 	@Before
 	public void setUp() throws Exception {
 		t = new Temp4000();
-		assertEquals(t.getState().getState(), State.SETUP);
+		assertEquals(t.getState(), SensorState.SHUTDOWN);
 		assertFalse(t.allParametersFilledUp());
 
 		Properties p = new Properties();
@@ -36,7 +35,7 @@ public class Temp4000Test {
 		assertEquals(t.invalidateResultAfter, (Long) 5L);
 
 		t.setUp();
-		assertEquals(t.getState().getState(), State.RUNNING);
+		assertEquals(t.getState(), SensorState.RUNNING);
 	}
 
 	/**
@@ -44,9 +43,9 @@ public class Temp4000Test {
 	 */
 	@After
 	public void tearDown() throws RemoteException {
-		assertEquals(t.getState().getState(), State.RUNNING);
+		assertEquals(t.getState(), SensorState.RUNNING);
 		t.tearDown();
-		assertEquals(t.getState().getState(), State.SHUTDOWN);
+		assertEquals(t.getState(), SensorState.SHUTDOWN);
 	}
 
 	/**

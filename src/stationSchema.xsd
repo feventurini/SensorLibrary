@@ -7,7 +7,7 @@
 	<xs:element name="station"> <!-- il nome della station -->
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element name="provider">
+				<xs:element name="provider" minOccurs="0" maxOccurs="1">
 					<xs:complexType>
 						<xs:simpleContent>
 							<xs:extension base="xs:string">

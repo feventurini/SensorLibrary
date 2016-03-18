@@ -16,7 +16,7 @@ import sensor.FutureResult;
 import sensor.FutureResultImpl;
 import sensor.SensorParameter;
 import sensor.SensorServer;
-import sensor.SensorState.State;
+import sensor.SensorState;
 import sensor.interfaces.HumiditySensor;
 import sensor.interfaces.TempSensor;
 
@@ -32,16 +32,15 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 	public Long invalidateResultAfter;
 
 	private Supplier<GroveTemperatureAndHumidityValue> measurer = () -> {
-		state.setState(State.MEASURING);
 		try {
 			GroveTemperatureAndHumidityValue value = sensor.get();
 			System.out.println("Measure done: " + value);
-			state.setState(State.RUNNING);
+			state = SensorState.RUNNING;
 			return value;
 		} catch (IOException e) {
 			System.out.println("A measure failed");
-			state.setState(State.FAULT);
-			state.setComment("A measure failed");
+			state = SensorState.FAULT;
+			
 			throw new CompletionException(e);
 		}
 	};
@@ -71,9 +70,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 	public FutureResult<Double> readHumidityAsync() throws RemoteException {
 		// if a measure is already running, return the same FutureResult to
 		// everyone requesting, it will be updated as soon as the measure ends
-		switch (state.getState()) {
-		case SETUP:
-			throw new IllegalStateException("Sensor setup incomplete");
+		switch (state) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -99,9 +96,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 	public synchronized FutureResult<Double> readTemperatureAsync(Unit unit) throws RemoteException {
 		// if a measure is already running, return the same FutureResult to
 		// everyone requesting, it will be updated as soon as the measure ends
-		switch (state.getState()) {
-		case SETUP:
-			throw new IllegalStateException("Sensor setup incomplete");
+		switch (state) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -120,27 +115,22 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 
 	@Override
 	public void setUp() throws Exception {
-		if (!allParametersFilledUp()) {
-			state.setState(State.SETUP);
-			state.setComment("Set up");
-		} else {
-			try {
-				sensor = new GroveTemperatureAndHumiditySensor(new GrovePi4J(), 2,
-						GroveTemperatureAndHumiditySensor.Type.DHT11);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			executor = Executors.newFixedThreadPool(1);
-			state.setState(State.RUNNING);
-			state.setComment("Running");
+		super.setUp();
+		try {
+			sensor = new GroveTemperatureAndHumiditySensor(new GrovePi4J(), 2,
+					GroveTemperatureAndHumiditySensor.Type.DHT11);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+		executor = Executors.newFixedThreadPool(1);
+		state = SensorState.RUNNING;
+		
 	}
 
 	@Override
 	public void tearDown() {
 		executor.shutdown();
-		state.setState(State.SHUTDOWN);
-		state.setComment("Shutdown");
+		state = SensorState.SHUTDOWN;
 		System.out.println("Temperature and Humidity sensor stopped");
 
 	}

@@ -14,6 +14,7 @@ import java.util.Set;
 import org.reflections.Reflections;
 
 import provider.Provider;
+import provider.ProviderUtils;
 import sensor.FutureResult;
 import sensor.Sensor;
 import sensor.interfaces.RfidSensor;
@@ -40,15 +41,15 @@ public class TestUser {
 		String providerUrl = null;
 		if (args.length == 0) {
 			try {
-				providerUrl = Provider.findProviderUrl();
+				providerUrl = ProviderUtils.findProviderUrl();
 			} catch (IOException e) {
 				System.out.println("Unable to get the provider address using multicast");
 			}
 		} else if (args.length == 1) {
-			providerUrl = Provider.buildProviderUrl(args[0]);
+			providerUrl = ProviderUtils.buildProviderUrl(args[0]);
 		} else if (args.length == 2) {
 			try {
-				providerUrl = Provider.buildProviderUrl(args[0], Integer.parseInt(args[1]));
+				providerUrl = ProviderUtils.buildProviderUrl(args[0], Integer.parseInt(args[1]));
 			} catch (Exception e) {
 				System.out.println("Unable to parse the provider address from the command line");
 				System.exit(2);
@@ -98,8 +99,8 @@ public class TestUser {
 
 	public void provaRfid() throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
 		// Ricerca e uso del sensore
-		RfidSensor t = (RfidSensor) p.find("camera", "rfid");
-		RgbLcdDisplay d = (RgbLcdDisplay) p.find("camera", "display");
+		RfidSensor t = (RfidSensor) p.find("cucina", "rfidFrigo");
+		RgbLcdDisplay d = (RgbLcdDisplay) p.find("cucina", "display");
 		System.out.println("Trovato sensore, inizio misure");
 
 		String tag = t.readTag();
@@ -141,8 +142,8 @@ public class TestUser {
 
 	public void provaTemp() throws Exception {
 		// Ricerca e uso del sensore
-		TempSensor t = (TempSensor) p.find("camera", "temp");
-		RgbLcdDisplay d = (RgbLcdDisplay) p.find("camera", "display");
+		TempSensor t = (TempSensor) p.find("cucina", "tempAmbiente");
+		RgbLcdDisplay d = (RgbLcdDisplay) p.find("cucina", "display");
 		System.out.println("Trovato sensore, inizio misure");
 
 		double temp;

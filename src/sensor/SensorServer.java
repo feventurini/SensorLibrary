@@ -13,15 +13,13 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import sensor.SensorState.State;
-
 public abstract class SensorServer extends UnicastRemoteObject implements Sensor {
 	private static final long serialVersionUID = 8455786461927369862L;
-	protected final SensorState state;
+	protected SensorState state;
 
 	protected SensorServer() throws RemoteException {
 		super();
-		state = new SensorState(State.SETUP, "Set up");
+		state = SensorState.SHUTDOWN;
 	}
 
 	/**
@@ -105,29 +103,19 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 		}
 	}
 
-	public final void loadParametersFromXML(File propertyFile) {
-		if (propertyFile != null) {
-			Properties properties = new Properties();
-			try {
-				InputStream inputStream = new FileInputStream(propertyFile);
-				properties.loadFromXML(inputStream);
-				inputStream.close();
-			} catch (IOException e) {
-				System.out.println("Properties loading  from " + propertyFile + " failed");
-				return;
-			}
-			loadParameters(properties);
-		}
-	}
-
 	/**
 	 * Use this method to perform the initialization of the sensor. Throw any
 	 * exception that can not be handled internally to allow Sensor Stations to
 	 * abort the registration of the sensor
 	 */
-	public abstract void setUp() throws Exception;
+	public void setUp() throws Exception {
+		if (!allParametersFilledUp()) 
+			throw new IllegalStateException("Missing parameters: "
+					+ getAllSensorParameterFields().stream().filter((f) -> f == null).toString());
+	}
 
 	public synchronized void tearDown() {
-		state.setState(State.SHUTDOWN);
+		state = SensorState.SHUTDOWN;
+		System.out.println(this.getClass().getSimpleName() + " has stopped");
 	}
 }
