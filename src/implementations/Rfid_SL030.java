@@ -50,7 +50,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
 	}
 
-	public String readRfid() throws IOException {
+	public String readRfid() throws Exception {
 
 		switch (state.getState()) {
 		case SETUP:
@@ -116,6 +116,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			errorCounter++;
 			if (errorCounter >= errorTreshold) {
 				state.setState(State.FAULT);
+				throw e;
 			}
 			return "NO-TAG";
 		}
@@ -168,8 +169,9 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 								}
 							}
 
-						} catch (IOException e) {
+						} catch (Exception e) {
 							e.printStackTrace();
+							queue.poll().raiseException(e);
 						}
 
 					}
