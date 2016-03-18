@@ -1,6 +1,9 @@
-package sensor;
+package sensor.interfaces;
 
 import java.rmi.RemoteException;
+
+import sensor.FutureResult;
+import sensor.Sensor;
 
 /**
  * The public interface of a temperature sensor. Contains methods to read the

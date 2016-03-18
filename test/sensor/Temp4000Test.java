@@ -1,7 +1,4 @@
-/**
- *
- */
-package implementations;
+package sensor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -15,14 +12,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import sensor.FutureResult;
 import sensor.SensorState.State;
-import sensor.TempSensor.Unit;
+import sensor.implementations.Temp4000;
+import sensor.interfaces.TempSensor.Unit;
 
-/**
- * @author federico
- *
- */
 public class Temp4000Test {
 
 	Temp4000 t;
@@ -47,7 +40,7 @@ public class Temp4000Test {
 	}
 
 	/**
-	 * Test method for {@link implementations.Temp4000#tearDown()}.
+	 * Test method for {@link sensor.implementations.Temp4000#tearDown()}.
 	 */
 	@After
 	public void tearDown() throws RemoteException {
@@ -58,7 +51,7 @@ public class Temp4000Test {
 
 	/**
 	 * Test method for
-	 * {@link implementations.Temp4000#readTemperature(sensor.TempSensor.Unit)}.
+	 * {@link sensor.implementations.Temp4000#readTemperature(sensor.interfaces.TempSensor.Unit)}.
 	 */
 	@Test
 	public void testReadTemperature() throws RemoteException {
@@ -67,7 +60,7 @@ public class Temp4000Test {
 
 	/**
 	 * Test method for
-	 * {@link implementations.Temp4000#readTemperatureAsync(sensor.TempSensor.Unit)}
+	 * {@link sensor.implementations.Temp4000#readTemperatureAsync(sensor.interfaces.TempSensor.Unit)}
 	 * .
 	 */
 	@Test

@@ -1,4 +1,4 @@
-package implementations;
+package sensor.implementations;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -21,9 +21,10 @@ import com.pi4j.io.i2c.I2CFactory;
 
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
-import sensor.RfidSensor;
 import sensor.SensorParameter;
+import sensor.SensorServer;
 import sensor.SensorState.State;
+import sensor.interfaces.RfidSensor;
 
 public class Rfid_SL030 extends SensorServer implements RfidSensor {
 	private static final long serialVersionUID = 4894977624049261879L;

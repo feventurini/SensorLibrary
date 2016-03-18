@@ -5,10 +5,10 @@ PROVIDER_NAME=federico
 PROVIDER_HOST=192.168.43.91
 
 STATION_NAME=pi
-STATION_HOST=192.168.43.
+STATION_HOST=192.168.43.107
 
 CLIENT_NAME=fede
-CLIENT_HOST=192.168.43.91
+CLIENT_HOST=192.168.43.61
 
 # Shortcuts
 PROVIDER=$PROVIDER_NAME@$PROVIDER_HOST
@@ -45,8 +45,8 @@ scp -rp ../dependency $PROVIDER:$BASE_DIR
 # - http
 # - provider/Provider.class
 # - sensor
-# - implementations
-# - sensorstation
+# - sensor.implementations
+# - station
 # - station.properties
 # - rmi.policy
 # - dependency
@@ -59,8 +59,8 @@ ssh $STATION mkdir $BASE_DIR $BASE_DIR/provider
 scp -rp http $STATION:$BASE_DIR
 scp -p provider/Provider.class $STATION:$BASE_DIR/provider
 scp -rp sensor $STATION:$BASE_DIR
-scp -rp implementations $STATION:$BASE_DIR
-scp -rp sensorstation $STATION:$BASE_DIR
+scp -rp sensor.implementations $STATION:$BASE_DIR
+scp -rp station $STATION:$BASE_DIR
 scp -p station.properties $STATION:$BASE_DIR
 scp -p TempAndHumiditySensor.properties $STATION:$BASE_DIR
 scp -p Temp4000.properties $STATION:$BASE_DIR

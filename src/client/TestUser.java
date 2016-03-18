@@ -15,11 +15,11 @@ import org.reflections.Reflections;
 
 import provider.Provider;
 import sensor.FutureResult;
-import sensor.RfidSensor;
-import sensor.RgbLcdDisplay;
 import sensor.Sensor;
-import sensor.TempSensor;
-import sensor.TempSensor.Unit;
+import sensor.interfaces.RfidSensor;
+import sensor.interfaces.RgbLcdDisplay;
+import sensor.interfaces.TempSensor;
+import sensor.interfaces.TempSensor.Unit;
 
 public class TestUser {
 
@@ -82,7 +82,7 @@ public class TestUser {
 				.filter((interfaccia) -> interfaccia.isInterface()).forEach((interfaccia) -> {
 					StringBuilder sb = new StringBuilder();
 					sb.append(interfaccia.getSimpleName()).append("\n");
-					for (Method m : interfaccia.getDeclaredMethods()) {
+					for (Method m : interfaccia.getMethods()) {
 						sb.append("\t").append(m.getReturnType().getSimpleName()).append(" ").append(m.getName()).append("(");
 						if (m.getParameterCount() == 0)
 							sb.append(")\n");

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<station name="cucina" xmlns="http://www.w3schools.com"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.w3schools.com stationSchema.xsd">
+	<provider ip="192.168.0.12" port="1099"/>
+	<sensor class="sensor.implementations.Rfid_SL038">
+		<name>rfidFrigo</name>
+		<parameters>rfid.properties</parameters>
+		<loadAtStartup>false</loadAtStartup>
+	</sensor>
+	<sensor class="sensor.implementations.Temp4000">
+		<name>tempForno</name>
+		<parameters>rfid.properties</parameters>
+		<loadAtStartup>true</loadAtStartup>
+	</sensor>
+	<sensor class="sensor.implementations.Temp4000">
+		<name>rfidAmbiente</name>
+		<parameters>rfid.properties</parameters>
+		<loadAtStartup>true</loadAtStartup>
+	</sensor>
+</station>

@@ -1,4 +1,4 @@
-package implementations;
+package sensor;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,9 +13,6 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import sensor.Sensor;
-import sensor.SensorParameter;
-import sensor.SensorState;
 import sensor.SensorState.State;
 
 public abstract class SensorServer extends UnicastRemoteObject implements Sensor {

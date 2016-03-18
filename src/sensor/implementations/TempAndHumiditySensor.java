@@ -1,4 +1,4 @@
-package implementations;
+package sensor.implementations;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -14,10 +14,11 @@ import org.iot.raspberry.grovepi.pi4j.GrovePi4J;
 
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
-import sensor.HumiditySensor;
 import sensor.SensorParameter;
+import sensor.SensorServer;
 import sensor.SensorState.State;
-import sensor.TempSensor;
+import sensor.interfaces.HumiditySensor;
+import sensor.interfaces.TempSensor;
 
 public class TempAndHumiditySensor extends SensorServer implements TempSensor, HumiditySensor {
 	private static final long serialVersionUID = -5353227817012312834L;

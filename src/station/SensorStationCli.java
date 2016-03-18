@@ -1,4 +1,4 @@
-package sensorstation;
+package station;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -24,9 +24,9 @@ import org.reflections.Reflections;
 
 import http.IpUtils;
 import http.RmiClassServer;
-import implementations.SensorServer;
 import provider.Provider;
 import sensor.SensorParameter;
+import sensor.SensorServer;
 
 public class SensorStationCli {
 	/**

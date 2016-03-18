@@ -1,4 +1,4 @@
-package implementations;
+package sensor.implementations;
 
 import java.rmi.RemoteException;
 import java.util.Random;
@@ -9,8 +9,9 @@ import java.util.concurrent.Executors;
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
 import sensor.SensorParameter;
+import sensor.SensorServer;
 import sensor.SensorState.State;
-import sensor.TempSensor;
+import sensor.interfaces.TempSensor;
 
 public class Temp2000 extends SensorServer implements TempSensor {
 	private static final long serialVersionUID = -9066863232278842877L;

@@ -1,4 +1,4 @@
-package implementations;
+package sensor.implementations;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -8,8 +8,9 @@ import java.util.concurrent.TimeUnit;
 import org.iot.raspberry.grovepi.devices.GroveRgbLcd;
 import org.iot.raspberry.grovepi.pi4j.GroveRgbLcdPi4J;
 
-import sensor.RgbLcdDisplay;
+import sensor.SensorServer;
 import sensor.SensorState.State;
+import sensor.interfaces.RgbLcdDisplay;
 
 public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 	private static final long serialVersionUID = 682226100883364068L;
