@@ -202,8 +202,9 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		System.out.printf(
 				"Requested: %s\n" + "\tclient will load the stub %s from %s\n" + "\timplemented interfaces %s\n",
-				fullName, sensor.getClass().getName(), annotation, Arrays.asList(sensor.getClass().getInterfaces())
-						.stream().filter((interfaccia) -> Sensor.class.isAssignableFrom(interfaccia)));
+				fullName, sensor.getClass().getName(), annotation,
+				Arrays.toString((Arrays.asList(sensor.getClass().getInterfaces()).stream()
+						.filter((interfaccia) -> Sensor.class.isAssignableFrom(interfaccia))).toArray()));
 		return sensor;
 	}
 
@@ -259,8 +260,9 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		System.out.printf("Registered: %s\n" + "\tstub %s loaded from %s\n" + "\timplemented interfaces %s\n", fullName,
-				sensor.getClass().getName(), annotation, Arrays.asList(sensor.getClass().getInterfaces()).stream()
-						.filter((interfaccia) -> Sensor.class.isAssignableFrom(interfaccia)));
+				sensor.getClass().getName(), annotation,
+				Arrays.toString((Arrays.asList(sensor.getClass().getInterfaces()).stream()
+						.filter((interfaccia) -> Sensor.class.isAssignableFrom(interfaccia))).toArray()));
 	}
 
 	@Override
