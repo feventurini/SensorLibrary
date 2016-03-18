@@ -242,7 +242,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 	@Override
 	public synchronized void register(String location, String name, Sensor sensor) throws RemoteException {
-		if (location == null || name == null || sensor == null || location.isEmpty() || name.isEmpty())
+		if (location == null || name == null || sensor == null || location.isEmpty() || name.isEmpty()
+				|| name.indexOf('@') != -1)
 			throw new RemoteException("Argument error");
 
 		String fullName = name + "@" + location;
@@ -257,7 +258,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 	@Override
 	public synchronized void unregister(String location, String name) throws RemoteException {
-		if (location == null || name == null || location.isEmpty() || name.isEmpty())
+		if (location == null || name == null || location.isEmpty() || name.isEmpty() || name.indexOf('@') != -1)
 			throw new RemoteException("Argument error");
 
 		String fullName = name + "@" + location;
