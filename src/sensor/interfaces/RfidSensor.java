@@ -1,6 +1,9 @@
-package sensor;
+package sensor.interfaces;
 
 import java.rmi.RemoteException;
+
+import sensor.FutureResult;
+import sensor.Sensor;
 
 /**
  * The public interface of an Rfid sensor. Contains methods to read a tag, both

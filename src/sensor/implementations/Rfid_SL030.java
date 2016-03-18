@@ -1,4 +1,4 @@
-package implementations;
+package sensor.implementations;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -21,9 +21,10 @@ import com.pi4j.io.i2c.I2CFactory;
 
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
-import sensor.RfidSensor;
 import sensor.SensorParameter;
-import sensor.SensorState.State;
+import sensor.SensorServer;
+import sensor.SensorState;
+import sensor.interfaces.RfidSensor;
 
 public class Rfid_SL030 extends SensorServer implements RfidSensor {
 	private static final long serialVersionUID = 4894977624049261879L;
@@ -47,14 +48,11 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 	public Rfid_SL030() throws RemoteException {
 		queue = new ConcurrentLinkedQueue<>();
 		errorCounter = 0;
-
 	}
 
 	public String readRfid() throws Exception {
 
-		switch (state.getState()) {
-		case SETUP:
-			throw new IllegalStateException("Sensor setup incomplete");
+		switch (state) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -115,7 +113,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			System.out.println("Error: " + e.getMessage());
 			errorCounter++;
 			if (errorCounter >= errorTreshold) {
-				state.setState(State.FAULT);
+				state = SensorState.FAULT;
 				throw e;
 			}
 			return "NO-TAG";
@@ -136,50 +134,46 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
 	@Override
 	public void setUp() throws Exception {
+		super.setUp();
+		
+		final GpioController gpio = GpioFactory.getInstance();
+		// provision gpio pin as an input pin with its internal pull
+		// down
+		// resistor enabled
+		Pin triggerPin = RaspiPin.getPinByName("GPIO " + triggerPinNumber);
+		trigger = gpio.provisionDigitalInputPin(triggerPin, PinPullResistance.PULL_DOWN);
+		trigger.setDebounce(1000);
+		// get the bus
+		bus = I2CFactory.getInstance(I2CBus.BUS_1);
+		System.out.println("Connected to bus");
+		// get device itself
+		sl030 = bus.getDevice(DEVICE_ADDRESS);
+		System.out.println("Connected to device");
 
-		if (!allParametersFilledUp()) {
-			state.setState(State.SETUP);
-		} else {
-			final GpioController gpio = GpioFactory.getInstance();
-			// provision gpio pin as an input pin with its internal pull
-			// down
-			// resistor enabled
-			Pin triggerPin = RaspiPin.getPinByName("GPIO " + triggerPinNumber);
-			trigger = gpio.provisionDigitalInputPin(triggerPin, PinPullResistance.PULL_DOWN);
-			trigger.setDebounce(1000);
-			// get the bus
-			bus = I2CFactory.getInstance(I2CBus.BUS_1);
-			System.out.println("Connected to bus");
-			// get device itself
-			sl030 = bus.getDevice(DEVICE_ADDRESS);
-			System.out.println("Connected to device");
-
-			trigger.addListener(new GpioPinListenerDigital() {
-				@Override
-				public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
-					if (!queue.isEmpty() && event.getState() == PinState.LOW) {
-						// something to read
-						String rfid = null;
-						try {
-							rfid = readRfid();
-							System.out.println("Letto RFID " + rfid);
-							if (!rfid.equalsIgnoreCase("NO-TAG")) {
-								while (!queue.isEmpty()) {
-									queue.poll().set(rfid);
-								}
+		trigger.addListener(new GpioPinListenerDigital() {
+			@Override
+			public void handleGpioPinDigitalStateChangeEvent(GpioPinDigitalStateChangeEvent event) {
+				if (!queue.isEmpty() && event.getState() == PinState.LOW) {
+					// something to read
+					String rfid = null;
+					try {
+						rfid = readRfid();
+						System.out.println("Letto RFID " + rfid);
+						if (!rfid.equalsIgnoreCase("NO-TAG")) {
+							while (!queue.isEmpty()) {
+								queue.poll().set(rfid);
 							}
-
-						} catch (Exception e) {
-							e.printStackTrace();
-							queue.poll().raiseException(e);
 						}
 
+					} catch (Exception e) {
+						queue.poll().raiseException(e);
+						e.printStackTrace();
 					}
-				}
-			});
-			state.setState(State.RUNNING);
-		}
 
+				}
+			}
+		});
+		state = SensorState.RUNNING;
 	}
 
 	@Override

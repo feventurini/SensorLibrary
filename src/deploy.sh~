@@ -1,14 +1,22 @@
 #!/bin/bash
 
 # Load destinations
-PROVIDER_NAME=pi
-PROVIDER_HOST=192.168.0.27
+PROVIDER_NAME=federico
+PROVIDER_HOST=192.168.0.15
 
 STATION_NAME=pi
-STATION_HOST=192.168.0.28
+<<<<<<< HEAD
+STATION_HOST=192.168.0.24
+=======
+STATION_HOST=192.168.43.107
+>>>>>>> branch 'rmi' of https://github.com/ventodiventu/SensorLibrary
 
 CLIENT_NAME=fede
-CLIENT_HOST=192.168.0.24
+<<<<<<< HEAD
+CLIENT_HOST=192.168.0.21
+=======
+CLIENT_HOST=192.168.43.61
+>>>>>>> branch 'rmi' of https://github.com/ventodiventu/SensorLibrary
 
 # Shortcuts
 PROVIDER=$PROVIDER_NAME@$PROVIDER_HOST
@@ -22,8 +30,6 @@ CLIENT=$CLIENT_NAME@$CLIENT_HOST
 # - provider
 # - sensor/Sensor.class
 # - sensor/SensorState.class
-# - sensor/SensorState$State.class
-# - utils
 # - rmi.policy
 # - dependency
 
@@ -36,20 +42,22 @@ scp -rp http $PROVIDER:$BASE_DIR
 scp -rp provider $PROVIDER:$BASE_DIR
 scp -p sensor/Sensor.class $PROVIDER:$BASE_DIR/sensor
 scp -p sensor/SensorState.class $PROVIDER:$BASE_DIR/sensor
-scp -p sensor/SensorState$State.class $PROVIDER:$BASE_DIR/sensor
 scp -p rmi.policy $PROVIDER:$BASE_DIR
 scp -rp ../dependency $PROVIDER:$BASE_DIR
-
 
 
 # Stations need these resources:
 # - http
 # - provider/Provider.class
 # - sensor
-# - implementations
-# - sensorstation
-# - utils
+<<<<<<< HEAD
+# - station
+# - station.xml
+=======
+# - sensor.implementations
+# - station
 # - station.properties
+>>>>>>> branch 'rmi' of https://github.com/ventodiventu/SensorLibrary
 # - rmi.policy
 # - dependency
 
@@ -61,13 +69,18 @@ ssh $STATION mkdir $BASE_DIR $BASE_DIR/provider
 scp -rp http $STATION:$BASE_DIR
 scp -p provider/Provider.class $STATION:$BASE_DIR/provider
 scp -rp sensor $STATION:$BASE_DIR
-scp -rp implementations $STATION:$BASE_DIR
-scp -rp sensorstation $STATION:$BASE_DIR
-scp -rp utils $STATION:$BASE_DIR
+<<<<<<< HEAD
+scp -rp station $STATION:$BASE_DIR
+scp -p cucinastation.xml $STATION:$BASE_DIR
+=======
+scp -rp sensor.implementations $STATION:$BASE_DIR
+scp -rp station $STATION:$BASE_DIR
 scp -p station.properties $STATION:$BASE_DIR
+>>>>>>> branch 'rmi' of https://github.com/ventodiventu/SensorLibrary
 scp -p TempAndHumiditySensor.properties $STATION:$BASE_DIR
 scp -p Temp4000.properties $STATION:$BASE_DIR
 scp -p Temp2000.properties $STATION:$BASE_DIR
+scp -p Rfid_SL030.properties $STATION:$BASE_DIR
 scp -p rmi.policy $STATION:$BASE_DIR
 scp -rp ../dependency $STATION:$BASE_DIR
 
@@ -75,7 +88,8 @@ scp -rp ../dependency $STATION:$BASE_DIR
 # - http
 # - client
 # - provider/Provider.class
-# - sensor
+# - sensor/Sensor.class
+# - sensor/interfaces
 # - rmi.policy
 # - dependency
 
@@ -84,9 +98,11 @@ echo ""
 echo "Copying client files to $CLIENT/$BASE_DIR"
 ssh $CLIENT rm -r $BASE_DIR
 ssh $CLIENT mkdir $BASE_DIR $BASE_DIR/provider
+ssh $CLIENT mkdir $BASE_DIR $BASE_DIR/sensor
 scp -rp http $CLIENT:$BASE_DIR
 scp -rp client $CLIENT:$BASE_DIR
 scp -p provider/Provider.class $CLIENT:$BASE_DIR/provider
-scp -rp sensor $CLIENT:$BASE_DIR
+scp -rp sensor/interfaces $CLIENT:$BASE_DIR/sensor
+scp -rp sensor/Sensor.class $CLIENT:$BASE_DIR/sensor
 scp -p rmi.policy $CLIENT:$BASE_DIR
 scp -rp ../dependency $CLIENT:$BASE_DIR

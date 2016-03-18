@@ -1,4 +1,4 @@
-package implementations;
+package sensor.implementations;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -8,8 +8,9 @@ import java.util.concurrent.TimeUnit;
 import org.iot.raspberry.grovepi.devices.GroveRgbLcd;
 import org.iot.raspberry.grovepi.pi4j.GroveRgbLcdPi4J;
 
-import sensor.RgbLcdDisplay;
-import sensor.SensorState.State;
+import sensor.SensorServer;
+import sensor.SensorState;
+import sensor.interfaces.RgbLcdDisplay;
 
 public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 	private static final long serialVersionUID = 682226100883364068L;
@@ -23,7 +24,7 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 		} catch (IOException e)
 
 		{
-			state.setState(State.FAULT);
+			state = SensorState.FAULT;
 			e.printStackTrace();
 		}
 
@@ -36,9 +37,7 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 
 	@Override
 	public synchronized void display(String text, int time) throws RemoteException {
-		switch (state.getState()) {
-		case SETUP:
-			throw new IllegalStateException("Sensor setup incomplete");
+		switch (state) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -58,7 +57,7 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 					executor.schedule(clearer, time, TimeUnit.SECONDS);
 				}
 			} catch (IOException e) {
-				state.setState(State.FAULT);
+				state = SensorState.FAULT;
 				e.printStackTrace();
 			}
 		}
@@ -66,9 +65,7 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 
 	@Override
 	public synchronized void setRGB(int r, int g, int b) throws RemoteException {
-		switch (state.getState()) {
-		case SETUP:
-			throw new IllegalStateException("Sensor setup incomplete");
+		switch (state) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -78,42 +75,34 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 			try {
 				display.setRGB(r, g, b);
 			} catch (IOException e) {
-				state.setState(State.FAULT);
+				state = SensorState.FAULT;
 				e.printStackTrace();
 			}
 		}
 	}
 
 	@Override
-	public void setUp() throws IOException {
-		if (!allParametersFilledUp()) {
-			state.setState(State.SETUP);
-			state.setComment("Set up");
-			throw new IllegalStateException("Missing parameters: "
-					+ getAllSensorParameterFields().stream().filter((f) -> f == null).toString());
-		}
+	public void setUp() throws Exception {
+		super.setUp();
 		try {
 			display = new GroveRgbLcdPi4J();
 		} catch (IOException e) {
-			state.setState(State.FAULT);
-			throw e;
+			state = SensorState.FAULT;
 		}
 		executor = new ScheduledThreadPoolExecutor(1);
-		state.setState(State.RUNNING);
-		state.setComment("Running");
+		state = SensorState.RUNNING;
+		
 	}
 
 	@Override
 	public void tearDown() {
+		super.tearDown();
 		try {
 			display.setRGB(0, 0, 0);
 			display.setText("");
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-		state.setState(State.SHUTDOWN);
-		state.setComment("Shutdown");
-		System.out.println("GroveRGBDisplay stopped");
+		}		
 	}
 
 }

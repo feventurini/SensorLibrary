@@ -1,4 +1,4 @@
-package implementations;
+package sensor.implementations;
 
 import java.rmi.RemoteException;
 import java.util.Random;
@@ -9,8 +9,9 @@ import java.util.concurrent.Executors;
 import sensor.FutureResult;
 import sensor.FutureResultImpl;
 import sensor.SensorParameter;
-import sensor.SensorState.State;
-import sensor.TempSensor;
+import sensor.SensorServer;
+import sensor.SensorState;
+import sensor.interfaces.TempSensor;
 
 public class Temp2000 extends SensorServer implements TempSensor {
 	private static final long serialVersionUID = -9066863232278842877L;
@@ -25,9 +26,7 @@ public class Temp2000 extends SensorServer implements TempSensor {
 	}
 
 	private Double measure(Unit unit) {
-		switch (state.getState()) {
-		case SETUP:
-			throw new IllegalStateException("Sensor setup incomplete");
+		switch (state) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -57,26 +56,18 @@ public class Temp2000 extends SensorServer implements TempSensor {
 	}
 
 	@Override
-	public void setUp() {
-		if (!allParametersFilledUp()) {
-			state.setState(State.SETUP);
-			state.setComment("Set up");
-
-		} else {
-			sensorUnit = "KELVIN";
-			r = new Random();
-			executor = Executors.newFixedThreadPool(1);
-			state.setState(State.RUNNING);
-			state.setComment("Running");
-		}
+	public void setUp() throws Exception {
+		super.setUp();
+		sensorUnit = "KELVIN";
+		r = new Random();
+		executor = Executors.newFixedThreadPool(1);
+		state = SensorState.RUNNING;
 	}
 
 	@Override
 	public void tearDown() {
+		super.tearDown();
 		executor.shutdown();
-		state.setState(State.SHUTDOWN);
-		state.setComment("Shutdown");
-		System.out.println("Temp2000 stopped");
 	}
 
 }
