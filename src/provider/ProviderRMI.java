@@ -18,6 +18,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RMIClassLoader;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -199,8 +200,10 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (sensor == null)
 			throw new RemoteException("Sensor " + fullName + " not found");
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
-		System.out.println("Requested: " + fullName + " (client will load " + sensor.getClass().getName() + " from "
-				+ annotation + ")");
+		System.out.printf(
+				"Requested: %s\n" + "\tclient will load the stub %s from %s\n" + "\timplemented interfaces %s\n",
+				fullName, sensor.getClass().getName(), annotation, Arrays.asList(sensor.getClass().getInterfaces())
+						.stream().filter((interfaccia) -> Sensor.class.isAssignableFrom(interfaccia)));
 		return sensor;
 	}
 
@@ -255,8 +258,9 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		sensorMap.put(fullName, sensor);
 
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
-		System.out.println(
-				"Registered: " + fullName + " (" + sensor.getClass().getName() + " loaded from " + annotation + ")");
+		System.out.printf("Registered: %s\n" + "\tstub %s loaded from %s\n" + "\timplemented interfaces %s\n", fullName,
+				sensor.getClass().getName(), annotation, Arrays.asList(sensor.getClass().getInterfaces()).stream()
+						.filter((interfaccia) -> Sensor.class.isAssignableFrom(interfaccia)));
 	}
 
 	@Override
@@ -279,7 +283,6 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		stationMap.put(stationName, station);
 
 		System.out.println("Registered station: " + stationName);
-
 	}
 
 	@Override
@@ -290,6 +293,6 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			throw new RemoteException("Station " + stationName + " not registered");
 		stationMap.remove(stationName);
 
-		System.out.println("Removed station: " + stationName);
+		System.out.println("Unregistered station: " + stationName);
 	}
 }
