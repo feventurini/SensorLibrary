@@ -23,6 +23,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import http.IpUtils;
 import http.RmiClassServer;
@@ -109,7 +112,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	private static final long serialVersionUID = -299631912733255270L;
 
 	// Avvio del Server RMI
-	// java -Djava.security.policy=rmi.policy provider.ProviderRMI
+	// java provider.ProviderRMI
 	public static void main(String[] args) {
 		int registryPort = 1099;
 		String registryHost = "localhost";
@@ -203,8 +206,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		System.out.printf(
 				"Requested: %s\n" + "\tclient will load the stub %s from %s\n" + "\timplemented interfaces %s\n",
 				fullName, sensor.getClass().getName(), annotation,
-				Arrays.toString((Arrays.asList(sensor.getClass().getInterfaces()).stream()
-						.filter((interfaccia) -> Sensor.class.isAssignableFrom(interfaccia))).toArray()));
+				Stream.of(sensor.getClass().getInterfaces()).filter(Sensor.class::isAssignableFrom)
+						.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")));
 		return sensor;
 	}
 
@@ -261,8 +264,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		System.out.printf("Registered: %s\n" + "\tstub %s loaded from %s\n" + "\timplemented interfaces %s\n", fullName,
 				sensor.getClass().getName(), annotation,
-				Arrays.toString((Arrays.asList(sensor.getClass().getInterfaces()).stream()
-						.filter((interfaccia) -> Sensor.class.isAssignableFrom(interfaccia))).toArray()));
+				Stream.of(sensor.getClass().getInterfaces()).filter(Sensor.class::isAssignableFrom)
+						.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")));
 	}
 
 	@Override
