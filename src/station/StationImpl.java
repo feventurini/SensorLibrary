@@ -132,18 +132,16 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 	}
 
 	private Document parseXml(File xml) {
-		// see:
 		// http://stackoverflow.com/questions/15732/whats-the-best-way-to-validate-an-xml-file-against-an-xsd-file
 		Source xmlFile = new StreamSource(xml);
-		SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-		Schema schema;
 		try {
-			schema = schemaFactory.newSchema(new File("stationSchema.xsd"));
+			SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+			Schema schema = schemaFactory.newSchema(new File("stationSchema.xsd"));
 			schema.newValidator().validate(xmlFile);
 			System.out.println(xmlFile.getSystemId() + " is valid");
 		} catch (SAXException | IOException e) {
 			System.err.println(xmlFile.getSystemId() + " is NOT valid");
-			System.err.println("Reason: " + e.getLocalizedMessage());
+			System.err.println("Reason: " + e.getMessage());
 			System.exit(-5);
 		}
 
@@ -153,7 +151,6 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			Document doc = dBuilder.parse(xml);
 
 			// optional, but recommended
-			// read this -
 			// http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
 			doc.getDocumentElement().normalize();
 			return doc;
