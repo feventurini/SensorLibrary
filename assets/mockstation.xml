@@ -8,12 +8,12 @@
 	<sensor loadAtStartup="true">
 		<name>tempForno</name>
 		<class>sensor.mocks.Temp4000</class>
-		<parameters>Temp4000.properties</parameters>
+		<parameters>assets/Temp4000.properties</parameters>
 	</sensor>
 	<sensor loadAtStartup="true">
 		<name>tempAmbiente</name>
 		<class>sensor.mocks.Temp4000</class>
-		<parameters>Temp4000.properties</parameters>
+		<parameters>assets/Temp4000.properties</parameters>
 	</sensor>
 	<sensor loadAtStartup="false">
 		<name>display</name>

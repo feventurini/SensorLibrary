@@ -57,12 +57,12 @@ public class TestUser {
 		}
 
 		// Impostazione del SecurityManager
-		if (!new File("rmi.policy").canRead()) {
+		if (!new File("assets/rmi.policy").canRead()) {
 			System.out.println(
-					"Unable to load security policy, assure that you have rmi.policy in the directory you launched ProviderRMI in");
+					"Unable to load security policy, assure that you have rmi.policy in the assets directory");
 			System.exit(-3);
 		}
-		System.setProperty("java.security.policy", "rmi.policy");
+		System.setProperty("java.security.policy", "assets/rmi.policy");
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new SecurityManager());
 		}

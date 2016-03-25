@@ -8,12 +8,12 @@
 	<sensor loadAtStartup="true">
 		<name>rfidFrigo</name>
 		<class>sensor.implementations.Rfid_SL030</class>
-		<parameters>rfid.properties</parameters>
+		<parameters>assets/rfid.properties</parameters>
 	</sensor>
 	<sensor loadAtStartup="true">
 		<name>tempAmbiente</name>
 		<class>sensor.implementations.TempAndHumiditySensor</class>
-		<parameters>TempAndHumiditySensor.properties</parameters>
+		<parameters>assets/TempAndHumiditySensor.properties</parameters>
 	</sensor>
 	<sensor loadAtStartup="true">
 		<name>display</name>

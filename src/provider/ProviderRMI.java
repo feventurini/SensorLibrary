@@ -83,8 +83,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 				responsePayload = baos.toByteArray();
 				dos.close();
 				baos.close();
-				System.out.println("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port
-						+ ", will send " + currentHostname + ":" + registryPort);
+				log.info("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port + ", will send "
+						+ currentHostname + ":" + registryPort);
 			} catch (IOException e) {
 				System.out.println("MulticastDiscoveryServer not started");
 				e.printStackTrace();
@@ -139,12 +139,12 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		}
 
 		// Impostazione del SecurityManager
-		if (!new File("rmi.policy").canRead()) {
-			log.severe(
-					"Unable to load security policy, assure that you have rmi.policy in the directory you launched ProviderRMI in");
+		if (!new File("assets/rmi.policy").canRead()) {
+			System.out
+					.println("Unable to load security policy, assure that you have rmi.policy in the assets directory");
 			System.exit(-3);
 		}
-		System.setProperty("java.security.policy", "rmi.policy");
+		System.setProperty("java.security.policy", "assets/rmi.policy");
 		if (System.getSecurityManager() == null) {
 			System.setSecurityManager(new SecurityManager());
 		}
@@ -262,9 +262,9 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		log.log(Level.INFO, "Registered: {0}\n\tstub:\t\t{1}\n\tannotation:\t{2}\n\tinterfaces:\t{3}",
-				new Object[] {fullName, sensor.getClass().getName(), annotation,
-				Stream.of(sensor.getClass().getInterfaces()).filter(Sensor.class::isAssignableFrom)
-						.map(Class::getSimpleName).sorted().collect(Collectors.joining(", "))});
+				new Object[] { fullName, sensor.getClass().getName(), annotation,
+						Stream.of(sensor.getClass().getInterfaces()).filter(Sensor.class::isAssignableFrom)
+								.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")) });
 	}
 
 	@Override
