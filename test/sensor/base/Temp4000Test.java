@@ -1,4 +1,4 @@
-package sensor;
+package sensor.base;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

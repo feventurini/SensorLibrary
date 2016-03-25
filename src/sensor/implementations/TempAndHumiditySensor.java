@@ -7,6 +7,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import org.iot.raspberry.grovepi.devices.GroveTemperatureAndHumiditySensor;
 import org.iot.raspberry.grovepi.devices.GroveTemperatureAndHumidityValue;
@@ -22,6 +23,9 @@ import sensor.interfaces.TempSensor;
 
 public class TempAndHumiditySensor extends SensorServer implements TempSensor, HumiditySensor {
 	private static final long serialVersionUID = -5353227817012312834L;
+
+	private final static Logger log = Logger.getLogger(TempAndHumiditySensor.class.getName());
+
 	private GroveTemperatureAndHumiditySensor sensor;
 	private FutureResultImpl<Double> resultTemp;
 	private FutureResultImpl<Double> resultHumid;
@@ -34,11 +38,11 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 	private Supplier<GroveTemperatureAndHumidityValue> measurer = () -> {
 		try {
 			GroveTemperatureAndHumidityValue value = sensor.get();
-			System.out.println("Measure done: " + value);
+			log.info("Measure done: " + value);
 			state = SensorState.RUNNING;
 			return value;
 		} catch (IOException e) {
-			System.out.println("A measure failed");
+			log.severe("A measure failed");
 			state = SensorState.FAULT;
 			
 			throw new CompletionException(e);
@@ -52,7 +56,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 		}
 		resultTemp = null;
 		resultHumid = null;
-		System.out.println("Measure invalidated");
+		log.info("Measure invalidated");
 	};
 
 	public TempAndHumiditySensor() throws RemoteException {
@@ -131,7 +135,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 	public void tearDown() {
 		executor.shutdown();
 		state = SensorState.SHUTDOWN;
-		System.out.println("Temperature and Humidity sensor stopped");
+		log.info("Temperature and Humidity sensor stopped");
 
 	}
 

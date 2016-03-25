@@ -12,9 +12,15 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Logger;
+
+import http.MiniHttpServer;
 
 public abstract class SensorServer extends UnicastRemoteObject implements Sensor {
 	private static final long serialVersionUID = 8455786461927369862L;
+
+	private final static Logger log = Logger.getLogger(SensorServer.class.getName());
+
 	protected SensorState state;
 
 	protected SensorServer() throws RemoteException {
@@ -74,7 +80,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 								properties.get(propertyName)));
 					} catch (InvocationTargetException ignore) {
 						// probabilemte un problema di parsing dei numeri
-						System.out.println("Exception: " + ignore.getTargetException().getMessage());
+						log.severe("Exception: " + ignore.getTargetException().getMessage());
 					} catch (NoSuchMethodException e) {
 						// non dovrebbe mai avvenire perchè tutti i
 						// campi di SensorParameter.validTypes
@@ -96,7 +102,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 				properties.load(inputStream);
 				inputStream.close();
 			} catch (IOException e) {
-				System.out.println("Properties loading from " + propertyFile + " failed");
+				log.severe("Properties loading from " + propertyFile + " failed");
 				return;
 			}
 			loadParameters(properties);
@@ -116,6 +122,6 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 
 	public synchronized void tearDown() {
 		state = SensorState.SHUTDOWN;
-		System.out.println(this.getClass().getSimpleName() + " has stopped");
+		log.info(this.getClass().getSimpleName() + " has stopped");
 	}
 }

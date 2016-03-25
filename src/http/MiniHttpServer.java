@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
  * RMI URL Classloader.
  */
 public class MiniHttpServer {
+	private final static Logger log = Logger.getLogger(MiniHttpServer.class.getName());
 	/**
 	 * Lightweight but naive implementation of HTTP 1.1.
 	 */
@@ -71,7 +72,7 @@ public class MiniHttpServer {
 
 				connection.close();
 			} catch (IOException e) {
-				LOGGER.info(e.getMessage());
+				log.info(e.getMessage());
 			}
 		}
 
@@ -97,15 +98,12 @@ public class MiniHttpServer {
 		InputStream getResponse(String url) throws IOException;
 	}
 
-	private static final Logger LOGGER = Logger.getLogger(MiniHttpServer.class.getName());
-
 	public static void main(String[] args) throws IOException {
 		Handler handler = url -> new ByteArrayInputStream(("You requested " + url).getBytes("ISO-8859-1"));
 
 		MiniHttpServer server = new MiniHttpServer(Executors.newFixedThreadPool(3), handler);
 		server.start();
-		System.out
-				.println("MiniHttpServer started on: http://" + server.getAddress() + ":" + server.getHttpPort() + "/");
+		log.info("MiniHttpServer started on: http://" + server.getAddress() + ":" + server.getHttpPort() + "/");
 	}
 
 	private final ExecutorService executorService;
@@ -150,7 +148,7 @@ public class MiniHttpServer {
 					executorService.execute(new ConnectionHandler(serverSocket.accept()));
 				}
 			} catch (IOException e) {
-				LOGGER.warning(e.getMessage());
+				log.warning(e.getMessage());
 			}
 		});
 	}

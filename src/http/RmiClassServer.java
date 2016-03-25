@@ -2,12 +2,15 @@ package http;
 
 import java.io.IOException;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 /**
  * Serves classes from the current classloader to remote clients for RMI. The
  * server should be started before any remote objects are bound.
  */
 public class RmiClassServer {
+
+	private final static Logger log = Logger.getLogger(RmiClassServer.class.getName());
 
 	// private final String serverHostname;
 	private final MiniHttpServer httpServer;
@@ -19,7 +22,7 @@ public class RmiClassServer {
 	 */
 	public RmiClassServer() {
 		httpServer = new MiniHttpServer(Executors.newFixedThreadPool(3), url -> {
-			System.out.println("RmiClassServer richiesto url: " + url);
+			log.info("RmiClassServer richiesto url: " + url);
 			return getClass().getResourceAsStream(url);
 		});
 	}
@@ -52,7 +55,7 @@ public class RmiClassServer {
 	public void start() {
 		try {
 			httpServer.start();
-			System.out.println("RmiClassServer started on: " + getUrl());
+			log.info("RmiClassServer started on: " + getUrl());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
