@@ -5,6 +5,7 @@ import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 import sensor.base.FutureResult;
 import sensor.base.FutureResultImpl;
@@ -14,6 +15,7 @@ import sensor.base.SensorState;
 import sensor.interfaces.TempSensor;
 
 public class Temp2000 extends SensorServer implements TempSensor {
+	private static final Logger log = Logger.getLogger(Temp4000.class.getName());
 	private static final long serialVersionUID = -9066863232278842877L;
 	private Random r;
 	private ExecutorService executor;

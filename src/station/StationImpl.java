@@ -9,9 +9,19 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -30,14 +40,73 @@ import org.xml.sax.SAXException;
 import http.IpUtils;
 import http.RmiClassServer;
 import provider.Provider;
+import provider.ProviderRMI;
 import provider.ProviderUtils;
 import sensor.base.SensorServer;
 import sensor.base.SensorState;
 
 public class StationImpl extends UnicastRemoteObject implements Station {
 	private static final long serialVersionUID = 1615162418507733656L;
+	private static final Logger log = Logger.getLogger(StationImpl.class.getName());
 
 	public static void main(String[] args) {
+		try {
+			Logger global = Logger.getLogger("");
+			FileHandler txt = new FileHandler(
+					"Provider_" + new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".log");
+			txt.setFormatter(new SimpleFormatter());
+			FileHandler html = new FileHandler(
+					"Provider_" + new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".html");
+			html.setFormatter(new Formatter() {
+				DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+				// this method is called for every log records
+				public String format(LogRecord rec) {
+					StringBuffer buf = new StringBuffer(100);
+					buf.append("<tr>");
+					// colorize WARNING in yellow, SEVERE in red
+					if (rec.getLevel().intValue() == Level.SEVERE.intValue()) {
+						buf.append("<td style=\"color:red; font-weight:bold;\">");
+					} else if (rec.getLevel().intValue() == Level.WARNING.intValue()) {
+						buf.append("<td style=\"color:yellow; font-weight:bold;\">");
+					} else {
+						buf.append("<td>");
+					}
+					buf.append(rec.getLevel());
+					buf.append("</td><td>");
+					buf.append(dateFormat.format(new Date(rec.getMillis())));
+					buf.append("</td><td>");
+					buf.append(formatMessage(rec));
+					buf.append("</td></tr>");
+
+					return buf.toString();
+				}
+
+				// this method is called just after the handler using this
+				// formatter is created
+				public String getHead(Handler h) {
+					return "<!DOCTYPE html><head><style>\n" + "table { width: 100% }\n"
+							+ "th { font:bold 10pt Tahoma; }\n" + "td { font:normal 10pt Tahoma; }\n"
+							+ "h1 {font:normal 11pt Tahoma;}\n" + "</style>\n" + "</head>\n" + "<body>\n" + "<h1>"
+							+ dateFormat.format(new Date()) + "</h1>\n"
+							+ "<table border=\"0\" cellpadding=\"5\" cellspacing=\"3\">\n" + "<tr align=\"left\">\n"
+							+ "\t<th style=\"width:10%\">Loglevel</th>\n" + "\t<th style=\"width:15%\">Time</th>\n"
+							+ "\t<th style=\"width:75%\">Log Message</th>\n" + "</tr>\n";
+				}
+
+				// this method is called just after the handler using this
+				// formatter is closed
+				public String getTail(Handler h) {
+					return "</table></body></html>";
+				}
+			});
+			global.addHandler(txt);
+			global.addHandler(html);
+			global.setLevel(Level.CONFIG);
+		} catch (SecurityException | IOException e) {
+			e.printStackTrace();
+		}
+		
 		if (args == null || args.length != 1) {
 			System.out.println("Usage: StationImpl xmlFile");
 			System.exit(-1);
