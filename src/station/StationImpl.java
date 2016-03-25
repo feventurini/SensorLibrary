@@ -40,7 +40,6 @@ import org.xml.sax.SAXException;
 import http.IpUtils;
 import http.RmiClassServer;
 import provider.Provider;
-import provider.ProviderRMI;
 import provider.ProviderUtils;
 import sensor.base.SensorServer;
 import sensor.base.SensorState;
@@ -108,13 +107,13 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		}
 		
 		if (args == null || args.length != 1) {
-			System.out.println("Usage: StationImpl xmlFile");
+			log.severe("Usage: StationImpl xmlFile");
 			System.exit(-1);
 		}
 		try {
 			new StationImpl(new File(args[0]));
 		} catch (RemoteException e) {
-			System.err.println(e.getMessage());
+			log.severe(e.getMessage());
 		}
 	}
 
@@ -140,14 +139,14 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			try {
 				provider.unregisterStation(stationName);
 			} catch (Exception e1) {
-				System.err.println(e1.getMessage());
+				log.severe(e1.getMessage());
 			}
 			sensors.forEach((n, s) -> {
 				try {
 					s.tearDown();
 					provider.unregister(stationName, n);
 				} catch (Exception e) {
-					System.err.println("Error unregistering " + n);
+					log.severe("Error unregistering " + n);
 					e.printStackTrace();
 				}
 			});
@@ -164,19 +163,19 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			boolean loadNow = Boolean.parseBoolean(e.getAttribute("loadAtStartup"));
 
 			if (sensors.containsKey(name)) {
-				System.err.println("A sensor named " + name + " already exists");
+				log.severe("A sensor named " + name + " already exists");
 			} else {
 				try {
 					SensorServer ss = (SensorServer) getClass().getClassLoader().loadClass(klass).newInstance();
 					if (!propertyFile.isEmpty())
 						ss.loadParametersFromFile(new File(propertyFile));
 					sensors.put(name, ss);
-					System.out.println("Caricato sensore " + name);
+					log.info("Caricato sensore " + name);
 					if (loadNow)
 						startSensor(name);
 				} catch (RemoteException | InstantiationException | IllegalAccessException
 						| ClassNotFoundException ex) {
-					System.err.println(ex.getMessage());
+					log.severe(ex.getMessage());
 				}
 			}
 		}
@@ -186,7 +185,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		try {
 			return ProviderUtils.findProviderUrl();
 		} catch (IOException e) {
-			System.err.println(e.getMessage());
+			log.severe(e.getMessage());
 		}
 
 		stationName = doc.getDocumentElement().getAttribute("name");
@@ -196,7 +195,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 					.parseInt(((Element) doc.getElementsByTagName("provider").item(0)).getAttribute("port"));
 			return ProviderUtils.buildProviderUrl(providerIp, providerPort);
 		} else {
-			System.err.println("No provider host discovered in multicast nor found in xml");
+			log.severe("No provider host discovered in multicast nor found in xml");
 			System.exit(-4);
 		}
 		return null;
@@ -209,10 +208,10 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 			Schema schema = schemaFactory.newSchema(new File("stationSchema.xsd"));
 			schema.newValidator().validate(xmlFile);
-			System.out.println(xmlFile.getSystemId() + " is valid");
+			log.info(xmlFile.getSystemId() + " is valid");
 		} catch (SAXException | IOException e) {
-			System.err.println(xmlFile.getSystemId() + " is NOT valid");
-			System.err.println("Reason: " + e.getMessage());
+			log.severe(xmlFile.getSystemId() + " is NOT valid");
+			log.severe("Reason: " + e.getMessage());
 			System.exit(-5);
 		}
 
@@ -226,7 +225,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			doc.getDocumentElement().normalize();
 			return doc;
 		} catch (IOException | SAXException | ParserConfigurationException e) {
-			System.err.println("Error parsing xml file: " + xml);
+			log.severe("Error parsing xml file: " + xml);
 			System.exit(-6);
 		}
 		return null;
@@ -235,7 +234,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 	private void initRmi(String providerUrl) {
 		// Impostazione del SecurityManager
 		if (!new File("rmi.policy").canRead()) {
-			System.out.println(
+			log.severe(
 					"Unable to load security policy, assure that you have rmi.policy in the directory you launched ProviderRMI in");
 			System.exit(-3);
 		}
@@ -247,7 +246,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		String currentHostname;
 		try {
 			currentHostname = IpUtils.getCurrentIp().getHostAddress();
-			System.out.println("currentHostName: " + currentHostname);
+			log.info("currentHostName: " + currentHostname);
 			// Avvia un server http affinchè altri possano scaricare gli stub di
 			// questa classe
 			// da questo codebase in maniera dinamica quando serve
@@ -258,25 +257,25 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			System.setProperty("java.rmi.server.codebase",
 					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
 		} catch (SocketException | UnknownHostException e) {
-			System.err.println("Unable to retrieve current ip: " + e.getMessage());
+			log.severe("Unable to retrieve current ip: " + e.getMessage());
 			System.exit(-7);
 		}
 
 		try {
 			// Ricerca del providerHost e registrazione
-			System.out.println("Looking up provider on: " + providerUrl);
+			log.info("Looking up provider on: " + providerUrl);
 			provider = (Provider) Naming.lookup(providerUrl);
-			System.out.println("Connessione al ProviderRMI completata");
+			log.info("Connessione al ProviderRMI completata");
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
-			System.err.println("Error finding provider: " + e.getMessage());
+			log.severe("Error finding provider: " + e.getMessage());
 		}
 
 		try {
 			stationName = doc.getDocumentElement().getAttribute("name");
 			provider.registerStation(stationName, this);
-			System.out.println("Registrazione di " + stationName + " al provider completata");
+			log.info("Registrazione di " + stationName + " al provider completata");
 		} catch (RemoteException e) {
-			System.err.println("Unable to register station on provider: " + e.getMessage());
+			log.severe("Unable to register station on provider: " + e.getMessage());
 		}
 	}
 
@@ -290,7 +289,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 				if (sensor.getState() == state)
 					result.add(name);
 			} catch (Exception ignore) {
-				System.err.println(ignore.getMessage());
+				log.severe(ignore.getMessage());
 			}
 		});
 		return result;
@@ -319,7 +318,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 				throw new RemoteException(e.getMessage(), e);
 			}
 			provider.register(stationName, name, s);
-			System.out.println("Registrato sensore " + name);
+			log.info("Registrato sensore " + name);
 			break;
 		default:
 			break;

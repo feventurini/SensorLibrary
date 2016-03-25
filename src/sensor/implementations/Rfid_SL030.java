@@ -3,6 +3,7 @@ package sensor.implementations;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -28,6 +29,7 @@ import sensor.interfaces.RfidSensor;
 
 public class Rfid_SL030 extends SensorServer implements RfidSensor {
 	private static final long serialVersionUID = 4894977624049261879L;
+	private final static Logger log = Logger.getLogger(Rfid_SL030.class.getName());
 
 	// RFID addresses
 	private static final int DEVICE_ADDRESS = 0x50;
@@ -76,12 +78,12 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			// first just read in a single byte that represents the
 			// command+status+data payload length
 			int length = sl030.read();
-			System.out.println("TOTAL BYTES AVAILABLE: " + length);
+			log.info("TOTAL BYTES AVAILABLE: " + length);
 
 			// if there are no remaining bytes (length == 0), then we can exit
 			// the function
 			if (length <= 0) {
-				System.out.println("Error: " + length + " bytes read for LENGTH");
+				log.severe("Error: " + length + " bytes read for LENGTH");
 				return "NO-TAG";
 			}
 
@@ -89,11 +91,11 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			// now
 			byte[] readBuffer = new byte[length + 1];
 			int readTotal = sl030.read(readBuffer, 0, length);
-			System.out.println("Letti: " + readTotal);
+			log.info("Letti: " + readTotal);
 			// validate to ensure we got back at least the command and status
 			// bytes
 			if (readTotal <= 3) {
-				System.out.println("Error: only " + readTotal + " bytes read");
+				log.warning("Error: only " + readTotal + " bytes read");
 				return "NO-TAG";
 			}
 
@@ -105,15 +107,16 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			// now we need to get the payload data (if there is any?)
 			String uid = DatatypeConverter.printHexBinary(uidByte);
 
-			System.out.println("Tag read: " + uid);
+			log.info("Tag read: " + uid);
 			errorCounter = 0; // reset error counter
 			return uid.trim();
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
-			System.out.println("Error: " + e.getMessage());
+			log.warning("Error: " + e.getMessage());
 			errorCounter++;
 			if (errorCounter >= errorTreshold) {
 				state = SensorState.FAULT;
+				log.severe("Rfid_SL030 sensor set to state fault because of repeated failure");
 				throw e;
 			}
 			return "NO-TAG";
@@ -145,10 +148,10 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 		trigger.setDebounce(1000);
 		// get the bus
 		bus = I2CFactory.getInstance(I2CBus.BUS_1);
-		System.out.println("Connected to bus");
+		log.info("Connected to bus");
 		// get device itself
 		sl030 = bus.getDevice(DEVICE_ADDRESS);
-		System.out.println("Connected to device");
+		log.info("Connected to device");
 
 		trigger.addListener(new GpioPinListenerDigital() {
 			@Override
@@ -158,7 +161,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 					String rfid = null;
 					try {
 						rfid = readRfid();
-						System.out.println("Letto RFID " + rfid);
+						log.info("Letto RFID " + rfid);
 						if (!rfid.equalsIgnoreCase("NO-TAG")) {
 							while (!queue.isEmpty()) {
 								queue.poll().set(rfid);
