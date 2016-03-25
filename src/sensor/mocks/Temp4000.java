@@ -1,4 +1,4 @@
-package sensor.implementations;
+package sensor.mocks;
 
 import java.rmi.RemoteException;
 import java.util.Random;
@@ -8,11 +8,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
-import sensor.FutureResult;
-import sensor.FutureResultImpl;
-import sensor.SensorParameter;
-import sensor.SensorServer;
-import sensor.SensorState;
+import sensor.base.FutureResult;
+import sensor.base.FutureResultImpl;
+import sensor.base.SensorParameter;
+import sensor.base.SensorServer;
+import sensor.base.SensorState;
 import sensor.interfaces.TempSensor;
 
 public class Temp4000 extends SensorServer implements TempSensor {

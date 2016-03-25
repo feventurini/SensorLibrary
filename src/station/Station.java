@@ -6,7 +6,7 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-import sensor.SensorState;
+import sensor.base.SensorState;
 
 public interface Station extends Remote {
 	/**

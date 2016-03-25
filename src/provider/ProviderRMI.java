@@ -18,18 +18,16 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RMIClassLoader;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import http.IpUtils;
 import http.RmiClassServer;
-import sensor.Sensor;
+import sensor.base.Sensor;
 import station.Station;
 
 public class ProviderRMI extends UnicastRemoteObject implements Provider {
@@ -202,12 +200,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		Sensor sensor = sensorMap.get(fullName);
 		if (sensor == null)
 			throw new RemoteException("Sensor " + fullName + " not found");
-		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
-		System.out.printf(
-				"Requested: %s\n" + "\tclient will load the stub %s from %s\n" + "\timplemented interfaces %s\n",
-				fullName, sensor.getClass().getName(), annotation,
-				Stream.of(sensor.getClass().getInterfaces()).filter(Sensor.class::isAssignableFrom)
-						.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")));
+		System.out.println("Requested: " + fullName);
 		return sensor;
 	}
 
@@ -262,7 +255,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		sensorMap.put(fullName, sensor);
 
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
-		System.out.printf("Registered: %s\n" + "\tstub %s loaded from %s\n" + "\timplemented interfaces %s\n", fullName,
+		System.out.printf("Registered: %s\n\tstub:\t\t%s\n\tannotation:\t%s\n\tinterfaces:\t%s\n", fullName,
 				sensor.getClass().getName(), annotation,
 				Stream.of(sensor.getClass().getInterfaces()).filter(Sensor.class::isAssignableFrom)
 						.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")));

@@ -1,36 +1,29 @@
 <xs:schema attributeFormDefault="unqualified"
-	elementFormDefault="qualified" 
-	xmlns="http://www.w3schools.com"
-	targetNamespace="http://www.w3schools.com"
-	xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	elementFormDefault="qualified" xmlns="http://www.w3schools.com"
+	targetNamespace="http://www.w3schools.com" xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
 	<xs:element name="station"> <!-- il nome della station -->
 		<xs:complexType>
 			<xs:sequence>
 				<xs:element name="provider" minOccurs="0" maxOccurs="1">
 					<xs:complexType>
-						<xs:simpleContent>
-							<xs:extension base="xs:string">
-								<xs:attribute type="IPv4Address" name="ip" use="required" />
-								<xs:attribute type="xs:nonNegativeInteger" name="port"
-									use="optional" default="1099" />
-							</xs:extension>
-						</xs:simpleContent>
+						<xs:attribute type="IPv4Address" name="ip" use="required" />
+						<xs:attribute type="xs:nonNegativeInteger" name="port"
+							use="optional" default="1099" />
 					</xs:complexType>
 				</xs:element>
-				<xs:element name="sensor" maxOccurs="unbounded"
-					minOccurs="0">
+				<xs:element name="sensor" minOccurs="0" maxOccurs="unbounded">
 					<xs:complexType>
 						<xs:sequence>
 							<xs:element type="xs:string" name="name" /> <!-- il nome del sensore nella station -->
-							<xs:element type="xs:string" name="parameters" /> <!-- il file da cui caricare i parametri per questo sensore -->
-							<xs:element type="xs:boolean" name="loadAtStartup" /> <!-- se la station deve avviare questo sensore all'accensione -->
+							<xs:element type="xs:string" name="class" /> <!-- la classe da cui istanziare questo sensore -->
+							<xs:element type="xs:string" name="parameters" /> <!-- il file da cui caricare i parametri per questo sensore --> 
 						</xs:sequence>
-						<xs:attribute type="xs:string" name="class" use="required" />
+						<xs:attribute type="xs:boolean" name="loadAtStartup" use="required" /> <!-- se la station deve avviare questo sensore all'accensione -->
 					</xs:complexType>
 				</xs:element>
 			</xs:sequence>
-			<xs:attribute type="xs:string" name="name" use="required" />
+	<xs:attribute type="xs:string" name="name" use="required" />
 		</xs:complexType>
 	</xs:element>
 

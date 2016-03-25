@@ -16,7 +16,7 @@ ssh $PROVIDER "cd $BASE_DIR && java -Djava.rmi.server.useCodebaseOnly=false -Dja
 sleep 10
 
 # Sensors
-ssh $SENSOR "cd $BASE_DIR && java -Djava.rmi.server.useCodebaseOnly=false -Djava.security.policy=rmi.policy sensor.implementations.Temp2000 $PROVIDER_HOST" &
+ssh $SENSOR "cd $BASE_DIR && java -Djava.rmi.server.useCodebaseOnly=false -Djava.security.policy=rmi.policy sensor.mocks.Temp2000 $PROVIDER_HOST" &
 sleep 10
 
 # Client

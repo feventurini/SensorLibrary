@@ -4,7 +4,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.List;
 
-import sensor.Sensor;
+import sensor.base.Sensor;
 import station.Station;
 
 /**

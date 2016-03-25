@@ -1,4 +1,4 @@
-package sensor;
+package sensor.base;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;

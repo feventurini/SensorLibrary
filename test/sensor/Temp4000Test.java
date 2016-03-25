@@ -12,8 +12,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import sensor.implementations.Temp4000;
+import sensor.base.FutureResult;
+import sensor.base.SensorState;
 import sensor.interfaces.TempSensor.Unit;
+import sensor.mocks.Temp4000;
 
 public class Temp4000Test {
 
@@ -39,7 +41,7 @@ public class Temp4000Test {
 	}
 
 	/**
-	 * Test method for {@link sensor.implementations.Temp4000#tearDown()}.
+	 * Test method for {@link sensor.mocks.Temp4000#tearDown()}.
 	 */
 	@After
 	public void tearDown() throws RemoteException {
@@ -50,7 +52,7 @@ public class Temp4000Test {
 
 	/**
 	 * Test method for
-	 * {@link sensor.implementations.Temp4000#readTemperature(sensor.interfaces.TempSensor.Unit)}.
+	 * {@link sensor.mocks.Temp4000#readTemperature(sensor.interfaces.TempSensor.Unit)}.
 	 */
 	@Test
 	public void testReadTemperature() throws RemoteException {
@@ -59,7 +61,7 @@ public class Temp4000Test {
 
 	/**
 	 * Test method for
-	 * {@link sensor.implementations.Temp4000#readTemperatureAsync(sensor.interfaces.TempSensor.Unit)}
+	 * {@link sensor.mocks.Temp4000#readTemperatureAsync(sensor.interfaces.TempSensor.Unit)}
 	 * .
 	 */
 	@Test

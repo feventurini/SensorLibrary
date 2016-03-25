@@ -5,19 +5,19 @@
 	
 	<provider ip="192.168.0.12" port="1099"/>
 	
-	<sensor class="sensor.implementations.Rfid_SL030">
+	<sensor loadAtStartup="true">
 		<name>rfidFrigo</name>
-		<parameters>Rfid_SL030.properties</parameters>
-		<loadAtStartup>true</loadAtStartup>
+		<class>sensor.implementations.Rfid_SL030</class>
+		<parameters>rfid.properties</parameters>
 	</sensor>
-	<sensor class="sensor.implementations.TempAndHumiditySensor">
+	<sensor loadAtStartup="true">
 		<name>tempAmbiente</name>
+		<class>sensor.implementations.TempAndHumiditySensor</class>
 		<parameters>TempAndHumiditySensor.properties</parameters>
-		<loadAtStartup>true</loadAtStartup>
 	</sensor>
-	<sensor class="sensor.implementations.GroveRgbDisplay">
+	<sensor loadAtStartup="true">
 		<name>display</name>
+		<class>sensor.implementations.GroveRgbDisplay</class>
 		<parameters></parameters>
-		<loadAtStartup>true</loadAtStartup>
 	</sensor>
 </station>

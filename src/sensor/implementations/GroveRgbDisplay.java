@@ -8,8 +8,8 @@ import java.util.concurrent.TimeUnit;
 import org.iot.raspberry.grovepi.devices.GroveRgbLcd;
 import org.iot.raspberry.grovepi.pi4j.GroveRgbLcdPi4J;
 
-import sensor.SensorServer;
-import sensor.SensorState;
+import sensor.base.SensorServer;
+import sensor.base.SensorState;
 import sensor.interfaces.RgbLcdDisplay;
 
 public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {

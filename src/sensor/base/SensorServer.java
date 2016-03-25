@@ -1,4 +1,4 @@
-package sensor;
+package sensor.base;
 
 import java.io.File;
 import java.io.FileInputStream;

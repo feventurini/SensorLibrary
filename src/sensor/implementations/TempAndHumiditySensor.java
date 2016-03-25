@@ -12,11 +12,11 @@ import org.iot.raspberry.grovepi.devices.GroveTemperatureAndHumiditySensor;
 import org.iot.raspberry.grovepi.devices.GroveTemperatureAndHumidityValue;
 import org.iot.raspberry.grovepi.pi4j.GrovePi4J;
 
-import sensor.FutureResult;
-import sensor.FutureResultImpl;
-import sensor.SensorParameter;
-import sensor.SensorServer;
-import sensor.SensorState;
+import sensor.base.FutureResult;
+import sensor.base.FutureResultImpl;
+import sensor.base.SensorParameter;
+import sensor.base.SensorServer;
+import sensor.base.SensorState;
 import sensor.interfaces.HumiditySensor;
 import sensor.interfaces.TempSensor;
 

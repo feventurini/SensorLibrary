@@ -19,11 +19,11 @@ import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CDevice;
 import com.pi4j.io.i2c.I2CFactory;
 
-import sensor.FutureResult;
-import sensor.FutureResultImpl;
-import sensor.SensorParameter;
-import sensor.SensorServer;
-import sensor.SensorState;
+import sensor.base.FutureResult;
+import sensor.base.FutureResultImpl;
+import sensor.base.SensorParameter;
+import sensor.base.SensorServer;
+import sensor.base.SensorState;
 import sensor.interfaces.RfidSensor;
 
 public class Rfid_SL030 extends SensorServer implements RfidSensor {

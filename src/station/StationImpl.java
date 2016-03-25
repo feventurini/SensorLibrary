@@ -31,8 +31,8 @@ import http.IpUtils;
 import http.RmiClassServer;
 import provider.Provider;
 import provider.ProviderUtils;
-import sensor.SensorServer;
-import sensor.SensorState;
+import sensor.base.SensorServer;
+import sensor.base.SensorState;
 
 public class StationImpl extends UnicastRemoteObject implements Station {
 	private static final long serialVersionUID = 1615162418507733656L;
@@ -89,18 +89,20 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		NodeList nl = doc.getElementsByTagName("sensor");
 		for (int i = 0; i < nl.getLength(); i++) {
 			Element e = (Element) nl.item(i);
-			String klass = e.getAttribute("class");
+			String klass = e.getElementsByTagName("class").item(0).getTextContent();;
 			String name = e.getElementsByTagName("name").item(0).getTextContent();
-			File propertyFile = new File(e.getElementsByTagName("parameters").item(0).getTextContent());
-			boolean loadNow = e.getElementsByTagName("loadAtStartup").item(0).getTextContent().equals("true");
+			String propertyFile = e.getElementsByTagName("parameters").item(0).getTextContent();
+			boolean loadNow = Boolean.parseBoolean(e.getAttribute("loadAtStartup"));
 
 			if (sensors.containsKey(name)) {
 				System.err.println("A sensor named " + name + " already exists");
 			} else {
 				try {
 					SensorServer ss = (SensorServer) getClass().getClassLoader().loadClass(klass).newInstance();
-					ss.loadParametersFromFile(propertyFile);
+					if (!propertyFile.isEmpty())
+						ss.loadParametersFromFile(new File(propertyFile));
 					sensors.put(name, ss);
+					System.out.println("Caricato sensore " + name);
 					if (loadNow)
 						startSensor(name);
 				} catch (RemoteException | InstantiationException | IllegalAccessException
@@ -251,6 +253,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 				throw new RemoteException(e.getMessage(), e);
 			}
 			provider.register(stationName, name, s);
+			System.out.println("Registrato sensore " + name);
 			break;
 		default:
 			break;

@@ -15,8 +15,8 @@ import org.reflections.Reflections;
 
 import provider.Provider;
 import provider.ProviderUtils;
-import sensor.FutureResult;
-import sensor.Sensor;
+import sensor.base.FutureResult;
+import sensor.base.Sensor;
 import sensor.interfaces.RfidSensor;
 import sensor.interfaces.RgbLcdDisplay;
 import sensor.interfaces.TempSensor;

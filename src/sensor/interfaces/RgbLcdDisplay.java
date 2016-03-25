@@ -2,7 +2,7 @@ package sensor.interfaces;
 
 import java.rmi.RemoteException;
 
-import sensor.Sensor;
+import sensor.base.Sensor;
 
 /**
  * The public interface of an rgb display. Contains methods to set the rgb color

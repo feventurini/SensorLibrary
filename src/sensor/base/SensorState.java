@@ -1,4 +1,4 @@
-package sensor;
+package sensor.base;
 
 /**
  * All sensors must be able to provide information about their state by means of
