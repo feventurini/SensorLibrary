@@ -12,8 +12,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import sensor.base.FutureResult;
-import sensor.base.SensorState;
 import sensor.interfaces.TempSensor.Unit;
 import sensor.mocks.Temp4000;
 

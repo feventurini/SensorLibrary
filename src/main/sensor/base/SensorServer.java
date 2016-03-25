@@ -14,8 +14,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import http.MiniHttpServer;
-
 public abstract class SensorServer extends UnicastRemoteObject implements Sensor {
 	private static final long serialVersionUID = 8455786461927369862L;
 

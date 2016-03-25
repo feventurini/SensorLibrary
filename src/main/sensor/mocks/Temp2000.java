@@ -42,6 +42,7 @@ public class Temp2000 extends SensorServer implements TempSensor {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		log.info("measuring");
 		return Unit.convert(r.nextDouble() * r.nextInt(500), Unit.valueOf(sensorUnit), unit);
 	}
 

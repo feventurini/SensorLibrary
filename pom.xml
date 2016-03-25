@@ -4,7 +4,15 @@
 	<groupId>SensorNetwork</groupId>
 	<version>0.0.1-SNAPSHOT</version>
 	<build>
-		<sourceDirectory>src</sourceDirectory>
+		<sourceDirectory>src/main</sourceDirectory>
+		<testSourceDirectory>src/test</testSourceDirectory>
+		<outputDirectory>target/classes</outputDirectory>
+		<testOutputDirectory>target/test-classes</testOutputDirectory>
+		<resources>
+			<resource>
+				<directory>/home/federico/git/SensorLibrary/assets</directory>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -20,6 +28,12 @@
 	</build>
 	<dependencies>
 		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.pi4j</groupId>
 			<artifactId>pi4j-core</artifactId>
 			<version>1.0</version>
@@ -28,6 +42,13 @@
 			<groupId>org.reflections</groupId>
 			<artifactId>reflections</artifactId>
 			<version>0.9.10</version>
+		</dependency>
+		<dependency>
+			<groupId>grovepi</groupId>
+			<artifactId>pi4j</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/lib/grovepi-pi4j.jar</systemPath>
 		</dependency>
 	</dependencies>
 	<artifactId>SensorNetwork</artifactId>
