@@ -120,7 +120,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	public static void main(String[] args) {
 		int registryPort = 1099;
 		String registryHost = "localhost";
-		Logs.init();
+		Logs.createLogFor("PROVIDER");
 
 		if (args.length == 1) {
 			try {
@@ -152,7 +152,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		try {
 			LocateRegistry.createRegistry(registryPort);
 		} catch (RemoteException e) {
-			e.printStackTrace();
+			log.log(Level.SEVERE, "Error creating the registry", e);
 			System.exit(-1);
 		}
 

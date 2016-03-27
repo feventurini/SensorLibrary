@@ -12,10 +12,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.util.logging.Logger;
 
 import http.IpUtils;
 
 public class ProviderUtils {
+	private static final Logger log = Logger.getLogger(ProviderUtils.class.getName());
 
 	/**
 	 * Builds the provider url in the form "rmi://host:port/name"
@@ -79,7 +81,7 @@ public class ProviderUtils {
 		do {
 			// sending request
 			ms.send(request);
-			System.out.println("Search for provider started on " + group.getHostAddress() + ":" + port);
+			log.info("Search for provider started on " + group.getHostAddress() + ":" + port);
 	
 			// receiving response
 			ds.receive(response);

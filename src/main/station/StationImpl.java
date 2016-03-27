@@ -41,7 +41,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 	private static final Logger log = Logger.getLogger(StationImpl.class.getName());
 
 	public static void main(String[] args) {
-		Logs.init();
+		Logs.createLogFor("STATION");
 
 		if (args == null || args.length != 1) {
 			log.severe("Usage: StationImpl xmlFile");
@@ -111,9 +111,10 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 					log.info("Caricato sensore " + name);
 					if (loadNow)
 						startSensor(name);
-				} catch (RemoteException | InstantiationException | IllegalAccessException
-						| ClassNotFoundException ex) {
-					log.severe(ex.getMessage());
+				} catch (RemoteException | InstantiationException | IllegalAccessException e1) {
+					log.severe(e1.getMessage());
+				} catch (ClassNotFoundException e2) {
+					log.severe("Class not found: " + e2.getMessage());;
 				}
 			}
 		}
@@ -206,6 +207,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			log.info("Connessione al ProviderRMI completata");
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			log.severe("Error finding provider: " + e.getMessage());
+			System.exit(-8);
 		}
 
 		try {

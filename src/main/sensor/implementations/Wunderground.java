@@ -77,20 +77,21 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 
 		@Override
 		public void characters(char[] ch, int start, int length) throws SAXException {
-			// se fallisce o viene saltata la lettura di uno o più campi si va avanti
+			// se fallisce o viene saltata la lettura di uno o più campi si va
+			// avanti
 			try {
 				if (in_temp_c)
-					observation.temp = Double.valueOf(new String(ch,start,length));
+					observation.temp = Double.valueOf(new String(ch, start, length));
 				else if (in_feelsLike)
-					observation.feelsLike = Double.valueOf(new String(ch,start,length));
+					observation.feelsLike = Double.valueOf(new String(ch, start, length));
 				else if (in_windSpeed)
-					observation.windSpeed = Double.valueOf(new String(ch,start,length));
+					observation.windSpeed = Double.valueOf(new String(ch, start, length));
 				else if (in_windDegrees)
-					observation.windDegrees = Double.valueOf(new String(ch,start,length));
+					observation.windDegrees = Double.valueOf(new String(ch, start, length));
 				else if (in_pressure)
-					observation.pressure = Double.valueOf(new String(ch,start,length));
+					observation.pressure = Double.valueOf(new String(ch, start, length));
 				else if (in_mmRain)
-					observation.mmRain = Double.valueOf(new String(ch,start,length));
+					observation.mmRain = Double.valueOf(new String(ch, start, length));
 			} catch (NumberFormatException e) {
 				log.warning(e.getMessage());
 			}
@@ -189,7 +190,8 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 
 	@Override
 	public void tearDown() {
-		executor.shutdown();
+		if (executor != null)
+			executor.shutdown();
 		state = SensorState.SHUTDOWN;
 	}
 }

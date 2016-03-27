@@ -10,9 +10,11 @@ import java.util.Properties;
  * All parameters types must have the static method valueOf(String) so that when
  * initializing the sensor the following code can be used:<br>
  * <code>
- * String value = "1";<br>
+ * Double value = 1;<br>
  * typeToParse.getMethod("valueOf", String.class).invoke(null, value.trim());<br>
- * </code>
+ * </code><br>
+ * Note that if the parameter is a String you can't use String.valueOf(String)
+ * and should assign it directly instead
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)

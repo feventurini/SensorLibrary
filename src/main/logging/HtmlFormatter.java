@@ -10,7 +10,12 @@ import java.util.logging.LogRecord;
 
 public class HtmlFormatter extends Formatter {
 
-	DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	private String title;
+
+	public HtmlFormatter(String title) {
+		this.title = "Log of " + title + " from " + dateFormat.format(new Date());
+	}
 
 	// this method is called for every log records
 	public String format(LogRecord rec) {
@@ -28,6 +33,8 @@ public class HtmlFormatter extends Formatter {
 		buf.append("</td><td>");
 		buf.append(dateFormat.format(new Date(rec.getMillis())));
 		buf.append("</td><td>");
+		buf.append(rec.getSourceClassName() + " " + rec.getSourceMethodName());
+		buf.append("</td><td>");
 		buf.append(formatMessage(rec));
 		buf.append("</td></tr>");
 
@@ -37,12 +44,11 @@ public class HtmlFormatter extends Formatter {
 	// this method is called just after the handler using this
 	// formatter is created
 	public String getHead(Handler h) {
-		return "<!DOCTYPE html><head><style>\n" +"body { font: Arial, sans-serif}\n"+ "table { width: 100% }\n" + "th { font:bold 10pt; }\n"
-				+ "td { font:normal 10pt; }\n" + "h1 {font:normal 11pt;}\n" + "</style>\n" + "</head>\n"
-				+ "<body>\n" + "<h1>Log of " + dateFormat.format(new Date()) + "</h1>\n"
-				+ "<table border=\"0\" cellpadding=\"5\" cellspacing=\"3\">\n" + "<tr align=\"left\">\n"
-				+ "\t<th style=\"width:10%\">Loglevel</th>\n" + "\t<th style=\"width:15%\">Time</th>\n"
-				+ "\t<th style=\"width:75%\">Log Message</th>\n" + "</tr>\n";
+		return "<!DOCTYPE html><head><title>" + title
+				+ "</title><style>body {font: Arial, sans-serif} table {width: 100%} th {font:bold 9pt}"
+				+ "td {font:normal 8pt} h1 {font:normal 11pt}</style></head>" + "<body><h1>" + title + "</h1>"
+				+ "<table border=\"0\" cellpadding=\"5\" cellspacing=\"3\"><tr align=\"left\">"
+				+ "<th style=\"width:10%\">Loglevel</th><th style=\"width:15%\">Time</th><th style=\"width:15%\">Origin</th><th style=\"width:60%\">Log Message</th></tr>";
 	}
 
 	// this method is called just after the handler using this

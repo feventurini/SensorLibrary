@@ -12,6 +12,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -75,15 +76,19 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 				if (properties.containsKey(propertyName)) {
 					try {
 						Class<?> typeToParse = f.getType();
-						f.set(this, typeToParse.getMethod("valueOf", String.class).invoke(null,
-								properties.get(propertyName)));
-					} catch (InvocationTargetException ignore) {
+						if (typeToParse == String.class)
+							f.set(this, properties.getProperty(propertyName));
+						else
+							f.set(this, typeToParse.getMethod("valueOf", String.class).invoke(null,
+									properties.get(propertyName)));
+					} catch (InvocationTargetException e) {
 						// probabilemte un problema di parsing dei numeri
-						log.severe("Exception: " + ignore.getTargetException().getMessage());
+						log.log(Level.SEVERE, "Error while loading the parameter " + propertyName, e);
 					} catch (NoSuchMethodException e) {
 						// non dovrebbe mai avvenire perchè tutti i
 						// campi di SensorParameter.validTypes
 						// hanno il metodo valueOf(String)
+						// a parte String che si tratta a parte
 					}
 				}
 			} catch (IllegalAccessException ignore) {
