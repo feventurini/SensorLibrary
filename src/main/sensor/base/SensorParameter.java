@@ -31,7 +31,7 @@ public @interface SensorParameter {
 	/**
 	 * The string to be used as key to retrieve the value of the parameter from
 	 * {@link Properties}
-	 * 
+	 *
 	 * @return
 	 */
 	String propertyName();
@@ -39,7 +39,7 @@ public @interface SensorParameter {
 	/**
 	 * A user friendly description of what the parameter represents, can be used
 	 * during initialization to query the user for a value
-	 * 
+	 *
 	 * @return
 	 */
 	String userDescription();

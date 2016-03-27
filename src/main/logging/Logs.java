@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 public class Logs {
 
@@ -17,7 +16,8 @@ public class Logs {
 			global.setLevel(Level.CONFIG);
 			new File("logs").mkdir(); // crea la cartella se non esiste
 
-			// se c'è handler[0] è la console, in questo modo imposto il formato su una riga sola
+			// se c'è handler[0] è la console, in questo modo imposto il formato
+			// su una riga sola
 			if (global.getHandlers().length > 0) {
 				global.getHandlers()[0].setFormatter(new OneLineFormatter());
 			}

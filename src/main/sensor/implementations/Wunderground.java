@@ -3,6 +3,7 @@ package sensor.implementations;
 import java.io.IOException;
 import java.net.HttpRetryException;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.concurrent.CompletableFuture;
@@ -10,6 +11,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -43,72 +45,73 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 		}
 
 		@Override
-		public void startElement(String uri, String localName, String qName, Attributes attributes)
-				throws SAXException {
-			if (qName.equals("temp_c"))
-				in_temp_c = true;
-			else if (qName.equals("feelslike_c"))
-				in_feelsLike = true;
-			else if (qName.equals("wind_kph"))
-				in_windSpeed = true;
-			else if (qName.equals("wind_degrees"))
-				in_windDegrees = true;
-			else if (qName.equals("pressure_mb"))
-				in_pressure = true;
-			else if (qName.equals("precip_today_metric"))
-				in_mmRain = true;
-		}
-
-		@Override
-		public void endElement(String uri, String localName, String qName) throws SAXException {
-			if (qName.equals("temp_c"))
-				in_temp_c = false;
-			else if (qName.equals("feelslike_c"))
-				in_feelsLike = false;
-			else if (qName.equals("wind_kph"))
-				in_windSpeed = false;
-			else if (qName.equals("wind_degrees"))
-				in_windDegrees = false;
-			else if (qName.equals("pressure_mb"))
-				in_pressure = false;
-			else if (qName.equals("precip_today_metric"))
-				in_mmRain = false;
-		}
-
-		@Override
 		public void characters(char[] ch, int start, int length) throws SAXException {
 			// se fallisce o viene saltata la lettura di uno o più campi si va
 			// avanti
 			try {
-				if (in_temp_c)
+				if (in_temp_c) {
 					observation.temp = Double.valueOf(new String(ch, start, length));
-				else if (in_feelsLike)
+				} else if (in_feelsLike) {
 					observation.feelsLike = Double.valueOf(new String(ch, start, length));
-				else if (in_windSpeed)
+				} else if (in_windSpeed) {
 					observation.windSpeed = Double.valueOf(new String(ch, start, length));
-				else if (in_windDegrees)
+				} else if (in_windDegrees) {
 					observation.windDegrees = Double.valueOf(new String(ch, start, length));
-				else if (in_pressure)
+				} else if (in_pressure) {
 					observation.pressure = Double.valueOf(new String(ch, start, length));
-				else if (in_mmRain)
+				} else if (in_mmRain) {
 					observation.mmRain = Double.valueOf(new String(ch, start, length));
+				}
 			} catch (NumberFormatException e) {
-				log.warning(e.getMessage());
+				log.log(Level.WARNING, "Failed to parse a value from xml", e);
+			}
+		}
+
+		@Override
+		public void endElement(String uri, String localName, String qName) throws SAXException {
+			if (qName.equals("temp_c")) {
+				in_temp_c = false;
+			} else if (qName.equals("feelslike_c")) {
+				in_feelsLike = false;
+			} else if (qName.equals("wind_kph")) {
+				in_windSpeed = false;
+			} else if (qName.equals("wind_degrees")) {
+				in_windDegrees = false;
+			} else if (qName.equals("pressure_mb")) {
+				in_pressure = false;
+			} else if (qName.equals("precip_today_metric")) {
+				in_mmRain = false;
+			}
+		}
+
+		@Override
+		public void startElement(String uri, String localName, String qName, Attributes attributes)
+				throws SAXException {
+			if (qName.equals("temp_c")) {
+				in_temp_c = true;
+			} else if (qName.equals("feelslike_c")) {
+				in_feelsLike = true;
+			} else if (qName.equals("wind_kph")) {
+				in_windSpeed = true;
+			} else if (qName.equals("wind_degrees")) {
+				in_windDegrees = true;
+			} else if (qName.equals("pressure_mb")) {
+				in_pressure = true;
+			} else if (qName.equals("precip_today_metric")) {
+				in_mmRain = true;
 			}
 		}
 	}
 
 	private static final long serialVersionUID = -7937251314150401320L;
 
-	public Wunderground() throws RemoteException {
-		super();
-		result = null;
-	}
-
 	private final static Logger log = Logger.getLogger(TempAndHumiditySensor.class.getName());
+
 	private FutureResultImpl<Observation> result;
 	private ExecutorService executor;
 	private URL url;
+	private int errorCounter;
+	private final int errorTreshold = 20;
 
 	@SensorParameter(userDescription = "Amount of seconds after which a new measurement is needed", propertyName = "InvalidateResultAfter")
 	public Long invalidateResultAfter;
@@ -118,7 +121,6 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 	public String stat;
 	@SensorParameter(userDescription = "API key", propertyName = "Key")
 	public String key;
-
 	private Supplier<Observation> measurer = () -> {
 		try {
 			Observation observation = new Observation();
@@ -131,13 +133,20 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 			SAXParser sax = SAXParserFactory.newInstance().newSAXParser();
 			sax.parse(conn.getInputStream(), new WundergroundHandler(observation));
 
-			log.info("Measure done: " + observation.toString());
-			state = SensorState.RUNNING;
+			log.info("Weather response: " + observation.toString());
+			errorCounter = 0; // reset error counter
 			return observation;
-		} catch (IOException | ParserConfigurationException | SAXException e) {
-			log.severe("A measure failed: " + e.getMessage());
-			state = SensorState.FAULT;
-			throw new CompletionException(e);
+		} catch (ParserConfigurationException | SAXException e1) {
+			log.log(Level.SEVERE, "Parser error", e1);
+			throw new CompletionException(e1);
+		} catch (IOException e2) {
+			log.log(Level.WARNING, "A weather request failed", e2);
+			errorCounter++;
+			if (errorCounter >= errorTreshold) {
+				state = SensorState.FAULT;
+				log.severe("Rfid_SL030 state set to FAULT because of repeated failures");
+			}
+			throw new CompletionException(e2);
 		}
 	};
 
@@ -149,6 +158,10 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 		result = null;
 		log.info("Measure invalidated");
 	};
+
+	public Wunderground() throws RemoteException {
+		super();
+	}
 
 	@Override
 	public Observation getObservation() throws RemoteException {
@@ -181,17 +194,19 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 		super.setUp();
 		try {
 			url = new URL("http://api.wunderground.com/api/" + key + "/conditions/q/" + stat + "/" + city + ".xml");
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (MalformedURLException ignore) {
 		}
+		errorCounter = 0;
+		result = null;
 		executor = Executors.newFixedThreadPool(1);
 		state = SensorState.RUNNING;
 	}
 
 	@Override
 	public void tearDown() {
-		if (executor != null)
+		if (executor != null) {
 			executor.shutdown();
+		}
 		state = SensorState.SHUTDOWN;
 	}
 }

@@ -35,8 +35,6 @@ import sensor.base.Sensor;
 import station.Station;
 
 public class ProviderRMI extends UnicastRemoteObject implements Provider {
-	private static final Logger log = Logger.getLogger(ProviderRMI.class.getName());
-
 	/**
 	 * Thread che attiva un servizio di discovery del provider in multicast.
 	 *
@@ -86,8 +84,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 				log.info("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port + ", will send "
 						+ currentHostname + ":" + registryPort);
 			} catch (IOException e) {
-				System.out.println("MulticastDiscoveryServer not started");
-				e.printStackTrace();
+				log.log(Level.WARNING, "MulticastDiscoveryServer not started", e);
 				return;
 			}
 
@@ -106,12 +103,13 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 					response = new DatagramPacket(responsePayload, responsePayload.length, requestor, requestorPort);
 					ds.send(response);
 				} catch (IOException e) {
-					System.out.println("Error during broadcast");
-					e.printStackTrace();
+					log.log(Level.WARNING, "Error during broadcast", e);
 				}
 			}
 		}
 	}
+
+	private static final Logger log = Logger.getLogger(ProviderRMI.class.getName());
 
 	private static final long serialVersionUID = -299631912733255270L;
 
@@ -170,7 +168,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			System.setProperty("java.rmi.server.codebase",
 					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
 		} catch (SocketException | UnknownHostException e) {
-			log.severe("Unable to get the local address");
+			log.log(Level.SEVERE, "Unable to get the local address", e);
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -182,7 +180,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			Naming.rebind(completeName, serverRMI);
 			log.info(PROVIDER_NAME + " registered on the rmiregistry");
 		} catch (RemoteException | MalformedURLException e) {
-			e.printStackTrace();
+			log.log(Level.SEVERE, "Unbale to register the provider", e);
 			System.exit(3);
 		}
 
@@ -268,16 +266,6 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized void unregister(String location, String name) throws RemoteException {
-		if (location == null || name == null || location.isEmpty() || name.isEmpty() || name.indexOf('@') != -1)
-			throw new RemoteException("Argument error");
-
-		String fullName = name + "@" + location;
-		sensorMap.remove(fullName);
-		log.info("Unregistered: " + fullName);
-	}
-
-	@Override
 	public synchronized void registerStation(String stationName, Station station) throws RemoteException {
 		if (stationName == null || stationName.isEmpty())
 			throw new RemoteException("Argument error");
@@ -287,6 +275,16 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		stationMap.put(stationName, station);
 
 		log.info("Registered station: " + stationName);
+	}
+
+	@Override
+	public synchronized void unregister(String location, String name) throws RemoteException {
+		if (location == null || name == null || location.isEmpty() || name.isEmpty() || name.indexOf('@') != -1)
+			throw new RemoteException("Argument error");
+
+		String fullName = name + "@" + location;
+		sensorMap.remove(fullName);
+		log.info("Unregistered: " + fullName);
 	}
 
 	@Override

@@ -25,7 +25,7 @@ public interface RgbLcdDisplay extends Sensor {
 
 	/**
 	 * Set RGB the color to display
-	 * 
+	 *
 	 * @param r
 	 * @param g
 	 * @param b

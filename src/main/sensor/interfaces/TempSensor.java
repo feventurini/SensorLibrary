@@ -12,10 +12,15 @@ import sensor.base.Sensor;
 public interface TempSensor extends Sensor {
 	public enum Unit {
 		CELSIUS, FAHRENHEIT, KELVIN;
-		/**Convenient method to convert a temperature between a unit and another
-		 * @param value the value
-		 * @param from the unit to convert from
-		 * @param to the unit to convert to
+		/**
+		 * Convenient method to convert a temperature between a unit and another
+		 *
+		 * @param value
+		 *            the value
+		 * @param from
+		 *            the unit to convert from
+		 * @param to
+		 *            the unit to convert to
 		 * @return
 		 */
 		public static Double convert(Double value, Unit from, Unit to) {

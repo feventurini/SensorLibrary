@@ -15,7 +15,10 @@ public interface WeatherSensor extends Sensor {
 		public Double windDegrees;
 		public Double pressure;
 		public Double mmRain;
-		/* (non-Javadoc)
+
+		/*
+		 * (non-Javadoc)
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
@@ -24,6 +27,8 @@ public interface WeatherSensor extends Sensor {
 					+ ", windDegrees=" + windDegrees + ", pressure=" + pressure + ", mmRain=" + mmRain + "]";
 		}
 	}
+
 	public Observation getObservation() throws RemoteException;
+
 	public FutureResult<Observation> getObservationAsync() throws RemoteException;
 }

@@ -12,7 +12,7 @@ public interface Sensor extends Remote {
 	/**
 	 * Gives information about the state of a sensor, states are defined in
 	 * {@link SensorState}
-	 * 
+	 *
 	 * @return the sensor state
 	 * @throws RemoteException
 	 */

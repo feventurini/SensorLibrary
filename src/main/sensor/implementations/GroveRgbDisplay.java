@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.iot.raspberry.grovepi.devices.GroveRgbLcd;
 import org.iot.raspberry.grovepi.pi4j.GroveRgbLcdPi4J;
@@ -14,6 +16,7 @@ import sensor.interfaces.RgbLcdDisplay;
 
 public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 	private static final long serialVersionUID = 682226100883364068L;
+	private final static Logger log = Logger.getLogger(GroveRgbDisplay.class.getName());
 
 	private GroveRgbLcd display;
 	private ScheduledThreadPoolExecutor executor;
@@ -21,13 +24,10 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 	private Runnable clearer = () -> {
 		try {
 			display.setText("");
-		} catch (IOException e)
-
-		{
+		} catch (IOException e) {
 			state = SensorState.FAULT;
-			e.printStackTrace();
+			log.log(Level.SEVERE, "Error during write to sensor", e);
 		}
-
 	};
 
 	public GroveRgbDisplay() throws RemoteException {
@@ -48,17 +48,16 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 				executor = new ScheduledThreadPoolExecutor(1); // sicuramente
 																// c'è un modo
 																// migliore
-				// executor.remove(clearer); // if someone was waiting to clear
-				// the
-				// display, prevents the thread to
-				// act
+				// executor.remove(clearer);
+				// if someone was waiting to clear the
+				// display, prevents the thread to act
 				display.setText(text);
 				if (time != 0) {
 					executor.schedule(clearer, time, TimeUnit.SECONDS);
 				}
 			} catch (IOException e) {
 				state = SensorState.FAULT;
-				e.printStackTrace();
+				log.log(Level.SEVERE, "Error writing to the display", e);
 			}
 		}
 	}
@@ -76,7 +75,7 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 				display.setRGB(r, g, b);
 			} catch (IOException e) {
 				state = SensorState.FAULT;
-				e.printStackTrace();
+				log.log(Level.SEVERE, "Error writing to the display", e);
 			}
 		}
 	}
@@ -88,10 +87,11 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 			display = new GroveRgbLcdPi4J();
 		} catch (IOException e) {
 			state = SensorState.FAULT;
+			log.log(Level.SEVERE, "Error writing to the display", e);
 		}
 		executor = new ScheduledThreadPoolExecutor(1);
 		state = SensorState.RUNNING;
-		
+
 	}
 
 	@Override
@@ -101,8 +101,8 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 			display.setRGB(0, 0, 0);
 			display.setText("");
 		} catch (IOException e) {
-			e.printStackTrace();
-		}		
+			log.log(Level.SEVERE, "Error writing to the display", e);
+		}
 	}
 
 }

@@ -50,7 +50,8 @@ public class Temp4000Test {
 
 	/**
 	 * Test method for
-	 * {@link sensor.mocks.Temp4000#readTemperature(sensor.interfaces.TempSensor.Unit)}.
+	 * {@link sensor.mocks.Temp4000#readTemperature(sensor.interfaces.TempSensor.Unit)}
+	 * .
 	 */
 	@Test
 	public void testReadTemperature() throws RemoteException {

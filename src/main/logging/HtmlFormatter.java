@@ -18,6 +18,7 @@ public class HtmlFormatter extends Formatter {
 	}
 
 	// this method is called for every log records
+	@Override
 	public String format(LogRecord rec) {
 		StringBuffer buf = new StringBuffer(100);
 		buf.append("<tr>");
@@ -43,6 +44,7 @@ public class HtmlFormatter extends Formatter {
 
 	// this method is called just after the handler using this
 	// formatter is created
+	@Override
 	public String getHead(Handler h) {
 		return "<!DOCTYPE html><head><title>" + title
 				+ "</title><style>body {font: Arial, sans-serif} table {width: 100%} th {font:bold 9pt}"
@@ -53,6 +55,7 @@ public class HtmlFormatter extends Formatter {
 
 	// this method is called just after the handler using this
 	// formatter is closed
+	@Override
 	public String getTail(Handler h) {
 		return "</table></body></html>";
 	}

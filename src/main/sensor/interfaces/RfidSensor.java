@@ -21,8 +21,8 @@ public interface RfidSensor extends Sensor {
 	/**
 	 * Reads a tag asynchronously
 	 *
-	 * @return a {@link FutureResult} representing the tag that will be read when
-	 *         available
+	 * @return a {@link FutureResult} representing the tag that will be read
+	 *         when available
 	 */
 	public FutureResult<String> readTagAsync() throws RemoteException;
 }

@@ -3,7 +3,6 @@ package logging;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DateFormat;
-import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Formatter;
@@ -13,7 +12,7 @@ public class OneLineFormatter extends Formatter {
 
 	Date dat = new Date();
 	private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	
+
 	// Line separator string. This is the value of the line.separator
 	// property at the moment that the SimpleFormatter was created.
 	// private String lineSeparator = (String)
@@ -23,22 +22,21 @@ public class OneLineFormatter extends Formatter {
 
 	/**
 	 * Format the given LogRecord.
-	 * 
+	 *
 	 * @param record
 	 *            the log record to be formatted.
 	 * @return a formatted log record
 	 */
+	@Override
 	public synchronized String format(LogRecord record) {
 		StringBuilder sb = new StringBuilder();
-		
+
 		// Time
 		dat.setTime(record.getMillis()); // Minimize memory allocations here.
-		sb.append(dateFormat.format(dat))
-		.append(" ")
+		sb.append(dateFormat.format(dat)).append(" ")
 
-		// Level
-		.append(record.getLevel())
-		.append("\t");
+				// Level
+				.append(record.getLevel()).append("\t");
 
 		// Class name
 		if (record.getSourceClassName() != null) {
@@ -49,12 +47,11 @@ public class OneLineFormatter extends Formatter {
 
 		// Method name
 		if (record.getSourceMethodName() != null) {
-			sb.append(" ")
-			.append(record.getSourceMethodName());
+			sb.append(" ").append(record.getSourceMethodName());
 		}
-		
+
 		sb.append(": ");
-		
+
 		String message = formatMessage(record);
 		sb.append(message);
 		sb.append(lineSeparator);

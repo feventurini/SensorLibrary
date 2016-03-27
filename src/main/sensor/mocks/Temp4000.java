@@ -7,6 +7,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import sensor.base.FutureResult;
@@ -19,18 +20,24 @@ import sensor.interfaces.TempSensor;
 public class Temp4000 extends SensorServer implements TempSensor {
 	private static final Logger log = Logger.getLogger(Temp4000.class.getName());
 	private static final long serialVersionUID = -9066863232278842877L;
+
+	public static void main(String[] args) throws RemoteException {
+		new Temp4000();
+	}
+
 	@SensorParameter(userDescription = "Amount of time in seconds after which a new measurement is needed", propertyName = "InvalidateResultAfter")
 	public Long invalidateResultAfter;
 	private Random r;
 	private ExecutorService executor;
 	private FutureResultImpl<Double> result;
+
 	private Supplier<Double> measurer = () -> {
 		try {
 			Thread.sleep(r.nextInt(5000) + 1000);
 			log.info("Measure done");
 			return r.nextDouble() * 1000;
 		} catch (InterruptedException e) {
-			log.severe("A measure failed");
+			log.log(Level.WARNING, "Sensor interrupted while measuring", e);
 			state = SensorState.FAULT;
 			throw new CompletionException(e);
 		}
@@ -39,9 +46,8 @@ public class Temp4000 extends SensorServer implements TempSensor {
 	private Runnable invalidator = () -> {
 		try {
 			Thread.sleep(invalidateResultAfter * 1000);
-		} catch (InterruptedException ignore)
-
-		{
+		} catch (InterruptedException e) {
+			log.log(Level.WARNING, "Sensor interrupted while measuring", e);
 		}
 		result = null;
 		log.info("Measure invalidated");
@@ -91,9 +97,5 @@ public class Temp4000 extends SensorServer implements TempSensor {
 	public void tearDown() {
 		super.tearDown();
 		executor.shutdown();
-	}
-
-	public static void main(String[] args) throws RemoteException {
-		new Temp4000();
 	}
 }

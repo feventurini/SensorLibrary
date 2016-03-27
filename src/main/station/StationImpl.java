@@ -12,6 +12,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.XMLConstants;
@@ -50,7 +51,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		try {
 			new StationImpl(new File(args[0]));
 		} catch (RemoteException e) {
-			log.severe(e.getMessage());
+			log.log(Level.SEVERE, "Impossible to create this station", e);
 		}
 	}
 
@@ -76,55 +77,25 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			try {
 				provider.unregisterStation(stationName);
 			} catch (Exception e1) {
-				log.severe(e1.getMessage());
+				log.log(Level.SEVERE, "Error unregistering station", e1);
 			}
 			sensors.forEach((n, s) -> {
 				try {
 					s.tearDown();
 					provider.unregister(stationName, n);
 				} catch (Exception e) {
-					log.severe("Error unregistering " + n);
+					log.log(Level.SEVERE, "Error unregistering " + n, e);
 					e.printStackTrace();
 				}
 			});
 		}));
 	}
 
-	private void loadSensors() {
-		NodeList nl = doc.getElementsByTagName("sensor");
-		for (int i = 0; i < nl.getLength(); i++) {
-			Element e = (Element) nl.item(i);
-			String klass = e.getElementsByTagName("class").item(0).getTextContent();
-			;
-			String name = e.getElementsByTagName("name").item(0).getTextContent();
-			String propertyFile = e.getElementsByTagName("parameters").item(0).getTextContent();
-			boolean loadNow = Boolean.parseBoolean(e.getAttribute("loadAtStartup"));
-
-			if (sensors.containsKey(name)) {
-				log.severe("A sensor named " + name + " already exists");
-			} else {
-				try {
-					SensorServer ss = (SensorServer) getClass().getClassLoader().loadClass(klass).newInstance();
-					if (!propertyFile.isEmpty())
-						ss.loadParametersFromFile(new File(propertyFile));
-					sensors.put(name, ss);
-					log.info("Caricato sensore " + name);
-					if (loadNow)
-						startSensor(name);
-				} catch (RemoteException | InstantiationException | IllegalAccessException e1) {
-					log.severe(e1.getMessage());
-				} catch (ClassNotFoundException e2) {
-					log.severe("Class not found: " + e2.getMessage());;
-				}
-			}
-		}
-	}
-
 	private String findProvider() {
 		try {
 			return ProviderUtils.findProviderUrl();
 		} catch (IOException e) {
-			log.severe(e.getMessage());
+			log.log(Level.WARNING, "Impossible to locate the provider using multicast", e);
 		}
 
 		stationName = doc.getDocumentElement().getAttribute("name");
@@ -140,34 +111,11 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		return null;
 	}
 
-	private Document parseXml(File xml) {
-		// http://stackoverflow.com/questions/15732/whats-the-best-way-to-validate-an-xml-file-against-an-xsd-file
-		Source xmlFile = new StreamSource(xml);
-		try {
-			SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-			Schema schema = schemaFactory.newSchema(new File("assets/stationSchema.xsd"));
-			schema.newValidator().validate(xmlFile);
-			log.info(xmlFile.getSystemId() + " is valid");
-		} catch (SAXException | IOException e) {
-			log.severe(xmlFile.getSystemId() + " is NOT valid");
-			log.severe("Reason: " + e.getMessage());
-			System.exit(-5);
-		}
-
-		try {
-			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-			Document doc = dBuilder.parse(xml);
-
-			// optional, but recommended
-			// http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
-			doc.getDocumentElement().normalize();
-			return doc;
-		} catch (IOException | SAXException | ParserConfigurationException e) {
-			log.severe("Error parsing xml file: " + xml);
-			System.exit(-6);
-		}
-		return null;
+	@Override
+	public synchronized SensorState getSensorState(String name) throws RemoteException {
+		if (name == null || name.isEmpty() || !sensors.containsKey(name))
+			throw new RemoteException("Name not found");
+		return sensors.get(name).getState();
 	}
 
 	private void initRmi(String providerUrl) {
@@ -196,7 +144,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			System.setProperty("java.rmi.server.codebase",
 					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
 		} catch (SocketException | UnknownHostException e) {
-			log.severe("Unable to retrieve current ip: " + e.getMessage());
+			log.log(Level.SEVERE, "Unable to retrieve current ip", e);
 			System.exit(-7);
 		}
 
@@ -206,7 +154,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			provider = (Provider) Naming.lookup(providerUrl);
 			log.info("Connessione al ProviderRMI completata");
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
-			log.severe("Error finding provider: " + e.getMessage());
+			log.log(Level.SEVERE, "Error finding provider", e);
 			System.exit(-8);
 		}
 
@@ -215,7 +163,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			provider.registerStation(stationName, this);
 			log.info("Registrazione di " + stationName + " al provider completata");
 		} catch (RemoteException e) {
-			log.severe("Unable to register station on provider: " + e.getMessage());
+			log.log(Level.SEVERE, "Unable to register station on provider", e);
 		}
 	}
 
@@ -226,20 +174,74 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		List<String> result = new LinkedList<>();
 		sensors.forEach((name, sensor) -> {
 			try {
-				if (sensor.getState() == state)
+				if (sensor.getState() == state) {
 					result.add(name);
-			} catch (Exception ignore) {
-				log.severe(ignore.getMessage());
+				}
+			} catch (RemoteException e) {
+				log.log(Level.SEVERE, "Impossible to read the state of a sensor", e);
 			}
 		});
 		return result;
 	}
 
-	@Override
-	public synchronized SensorState getSensorState(String name) throws RemoteException {
-		if (name == null || name.isEmpty() || !sensors.containsKey(name))
-			throw new RemoteException("Name not found");
-		return sensors.get(name).getState();
+	private void loadSensors() {
+		NodeList nl = doc.getElementsByTagName("sensor");
+		for (int i = 0; i < nl.getLength(); i++) {
+			Element e = (Element) nl.item(i);
+			String klass = e.getElementsByTagName("class").item(0).getTextContent();
+			;
+			String name = e.getElementsByTagName("name").item(0).getTextContent();
+			String propertyFile = e.getElementsByTagName("parameters").item(0).getTextContent();
+			boolean loadNow = Boolean.parseBoolean(e.getAttribute("loadAtStartup"));
+
+			if (sensors.containsKey(name)) {
+				log.severe("A sensor named " + name + " already exists");
+			} else {
+				try {
+					SensorServer ss = (SensorServer) getClass().getClassLoader().loadClass(klass).newInstance();
+					if (!propertyFile.isEmpty()) {
+						ss.loadParametersFromFile(new File(propertyFile));
+					}
+					sensors.put(name, ss);
+					log.info("Caricato sensore " + name);
+					if (loadNow) {
+						startSensor(name);
+					}
+				} catch (RemoteException | InstantiationException | IllegalAccessException
+						| ClassNotFoundException e1) {
+					log.log(Level.SEVERE, "Error while instantiating a class", e1);
+				}
+			}
+		}
+	}
+
+	private Document parseXml(File xml) {
+		// http://stackoverflow.com/questions/15732/whats-the-best-way-to-validate-an-xml-file-against-an-xsd-file
+		Source xmlFile = new StreamSource(xml);
+		try {
+			SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+			Schema schema = schemaFactory.newSchema(new File("assets/stationSchema.xsd"));
+			schema.newValidator().validate(xmlFile);
+			log.info(xmlFile.getSystemId() + " is valid");
+		} catch (SAXException | IOException e) {
+			log.log(Level.SEVERE, xmlFile.getSystemId() + " is NOT valid", e);
+			System.exit(-5);
+		}
+
+		try {
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(xml);
+
+			// optional, but recommended
+			// http://stackoverflow.com/questions/13786607/normalization-in-dom-parsing-with-java-how-does-it-work
+			doc.getDocumentElement().normalize();
+			return doc;
+		} catch (IOException | SAXException | ParserConfigurationException e) {
+			log.log(Level.SEVERE, "Error parsing xml file: " + xml, e);
+			System.exit(-6);
+		}
+		return null;
 	}
 
 	@Override

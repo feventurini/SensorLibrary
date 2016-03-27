@@ -3,6 +3,7 @@ package sensor.implementations;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
@@ -49,7 +50,6 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
 	public Rfid_SL030() throws RemoteException {
 		queue = new ConcurrentLinkedQueue<>();
-		errorCounter = 0;
 	}
 
 	public String readRfid() throws Exception {
@@ -111,12 +111,11 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			errorCounter = 0; // reset error counter
 			return uid.trim();
 		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-			log.warning("Error: " + e.getMessage());
+			log.log(Level.WARNING, "Error reading from the sensor", e);
 			errorCounter++;
 			if (errorCounter >= errorTreshold) {
 				state = SensorState.FAULT;
-				log.severe("Rfid_SL030 sensor set to state fault because of repeated failure");
+				log.severe("Rfid_SL030 state set to FAULT because of repeated failures");
 				throw e;
 			}
 			return "NO-TAG";
@@ -138,7 +137,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 	@Override
 	public void setUp() throws Exception {
 		super.setUp();
-		
+
 		final GpioController gpio = GpioFactory.getInstance();
 		// provision gpio pin as an input pin with its internal pull
 		// down
@@ -167,7 +166,6 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 								queue.poll().set(rfid);
 							}
 						}
-
 					} catch (Exception e) {
 						queue.poll().raiseException(e);
 						e.printStackTrace();
@@ -176,6 +174,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 				}
 			}
 		});
+		errorCounter = 0;
 		state = SensorState.RUNNING;
 	}
 

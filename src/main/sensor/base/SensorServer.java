@@ -76,15 +76,16 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 				if (properties.containsKey(propertyName)) {
 					try {
 						Class<?> typeToParse = f.getType();
-						if (typeToParse == String.class)
+						if (typeToParse == String.class) {
 							f.set(this, properties.getProperty(propertyName));
-						else
+						} else {
 							f.set(this, typeToParse.getMethod("valueOf", String.class).invoke(null,
 									properties.get(propertyName)));
+						}
 					} catch (InvocationTargetException e) {
 						// probabilemte un problema di parsing dei numeri
 						log.log(Level.SEVERE, "Error while loading the parameter " + propertyName, e);
-					} catch (NoSuchMethodException e) {
+					} catch (NoSuchMethodException ignore) {
 						// non dovrebbe mai avvenire perchè tutti i
 						// campi di SensorParameter.validTypes
 						// hanno il metodo valueOf(String)
@@ -106,7 +107,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 				properties.load(inputStream);
 				inputStream.close();
 			} catch (IOException e) {
-				log.severe("Properties loading from " + propertyFile + " failed");
+				log.log(Level.SEVERE, "Properties loading from " + propertyFile + " failed", e);
 				return;
 			}
 			loadParameters(properties);

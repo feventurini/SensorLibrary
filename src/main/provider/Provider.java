@@ -61,6 +61,8 @@ public interface Provider extends Remote {
 	 */
 	public void register(String location, String name, Sensor sensor) throws RemoteException;
 
+	public void registerStation(String stationName, Station station) throws RemoteException;
+
 	/**
 	 * Unregister a Sensor
 	 *
@@ -72,8 +74,6 @@ public interface Provider extends Remote {
 	 *             if the unregistration was not possible
 	 */
 	public void unregister(String location, String name) throws RemoteException;
-
-	public void registerStation(String stationName, Station station) throws RemoteException;
 
 	public void unregisterStation(String stationName) throws RemoteException;
 

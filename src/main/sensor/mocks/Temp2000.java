@@ -5,6 +5,7 @@ import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import sensor.base.FutureResult;
@@ -40,6 +41,7 @@ public class Temp2000 extends SensorServer implements TempSensor {
 		try {
 			Thread.sleep(r.nextInt(5000) + 1000);
 		} catch (InterruptedException e) {
+			log.log(Level.WARNING, "Sensor interrupted while measuring", e);
 			e.printStackTrace();
 		}
 		log.info("measuring");

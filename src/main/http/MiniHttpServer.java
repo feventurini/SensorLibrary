@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,7 +19,6 @@ import java.util.regex.Pattern;
  * RMI URL Classloader.
  */
 public class MiniHttpServer {
-	private final static Logger log = Logger.getLogger(MiniHttpServer.class.getName());
 	/**
 	 * Lightweight but naive implementation of HTTP 1.1.
 	 */
@@ -59,7 +59,8 @@ public class MiniHttpServer {
 				if (responseData != null) {
 					write("HTTP/1.1 200 OK\r\n\r\n");
 					int b;
-					// TODO migliorare l'efficienza, leggere e scrivere a blocchi
+					// TODO migliorare l'efficienza, leggere e scrivere a
+					// blocchi
 					while ((b = responseData.read()) != -1) {
 						connection.getOutputStream().write(b);
 					}
@@ -72,7 +73,7 @@ public class MiniHttpServer {
 
 				connection.close();
 			} catch (IOException e) {
-				log.info(e.getMessage());
+				log.log(Level.WARNING, "Exception handling a request", e);
 			}
 		}
 
@@ -97,6 +98,8 @@ public class MiniHttpServer {
 		 */
 		InputStream getResponse(String url) throws IOException;
 	}
+
+	private final static Logger log = Logger.getLogger(MiniHttpServer.class.getName());
 
 	public static void main(String[] args) throws IOException {
 		Handler handler = url -> new ByteArrayInputStream(("You requested " + url).getBytes("ISO-8859-1"));
@@ -148,7 +151,7 @@ public class MiniHttpServer {
 					executorService.execute(new ConnectionHandler(serverSocket.accept()));
 				}
 			} catch (IOException e) {
-				log.warning(e.getMessage());
+				log.log(Level.WARNING, "Exception accepting a connection", e);
 			}
 		});
 	}

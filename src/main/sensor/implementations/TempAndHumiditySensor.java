@@ -7,6 +7,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.iot.raspberry.grovepi.devices.GroveTemperatureAndHumiditySensor;
@@ -39,12 +40,10 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 		try {
 			GroveTemperatureAndHumidityValue value = sensor.get();
 			log.info("Measure done: " + value);
-			state = SensorState.RUNNING;
 			return value;
 		} catch (IOException e) {
-			log.severe("A measure failed");
+			log.log(Level.SEVERE, "A measure failed", e);
 			state = SensorState.FAULT;
-			
 			throw new CompletionException(e);
 		}
 	};
@@ -111,7 +110,8 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 				CompletableFuture.supplyAsync(measurer, executor).exceptionally((ex) -> {
 					resultTemp.raiseException((Exception) ex.getCause());
 					return null; // questo valore verrà ignorato
-				}).thenAccept((reading) -> resultTemp.set(reading.getTemperature())).thenRunAsync(invalidator, executor);
+				}).thenAccept((reading) -> resultTemp.set(reading.getTemperature())).thenRunAsync(invalidator,
+						executor);
 			}
 			return resultTemp;
 		}
@@ -124,10 +124,10 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 			sensor = new GroveTemperatureAndHumiditySensor(new GrovePi4J(), 2,
 					GroveTemperatureAndHumiditySensor.Type.DHT11);
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.log(Level.SEVERE, "Error connecting to the sensor", e);
 		}
 		executor = Executors.newFixedThreadPool(1);
-		state = SensorState.RUNNING;		
+		state = SensorState.RUNNING;
 	}
 
 	@Override

@@ -58,8 +58,8 @@ public class TestUser {
 
 		// Impostazione del SecurityManager
 		if (!new File("assets/rmi.policy").canRead()) {
-			System.out.println(
-					"Unable to load security policy, assure that you have rmi.policy in the assets directory");
+			System.out
+					.println("Unable to load security policy, assure that you have rmi.policy in the assets directory");
 			System.exit(-3);
 		}
 		System.setProperty("java.security.policy", "assets/rmi.policy");
@@ -84,14 +84,17 @@ public class TestUser {
 					StringBuilder sb = new StringBuilder();
 					sb.append(interfaccia.getSimpleName()).append("\n");
 					for (Method m : interfaccia.getMethods()) {
-						sb.append("\t").append(m.getReturnType().getSimpleName()).append(" ").append(m.getName()).append("(");
-						if (m.getParameterCount() == 0)
+						sb.append("\t").append(m.getReturnType().getSimpleName()).append(" ").append(m.getName())
+								.append("(");
+						if (m.getParameterCount() == 0) {
 							sb.append(")\n");
-						else
-							for (int i = 0; i < m.getParameterCount(); i++)
+						} else {
+							for (int i = 0; i < m.getParameterCount(); i++) {
 								sb.append(m.getParameterTypes()[i].getSimpleName()).append(" ")
 										.append(m.getParameters()[i].getName())
 										.append(i == m.getParameterCount() - 1 ? ")\n" : ", ");
+							}
+						}
 					}
 					System.out.println(sb.toString());
 				});
