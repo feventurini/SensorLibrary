@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public abstract class SensorServer extends UnicastRemoteObject implements Sensor {
 	private static final long serialVersionUID = 8455786461927369862L;
@@ -113,9 +114,9 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	 * abort the registration of the sensor
 	 */
 	public void setUp() throws Exception {
-		if (!allParametersFilledUp()) 
-			throw new IllegalStateException("Missing parameters: "
-					+ getAllSensorParameterFields().stream().filter((f) -> f == null).toString());
+		if (!allParametersFilledUp())
+			throw new IllegalStateException("Missing parameters: " + getAllSensorParameterFields().stream()
+					.filter((f) -> f == null).map(Field::getName).collect(Collectors.joining(", ")));
 	}
 
 	public synchronized void tearDown() {

@@ -85,7 +85,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 				CompletableFuture.supplyAsync(measurer, executor).exceptionally((ex) -> {
 					resultHumid.raiseException((Exception) ex.getCause());
 					return null; // questo valore verrà ignorato
-				}).thenAccept((temp) -> resultTemp.set(temp.getHumidity())).thenRunAsync(invalidator, executor);
+				}).thenAccept((reading) -> resultTemp.set(reading.getHumidity())).thenRunAsync(invalidator, executor);
 			}
 			return resultHumid;
 		}
@@ -111,7 +111,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 				CompletableFuture.supplyAsync(measurer, executor).exceptionally((ex) -> {
 					resultTemp.raiseException((Exception) ex.getCause());
 					return null; // questo valore verrà ignorato
-				}).thenAccept((temp) -> resultTemp.set(temp.getTemperature())).thenRunAsync(invalidator, executor);
+				}).thenAccept((reading) -> resultTemp.set(reading.getTemperature())).thenRunAsync(invalidator, executor);
 			}
 			return resultTemp;
 		}
@@ -127,16 +127,13 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 			e.printStackTrace();
 		}
 		executor = Executors.newFixedThreadPool(1);
-		state = SensorState.RUNNING;
-		
+		state = SensorState.RUNNING;		
 	}
 
 	@Override
 	public void tearDown() {
 		executor.shutdown();
 		state = SensorState.SHUTDOWN;
-		log.info("Temperature and Humidity sensor stopped");
-
 	}
 
 }
