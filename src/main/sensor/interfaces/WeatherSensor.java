@@ -7,7 +7,7 @@ import sensor.base.FutureResult;
 import sensor.base.Sensor;
 
 public interface WeatherSensor extends Sensor {
-	public class Observation implements Serializable {
+	public class Weather implements Serializable {
 		private static final long serialVersionUID = 1234567890L;
 		public Double temp;
 		public Double feelsLike;
@@ -23,12 +23,12 @@ public interface WeatherSensor extends Sensor {
 		 */
 		@Override
 		public String toString() {
-			return "Observation [temp=" + temp + ", feelsLike=" + feelsLike + ", windSpeed=" + windSpeed
+			return "Weather [temp=" + temp + ", feelsLike=" + feelsLike + ", windSpeed=" + windSpeed
 					+ ", windDegrees=" + windDegrees + ", pressure=" + pressure + ", mmRain=" + mmRain + "]";
 		}
 	}
 
-	public Observation getObservation() throws RemoteException;
+	public Weather getWeather() throws RemoteException;
 
-	public FutureResult<Observation> getObservationAsync() throws RemoteException;
+	public FutureResult<Weather> getWeatherAsync() throws RemoteException;
 }

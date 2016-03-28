@@ -6,10 +6,18 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,12 +35,104 @@ import sensor.base.FutureResultImpl;
 import sensor.base.SensorParameter;
 import sensor.base.SensorServer;
 import sensor.base.SensorState;
+import sensor.interfaces.AstronomySensor;
 import sensor.interfaces.WeatherSensor;
 
-public class Wunderground extends SensorServer implements WeatherSensor {
-	private class WundergroundHandler extends DefaultHandler {
+public class Wunderground extends SensorServer implements WeatherSensor, AstronomySensor {
+	public class AstronomyHandler extends DefaultHandler {
+		private Astronomy observation;
+		private boolean in_moonphase;
+		private boolean in_sunphase;
+		private boolean in_sunset;
+		private boolean in_sunrise;
+		private boolean in_moonset;
+		private boolean in_moonrise;
+		private boolean in_hour;
+		private boolean in_minute;
 
-		private Observation observation;
+		public AstronomyHandler(Astronomy observation) {
+			this.observation = observation;
+			Calendar now = new GregorianCalendar();
+			this.observation.moonrise = now;
+			this.observation.moonset = now;
+			this.observation.sunrise = now;
+			this.observation.sunset = now;
+		}
+
+		@Override
+		public void characters(char[] ch, int start, int length) throws SAXException {
+			// se fallisce o viene saltata la lettura di uno o più campi si va
+			// avanti
+			try {
+				if (in_moonphase && in_moonrise && in_hour) {
+					observation.moonrise.set(Calendar.HOUR_OF_DAY, Integer.parseInt(new String(ch, start, length)));
+				} else if (in_moonphase && in_moonrise && in_minute) {
+					observation.moonrise.set(Calendar.MINUTE, Integer.parseInt(new String(ch, start, length)));
+				} else if (in_moonphase && in_moonset && in_hour) {
+					observation.moonset.set(Calendar.HOUR_OF_DAY, Integer.parseInt(new String(ch, start, length)));
+				} else if (in_moonphase && in_moonset && in_minute) {
+					observation.moonset.set(Calendar.MINUTE, Integer.parseInt(new String(ch, start, length)));
+				} else if (in_sunphase && in_sunrise && in_hour) {
+					observation.sunrise.set(Calendar.HOUR_OF_DAY, Integer.parseInt(new String(ch, start, length)));
+				} else if (in_sunphase && in_sunrise && in_minute) {
+					observation.sunrise.set(Calendar.MINUTE, Integer.parseInt(new String(ch, start, length)));
+				} else if (in_sunphase && in_sunset && in_hour) {
+					observation.sunset.set(Calendar.HOUR_OF_DAY, Integer.parseInt(new String(ch, start, length)));
+				} else if (in_sunphase && in_sunset && in_minute) {
+					observation.sunset.set(Calendar.MINUTE, Integer.parseInt(new String(ch, start, length)));
+				}
+			} catch (NumberFormatException e) {
+				log.log(Level.WARNING, "Failed to parse a value from xml", e);
+			}
+		}
+
+		@Override
+		public void endElement(String uri, String localName, String qName) throws SAXException {
+			if (qName.equals("moonrise")) {
+				in_moonrise = false;
+			} else if (qName.equals("moonset")) {
+				in_moonset = false;
+			} else if (qName.equals("sunrise")) {
+				in_sunrise = false;
+			} else if (qName.equals("sunset")) {
+				in_sunset = false;
+			} else if (qName.equals("sunphase")) {
+				in_sunphase = false;
+			} else if (qName.equals("moonphase")) {
+				in_moonphase = false;
+			} else if (qName.equals("hour")) {
+				in_hour = false;
+			} else if (qName.equals("minute")) {
+				in_minute = false;
+			}
+		}
+
+		@Override
+		public void startElement(String uri, String localName, String qName, Attributes attributes)
+				throws SAXException {
+			if (qName.equals("moonrise")) {
+				in_moonrise = true;
+			} else if (qName.equals("moonset")) {
+				in_moonset = true;
+			} else if (qName.equals("sunrise")) {
+				in_sunrise = true;
+			} else if (qName.equals("sunset")) {
+				in_sunset = true;
+			} else if (qName.equals("sunphase")) {
+				in_sunphase = true;
+			} else if (qName.equals("moonphase")) {
+				in_moonphase = true;
+			} else if (qName.equals("hour")) {
+				in_hour = true;
+			} else if (qName.equals("minute")) {
+				in_minute = true;
+			}
+		}
+	}
+
+	private class WeatherHandler extends DefaultHandler {
+
+		private Weather observation;
 		private boolean in_mmRain;
 		private boolean in_pressure;
 		private boolean in_windDegrees;
@@ -40,7 +140,7 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 		private boolean in_feelsLike;
 		private boolean in_temp_c;
 
-		public WundergroundHandler(Observation observation) {
+		public WeatherHandler(Weather observation) {
 			this.observation = observation;
 		}
 
@@ -107,13 +207,15 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 
 	private final static Logger log = Logger.getLogger(TempAndHumiditySensor.class.getName());
 
-	private FutureResultImpl<Observation> result;
+	private FutureResultImpl<Weather> weather;
+	private FutureResultImpl<Astronomy> astronomy;
 	private ExecutorService executor;
-	private URL url;
-	private int errorCounter;
+	private URL weatherUrl;
+	private URL astronomyUrl;
+	private AtomicInteger errorCounter;
 	private final int errorTreshold = 20;
 
-	@SensorParameter(userDescription = "Amount of seconds after which a new measurement is needed", propertyName = "InvalidateResultAfter")
+	@SensorParameter(userDescription = "Amount of seconds after which a new weather measurement is needed", propertyName = "InvalidateResultAfter")
 	public Long invalidateResultAfter;
 	@SensorParameter(userDescription = "City", propertyName = "City")
 	public String city;
@@ -121,41 +223,74 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 	public String stat;
 	@SensorParameter(userDescription = "API key", propertyName = "Key")
 	public String key;
-	private Supplier<Observation> measurer = () -> {
-		try {
-			Observation observation = new Observation();
 
-			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+	private Supplier<Weather> weatherMeasurer = () -> {
+		try {
+			Weather observation = new Weather();
+
+			HttpURLConnection conn = (HttpURLConnection) weatherUrl.openConnection();
 			int response = conn.getResponseCode();
 			if (response != HttpURLConnection.HTTP_OK)
 				throw new CompletionException(new HttpRetryException("HTTP response code " + response, response));
 
 			SAXParser sax = SAXParserFactory.newInstance().newSAXParser();
-			sax.parse(conn.getInputStream(), new WundergroundHandler(observation));
+			sax.parse(conn.getInputStream(), new WeatherHandler(observation));
 
 			log.info("Weather response: " + observation.toString());
-			errorCounter = 0; // reset error counter
+			errorCounter.set(0); // reset error counter
 			return observation;
 		} catch (ParserConfigurationException | SAXException e1) {
 			log.log(Level.SEVERE, "Parser error", e1);
 			throw new CompletionException(e1);
 		} catch (IOException e2) {
 			log.log(Level.WARNING, "A weather request failed", e2);
-			errorCounter++;
-			if (errorCounter >= errorTreshold) {
+			if (errorCounter.incrementAndGet() >= errorTreshold) {
 				state = SensorState.FAULT;
-				log.severe("Rfid_SL030 state set to FAULT because of repeated failures");
+				log.severe("Wunderground state set to FAULT because of repeated failures");
 			}
 			throw new CompletionException(e2);
 		}
 	};
 
-	private Runnable invalidator = () -> {
+	private Runnable weatherInvalidator = () -> {
 		try {
 			Thread.sleep(invalidateResultAfter * 1000);
 		} catch (InterruptedException ignore) {
 		}
-		result = null;
+		weather = null;
+		log.info("Measure invalidated");
+	};
+
+	private Supplier<Astronomy> astronomyMeasurer = () -> {
+		try {
+			Astronomy observation = new Astronomy();
+
+			HttpURLConnection conn = (HttpURLConnection) astronomyUrl.openConnection();
+			int response = conn.getResponseCode();
+			if (response != HttpURLConnection.HTTP_OK)
+				throw new CompletionException(new HttpRetryException("HTTP response code " + response, response));
+
+			SAXParser sax = SAXParserFactory.newInstance().newSAXParser();
+			sax.parse(conn.getInputStream(), new AstronomyHandler(observation));
+
+			log.info("Weather response: " + observation.toString());
+			errorCounter.set(0); // reset error counter
+			return observation;
+		} catch (ParserConfigurationException | SAXException e1) {
+			log.log(Level.SEVERE, "Parser error", e1);
+			throw new CompletionException(e1);
+		} catch (IOException e2) {
+			log.log(Level.WARNING, "An astronomy request failed", e2);
+			if (errorCounter.incrementAndGet() >= errorTreshold) {
+				state = SensorState.FAULT;
+				log.severe("Wunderground state set to FAULT because of repeated failures");
+			}
+			throw new CompletionException(e2);
+		}
+	};
+
+	private Runnable astronomyInvalidator = () -> {
+		weather = null;
 		log.info("Measure invalidated");
 	};
 
@@ -164,12 +299,12 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 	}
 
 	@Override
-	public Observation getObservation() throws RemoteException {
-		return getObservationAsync().get();
+	public synchronized Astronomy getAstronomy() throws RemoteException {
+		return getAstronomyAsync().get();
 	}
 
 	@Override
-	public FutureResult<Observation> getObservationAsync() throws RemoteException {
+	public synchronized FutureResult<Astronomy> getAstronomyAsync() throws RemoteException {
 		// if a measure is already running, return the same FutureResult to
 		// everyone requesting, it will be updated as soon as the measure ends
 		switch (state) {
@@ -178,14 +313,40 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 		case SHUTDOWN:
 			throw new IllegalStateException("Sensor shutdown");
 		default:
-			if (result == null) {
-				result = new FutureResultImpl<>();
-				CompletableFuture.supplyAsync(measurer, executor).exceptionally((ex) -> {
-					result.raiseException((Exception) ex.getCause());
+			if (astronomy == null) {
+				astronomy = new FutureResultImpl<>();
+				CompletableFuture.supplyAsync(astronomyMeasurer, executor).exceptionally((ex) -> {
+					astronomy.raiseException((Exception) ex.getCause());
 					return null; // questo valore verrà ignorato
-				}).thenAccept(result::set).thenRunAsync(invalidator, executor);
+				}).thenAccept(astronomy::set);
 			}
-			return result;
+			return astronomy;
+		}
+	}
+
+	@Override
+	public synchronized Weather getWeather() throws RemoteException {
+		return getWeatherAsync().get();
+	}
+
+	@Override
+	public synchronized FutureResult<Weather> getWeatherAsync() throws RemoteException {
+		// if a measure is already running, return the same FutureResult to
+		// everyone requesting, it will be updated as soon as the measure ends
+		switch (state) {
+		case FAULT:
+			throw new IllegalStateException("Sensor fault");
+		case SHUTDOWN:
+			throw new IllegalStateException("Sensor shutdown");
+		default:
+			if (weather == null) {
+				weather = new FutureResultImpl<>();
+				CompletableFuture.supplyAsync(weatherMeasurer, executor).exceptionally((ex) -> {
+					weather.raiseException((Exception) ex.getCause());
+					return null; // questo valore verrà ignorato
+				}).thenAccept(weather::set).thenRunAsync(weatherInvalidator, executor);
+			}
+			return weather;
 		}
 	}
 
@@ -193,12 +354,24 @@ public class Wunderground extends SensorServer implements WeatherSensor {
 	public void setUp() throws Exception {
 		super.setUp();
 		try {
-			url = new URL("http://api.wunderground.com/api/" + key + "/conditions/q/" + stat + "/" + city + ".xml");
+			weatherUrl = new URL(
+					"http://api.wunderground.com/api/" + key + "/conditions/q/" + stat + "/" + city + ".xml");
+			astronomyUrl = new URL(
+					"http://api.wunderground.com/api/" + key + "/astronomy/q/" + stat + "/" + city + ".xml");
 		} catch (MalformedURLException ignore) {
 		}
-		errorCounter = 0;
-		result = null;
-		executor = Executors.newFixedThreadPool(1);
+		errorCounter = new AtomicInteger();
+		weather = null;
+		executor = Executors.newFixedThreadPool(2);
+
+		LocalTime midnight = LocalTime.MIDNIGHT;
+		LocalDate today = LocalDate.now();
+		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime tomorrow_00_00 = LocalDateTime.of(today, midnight).plusDays(1);
+
+		int oneDay = 24 * 60 * 60;
+		Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(astronomyInvalidator,
+				now.until(tomorrow_00_00, ChronoUnit.SECONDS), oneDay, TimeUnit.SECONDS);
 		state = SensorState.RUNNING;
 	}
 
