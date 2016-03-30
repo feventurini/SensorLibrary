@@ -28,13 +28,10 @@ tar -cf dependencies.tar ../dependency
 BASE_DIR=sensorlibraryprovider
 echo ""
 echo "Copying provider files to $PROVIDER/$BASE_DIR"
-tar -cf provider.tar --files-from provider.txt
-ssh $PROVIDER "rm -r $BASE_DIR || mkdir $BASE_DIR"
-scp -p provider.tar $PROVIDER:$BASE_DIR
-ssh $PROVIDER "cd $BASE_DIR && tar -xf provider.tar"
-scp -p dependencies.tar $PROVIDER:$BASE_DIR
-ssh $PROVIDER "cd $BASE_DIR && tar -xf dependencies.tar"
-rm provider.tar
+ssh $PROVIDER "rm -r $BASE_DIR"
+ssh $PROVIDER "mkdir $BASE_DIR"
+tar cf - --files-from provider.txt | ssh $PROVIDER "cd $BASE_DIR && tar xf -" 
+ssh $PROVIDER "cd $BASE_DIR && tar -xf -" < dependencies.tar
 
 # Stations need these resources:
 # - http
@@ -48,13 +45,10 @@ rm provider.tar
 BASE_DIR=sensorlibrarystation
 echo ""
 echo "Copying station files to $STATION/$BASE_DIR"
-tar -cf station.tar --files-from station.txt
-ssh $STATION "rm -r $BASE_DIR || mkdir $BASE_DIR"
-scp -p station.tar $STATION:$BASE_DIR
-ssh $STATION "cd $BASE_DIR && tar -xf station.tar"
-scp -p dependencies.tar $STATION:$BASE_DIR
-ssh $STATION "cd $BASE_DIR && tar -xf dependencies.tar"
-rm station.tar
+ssh $STATION "rm -r $BASE_DIR" 
+ssh $STATION "mkdir $BASE_DIR"
+tar cf - --files-from station.txt | ssh $STATION "cd $BASE_DIR && tar xf -" 
+ssh $STATION "cd $BASE_DIR && tar -xf -" < dependencies.tar
 
 # Clients need these resources:
 # - http
@@ -68,10 +62,6 @@ rm station.tar
 BASE_DIR=sensorlibraryclient
 echo ""
 echo "Copying client files to $CLIENT/$BASE_DIR"
-tar -cf client.tar --files-from client.txt
 ssh $CLIENT "rm -r $BASE_DIR || mkdir $BASE_DIR"
-scp -p client.tar $CLIENT:$BASE_DIR
-ssh $CLIENT "cd $BASE_DIR && tar -xf client.tar"
-scp -p dependencies.tar $CLIENT:$BASE_DIR
-ssh $CLIENT "cd $BASE_DIR && tar -xf dependencies.tar"
-rm client.tar
+tar cf - --files-from client.txt | ssh $CLIENT "cd $BASE_DIR && tar xf -" 
+ssh $CLIENT "cd $BASE_DIR && tar -xf -" < dependencies.tar
