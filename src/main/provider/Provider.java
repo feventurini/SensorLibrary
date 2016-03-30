@@ -8,17 +8,12 @@ import sensor.base.Sensor;
 import station.Station;
 
 /**
- * The public interface of a Provider. Contains methods to build the provider
- * rmi url from its hostname (and port), to find the provider over the network
- * using datagram packets sent to a multicast group. Moreover defines the public
+ * The public interface of a Provider. Defines the public
  * services that the provider offers: finding a sensor given its name and
  * position, finding all the sensors matching a given name or location,
  * registering and unregistering a sensor.
  */
 public interface Provider extends Remote {
-	public static final String PROVIDER_NAME = "ProviderRMI";
-	public static final int PROVIDER_PORT = 1099;
-
 	/**
 	 * If possible finds the sensor registered with the name and location
 	 * provided
@@ -29,9 +24,21 @@ public interface Provider extends Remote {
 	 *            the name
 	 * @return a remote reference to the sensor
 	 * @throws RemoteException
-	 *             if the sensor were not found
+	 *             if the sensor was not found
 	 */
 	public Sensor find(String location, String name) throws RemoteException;
+	
+	/**
+	 * If possible finds the station registered on the location
+	 * provided
+	 *
+	 * @param location
+	 *            the location
+	 * @return a remote reference to the station
+	 * @throws RemoteException
+	 *             if the station was not found
+	 */
+	public Station findStation(String location) throws RemoteException;
 
 	/**
 	 * If possible finds the all the sensors registered with the name and

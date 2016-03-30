@@ -17,6 +17,11 @@ import java.util.logging.Logger;
 
 import http.IpUtils;
 
+/**
+ * Contains methods to build the provider rmi url from its hostname (and port),
+ * to find the provider over the network using datagram packets sent to a
+ * multicast group.
+ */
 public class ProviderUtils {
 	private static final Logger log = Logger.getLogger(ProviderUtils.class.getName());
 
@@ -38,7 +43,7 @@ public class ProviderUtils {
 	 * @return the provider url
 	 */
 	public static String buildProviderUrl(String host, int port) {
-		return "rmi://" + host + ":" + port + "/" + Provider.PROVIDER_NAME;
+		return "rmi://" + host + ":" + port + "/" + ProviderUtils.PROVIDER_NAME;
 	}
 
 	/**
@@ -102,5 +107,8 @@ public class ProviderUtils {
 		ds.close();
 		return buildProviderUrl(providerHost.getHostAddress(), providerPort);
 	}
+
+	public static final String PROVIDER_NAME = "ProviderRMI";
+	public static final int PROVIDER_PORT = 1099;
 
 }

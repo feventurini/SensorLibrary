@@ -178,9 +178,9 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			String completeName = ProviderUtils.buildProviderUrl(registryHost, registryPort);
 			ProviderRMI serverRMI = new ProviderRMI();
 			Naming.rebind(completeName, serverRMI);
-			log.info(PROVIDER_NAME + " registered on the rmiregistry");
+			log.info(ProviderUtils.PROVIDER_NAME + " registered on the rmiregistry");
 		} catch (RemoteException | MalformedURLException e) {
-			log.log(Level.SEVERE, "Unbale to register the provider", e);
+			log.log(Level.SEVERE, "Unable to register the provider", e);
 			System.exit(3);
 		}
 
