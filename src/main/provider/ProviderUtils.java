@@ -65,7 +65,7 @@ public class ProviderUtils {
 		// datagram socket to receive a response
 		InetAddress localaddress = IpUtils.getCurrentIp();
 		DatagramSocket ds = new DatagramSocket();
-		ds.setSoTimeout(5000);
+		ds.setSoTimeout(30000);
 
 		// request containing the local address
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();

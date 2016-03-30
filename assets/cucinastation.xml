@@ -8,7 +8,7 @@
 	<sensor loadAtStartup="true">
 		<name>rfidFrigo</name>
 		<class>sensor.implementations.Rfid_SL030</class>
-		<parameters>assets/rfid.properties</parameters>
+		<parameters>assets/Rfid_SL030.properties</parameters>
 	</sensor>
 	<sensor loadAtStartup="true">
 		<name>tempAmbiente</name>

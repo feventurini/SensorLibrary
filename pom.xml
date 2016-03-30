@@ -10,7 +10,8 @@
 		<testOutputDirectory>target/test-classes</testOutputDirectory>
 		<resources>
 			<resource>
-				<directory>/home/federico/git/SensorLibrary/assets</directory>
+				<directory>assets</directory>
+				<targetPath>assets</targetPath>
 			</resource>
 		</resources>
 		<plugins>
