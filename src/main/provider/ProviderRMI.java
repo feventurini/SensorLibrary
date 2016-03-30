@@ -297,4 +297,15 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 		log.info("Unregistered station: " + stationName);
 	}
+
+	@Override
+	public synchronized Station findStation(String location) throws RemoteException {
+		if (location == null || location.isEmpty())
+			throw new RemoteException("Argument error");
+		Station station = stationMap.get(location);
+		if (station == null)
+			throw new RemoteException("Station " + location + " not found");
+		log.info("Requested station: " + location);
+		return station;
+	}
 }
