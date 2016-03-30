@@ -11,7 +11,8 @@ import sensor.base.SensorState;
 public interface Station extends Remote {
 	/**
 	 * Returns the state of the sensor identified by the name passed as
-	 * parameter
+	 * parameter. The sensor must be known by this station, but it is not
+	 * relevant if it is registered on the provider or not.
 	 *
 	 * @param name
 	 * @return the state of the sensor
