@@ -43,7 +43,7 @@ public class ProviderRMITest {
 		}
 		sensorIds.stream().forEach((name) -> {
 			try {
-				p.register("mocklocation", name, Mockito.mock(Sensor.class));
+				p.register(name, "mocklocation", Mockito.mock(Sensor.class));
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

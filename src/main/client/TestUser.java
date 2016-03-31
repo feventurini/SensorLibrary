@@ -102,8 +102,8 @@ public class TestUser {
 
 	public void provaRfid() throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
 		// Ricerca e uso del sensore
-		RfidSensor t = (RfidSensor) p.find("cucina", "rfidFrigo");
-		RgbLcdDisplay d = (RgbLcdDisplay) p.find("cucina", "display");
+		RfidSensor t = (RfidSensor) p.find("rfidFrigo", "cucina");
+		RgbLcdDisplay d = (RgbLcdDisplay) p.find("display", "cucina");
 		System.out.println("Trovato sensore, inizio misure");
 
 		String tag = t.readTag();
@@ -145,8 +145,8 @@ public class TestUser {
 
 	public void provaTemp() throws Exception {
 		// Ricerca e uso del sensore
-		TempSensor t = (TempSensor) p.find("cucina", "tempAmbiente");
-		RgbLcdDisplay d = (RgbLcdDisplay) p.find("cucina", "display");
+		TempSensor t = (TempSensor) p.find("tempAmbiente", "cucina");
+		RgbLcdDisplay d = (RgbLcdDisplay) p.find("display", "cucina");
 		System.out.println("Trovato sensore, inizio misure");
 
 		double temp;

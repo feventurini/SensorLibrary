@@ -1,17 +1,8 @@
 
 package provider;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
@@ -20,8 +11,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RMIClassLoader;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,78 +24,13 @@ import sensor.base.Sensor;
 import station.Station;
 
 public class ProviderRMI extends UnicastRemoteObject implements Provider {
-	/**
-	 * Thread che attiva un servizio di discovery del provider in multicast.
-	 *
-	 * Sfrutta due porte Datagram, una multicast (indirizzo 230.0.0.1 porta
-	 * 5000) e una datagram, la prima per ricevere le richieste di discovery dai
-	 * clienti e la seconda per inviare le risposte ai singoli.<br>
-	 * Le richieste devono rappresentare l'indirizzo ip e la porta a cui inviare
-	 * la risposta nel formato stringa + intero. Le risposte contengono
-	 * indirizzo ip + porta del provider nello stesso formato.
-	 */
-	public static class MulticastProvider extends Thread {
-		private String currentHostname;
-		private int registryPort;
 
-		public MulticastProvider(String currentHostname, int registryPort) {
-			this.currentHostname = currentHostname;
-			this.registryPort = registryPort;
-		}
+	private static String createId(String name, String location) {
+		return name + "@" + location;
+	}
 
-		@Override
-		public void run() {
-			InetAddress group;
-			int port;
-			MulticastSocket ms;
-			DatagramSocket ds;
-			DatagramPacket response;
-			DatagramPacket request;
-			byte[] responsePayload = null;
-
-			// setup
-			try {
-				// multicast socket to receive requests
-				group = InetAddress.getByName("230.0.0.1");
-				port = 5000;
-				ms = new MulticastSocket(port);
-				ms.joinGroup(group);
-				// datagram socket to send responses
-				ds = new DatagramSocket();
-				// preparing the response with provider ip + provide port
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				DataOutputStream dos = new DataOutputStream(baos);
-				dos.writeUTF(currentHostname);
-				dos.writeInt(registryPort);
-				responsePayload = baos.toByteArray();
-				dos.close();
-				baos.close();
-				log.info("MulticastDiscoveryServer started on " + group.getHostAddress() + ":" + port + ", will send "
-						+ currentHostname + ":" + registryPort);
-			} catch (IOException e) {
-				log.log(Level.WARNING, "MulticastDiscoveryServer not started", e);
-				return;
-			}
-
-			while (true) {
-				try {
-					request = new DatagramPacket(new byte[20], 20);
-					ms.receive(request);
-					// reading requestor address
-					ByteArrayInputStream bias = new ByteArrayInputStream(request.getData());
-					DataInputStream dis = new DataInputStream(bias);
-					InetAddress requestor = InetAddress.getByName(dis.readUTF());
-					int requestorPort = dis.readInt();
-					dis.close();
-					bias.close();
-					// sending response
-					response = new DatagramPacket(responsePayload, responsePayload.length, requestor, requestorPort);
-					ds.send(response);
-				} catch (IOException e) {
-					log.log(Level.WARNING, "Error during broadcast", e);
-				}
-			}
-		}
+	private static String[] splitId(String id) {
+		return new String[] { id.substring(0, id.indexOf('@')), id.substring(id.indexOf('@')) };
 	}
 
 	private static final Logger log = Logger.getLogger(ProviderRMI.class.getName());
@@ -197,10 +121,10 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized Sensor find(String location, String name) throws RemoteException {
+	public synchronized Sensor find(String name, String location) throws RemoteException {
 		if (location == null || name == null || location.isEmpty() || name.isEmpty())
 			throw new RemoteException("Argument error");
-		String fullName = name + "@" + location;
+		String fullName = createId(name, location);
 		Sensor sensor = sensorMap.get(fullName);
 		if (sensor == null)
 			throw new RemoteException("Sensor " + fullName + " not found");
@@ -209,51 +133,33 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	/**
-	 * @param location
-	 *            or "" for any location
 	 * @param name
+	 *            or "" for any location
+	 * @param location
 	 *            or "" for any location
 	 * @return
 	 * @throws RemoteException
 	 */
 	@Override
-	public synchronized List<Sensor> findAll(String location, String name) throws RemoteException {
-		if (location == null || name == null)
-			throw new RemoteException("Argument error");
-
-		List<Sensor> result = new LinkedList<Sensor>();
-		if (!location.isEmpty() && !name.isEmpty()) {
-			String fullName = name + "@" + location;
-			sensorMap.forEach((n, s) -> {
-				if (n.equals(fullName)) {
-					result.add(s);
-				}
-			});
-		} else if (!location.isEmpty()) {
-			sensorMap.forEach((n, s) -> {
-				if (n.substring(n.indexOf('@')).equals(location)) {
-					result.add(s);
-				}
-			});
-		} else if (!name.isEmpty()) {
-			sensorMap.forEach((n, s) -> {
-				if (n.substring(n.indexOf('@')).equals(location)) {
-					result.add(s);
-				}
-			});
-		} else {
-			result.addAll(sensorMap.values());
-		}
+	public synchronized Map<String, Sensor> findAll(String name, String location, Class<? extends Sensor> type)
+			throws RemoteException {
+		Map<String, Sensor> result = new HashMap<>();
+		sensorMap.forEach((fullname, sensor) -> {
+			String[] id = splitId(fullname);
+			if ((name == null || id[0].equals(name)) 
+					&& (location == null || id[1].equals(location))
+					&& (type == null || type.isAssignableFrom(sensor.getClass())))
+				result.put(fullname, sensor);
+		});
 		return result;
 	}
 
 	@Override
-	public synchronized void register(String location, String name, Sensor sensor) throws RemoteException {
-		if (location == null || name == null || sensor == null || location.isEmpty() || name.isEmpty()
-				|| name.indexOf('@') != -1)
+	public synchronized void register(String name, String location, Sensor sensor) throws RemoteException {
+		if (location == null || name == null || sensor == null || location.isEmpty() || name.isEmpty())
 			throw new RemoteException("Argument error");
 
-		String fullName = name + "@" + location;
+		String fullName = createId(name, location);
 		if (sensorMap.containsKey(fullName))
 			throw new RemoteException("Sensor " + fullName + " already registered");
 		sensorMap.put(fullName, sensor);
@@ -278,11 +184,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized void unregister(String location, String name) throws RemoteException {
-		if (location == null || name == null || location.isEmpty() || name.isEmpty() || name.indexOf('@') != -1)
+	public synchronized void unregister(String name, String location) throws RemoteException {
+		if (location == null || name == null || location.isEmpty() || name.isEmpty())
 			throw new RemoteException("Argument error");
 
-		String fullName = name + "@" + location;
+		String fullName = createId(name, location);
 		sensorMap.remove(fullName);
 		log.info("Unregistered: " + fullName);
 	}

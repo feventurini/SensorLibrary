@@ -82,7 +82,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			sensors.forEach((n, s) -> {
 				try {
 					s.tearDown();
-					provider.unregister(stationName, n);
+					provider.unregister(n, stationName);
 				} catch (Exception e) {
 					log.log(Level.SEVERE, "Error unregistering " + n, e);
 					e.printStackTrace();
@@ -259,7 +259,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 				s.tearDown();
 				throw new RemoteException(e.getMessage(), e);
 			}
-			provider.register(stationName, name, s);
+			provider.register(name, stationName, s);
 			log.info("Registrato sensore " + name);
 			break;
 		default:
@@ -273,6 +273,6 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			throw new RemoteException("Name not found");
 
 		sensors.get(name).tearDown();
-		provider.unregister(stationName, name);
+		provider.unregister(name, stationName);
 	}
 }

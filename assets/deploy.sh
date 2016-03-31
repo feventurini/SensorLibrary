@@ -17,7 +17,7 @@ CLIENT=$CLIENT_NAME@$CLIENT_HOST
 
 tar -cf dependencies.tar ../dependency
 
-# Provider needs these resources:
+# Provider needs these resources: TO BE UPDATED
 # - http
 # - provider
 # - sensor/Sensor.class
@@ -30,10 +30,10 @@ echo ""
 echo "Copying provider files to $PROVIDER/$BASE_DIR"
 ssh $PROVIDER "rm -r $BASE_DIR"
 ssh $PROVIDER "mkdir $BASE_DIR"
-tar cf - --files-from provider.txt | ssh $PROVIDER "cd $BASE_DIR && tar xf -" 
-ssh $PROVIDER "cd $BASE_DIR && tar -xf -" < dependencies.tar
+tar c --files-from provider.txt | ssh $PROVIDER "tar x -C $BASE_DIR"
+ssh $PROVIDER "tar -x -C $BASE_DIR" < dependencies.tar
 
-# Stations need these resources:
+# Stations need these resources: TO BE UPDATED
 # - http
 # - provider/Provider.class
 # - sensor
@@ -44,13 +44,13 @@ ssh $PROVIDER "cd $BASE_DIR && tar -xf -" < dependencies.tar
 
 BASE_DIR=sensorlibrarystation
 echo ""
-echo "Copying station files to $STATION/$BASE_DIR"
+echo "Copying station files to $STATION/$BASE_DIR" 
 ssh $STATION "rm -r $BASE_DIR" 
 ssh $STATION "mkdir $BASE_DIR"
-tar cf - --files-from station.txt | ssh $STATION "cd $BASE_DIR && tar xf -" 
-ssh $STATION "cd $BASE_DIR && tar -xf -" < dependencies.tar
+tar c --files-from station.txt | ssh $STATION "tar x -C $BASE_DIR"
+ssh $STATION "tar -x -C $BASE_DIR" < dependencies.tar
 
-# Clients need these resources:
+# Clients need these resources: TO BE UPDATED
 # - http
 # - client
 # - provider/Provider.class
@@ -63,5 +63,5 @@ BASE_DIR=sensorlibraryclient
 echo ""
 echo "Copying client files to $CLIENT/$BASE_DIR"
 ssh $CLIENT "rm -r $BASE_DIR || mkdir $BASE_DIR"
-tar cf - --files-from client.txt | ssh $CLIENT "cd $BASE_DIR && tar xf -" 
-ssh $CLIENT "cd $BASE_DIR && tar -xf -" < dependencies.tar
+tar c --files-from client.txt | ssh $CLIENT "tar x -C $BASE_DIR"
+ssh $CLIENT "tar -x -C $BASE_DIR" < dependencies.tar
