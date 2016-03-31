@@ -1,4 +1,3 @@
-
 package provider;
 
 import java.io.File;
@@ -24,15 +23,6 @@ import sensor.base.Sensor;
 import station.Station;
 
 public class ProviderRMI extends UnicastRemoteObject implements Provider {
-
-	private static String createId(String name, String location) {
-		return name + "@" + location;
-	}
-
-	private static String[] splitId(String id) {
-		return new String[] { id.substring(0, id.indexOf('@')), id.substring(id.indexOf('@')) };
-	}
-
 	private static final Logger log = Logger.getLogger(ProviderRMI.class.getName());
 
 	private static final long serialVersionUID = -299631912733255270L;
@@ -111,7 +101,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		new MulticastProvider(currentHostname, registryPort).start();
 	}
 
-	private final Map<String, Sensor> sensorMap;
+	private final Map<SensorId, Sensor> sensorMap;
 	private final Map<String, Station> stationMap;
 
 	private ProviderRMI() throws RemoteException {
@@ -121,10 +111,9 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized Sensor find(String name, String location) throws RemoteException {
-		if (location == null || name == null || location.isEmpty() || name.isEmpty())
+	public synchronized Sensor find(SensorId fullName) throws RemoteException {
+		if (fullName == null)
 			throw new RemoteException("Argument error");
-		String fullName = createId(name, location);
 		Sensor sensor = sensorMap.get(fullName);
 		if (sensor == null)
 			throw new RemoteException("Sensor " + fullName + " not found");
@@ -132,17 +121,12 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		return sensor;
 	}
 
-	// TODO Attenzione che ovunque tranne qui i nomi logici dei sensori nella
-	// forma nome@location non escono fuori dal provider, cioè nessuno sa che
-	// formato usiamo internamente, però questo metodo lo fa uscire all'esterno
-	// -> male
 	@Override
-	public synchronized Map<String, Sensor> findAll(String name, String location, Class<? extends Sensor> type)
+	public synchronized Map<SensorId, Sensor> findAll(String name, String location, Class<? extends Sensor> type)
 			throws RemoteException {
-		Map<String, Sensor> result = new HashMap<>();
+		Map<SensorId, Sensor> result = new HashMap<>();
 		sensorMap.forEach((fullname, sensor) -> {
-			String[] id = splitId(fullname);
-			if ((name == null || id[0].equals(name)) && (location == null || id[1].equals(location))
+			if ((name == null || fullname.name.equals(name)) && (location == null || fullname.location.equals(location))
 					&& (type == null || type.isAssignableFrom(sensor.getClass())))
 				result.put(fullname, sensor);
 		});
@@ -150,11 +134,10 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized void register(String name, String location, Sensor sensor) throws RemoteException {
-		if (location == null || name == null || sensor == null || location.isEmpty() || name.isEmpty())
+	public synchronized void register(SensorId fullName, Sensor sensor) throws RemoteException {
+		if (fullName == null || sensor == null)
 			throw new RemoteException("Argument error");
 
-		String fullName = createId(name, location);
 		if (sensorMap.containsKey(fullName))
 			throw new RemoteException("Sensor " + fullName + " already registered");
 		sensorMap.put(fullName, sensor);
@@ -179,11 +162,10 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized void unregister(String name, String location) throws RemoteException {
-		if (location == null || name == null || location.isEmpty() || name.isEmpty())
+	public synchronized void unregister(SensorId fullName) throws RemoteException {
+		if (fullName == null)
 			throw new RemoteException("Argument error");
 
-		String fullName = createId(name, location);
 		sensorMap.remove(fullName);
 		log.info("Unregistered: " + fullName);
 	}

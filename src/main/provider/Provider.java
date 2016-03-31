@@ -27,7 +27,7 @@ public interface Provider extends Remote {
 	 * @throws RemoteException
 	 *             if the sensor was not found
 	 */
-	public Sensor find(String name, String location) throws RemoteException;
+	public Sensor find(SensorId fullName) throws RemoteException;
 
 	/**
 	 * If possible finds the station registered on the location provided
@@ -54,7 +54,7 @@ public interface Provider extends Remote {
 	 *         length
 	 * @throws RemoteException
 	 */
-	public Map<String, Sensor> findAll(String name, String location, Class<? extends Sensor> type) throws RemoteException;
+	public Map<SensorId, Sensor> findAll(String name, String location, Class<? extends Sensor> type) throws RemoteException;
 
 	/**
 	 * Register a new Sensor
@@ -69,7 +69,7 @@ public interface Provider extends Remote {
 	 * @throws RemoteException
 	 *             if the registration was not possible
 	 */
-	public void register(String name, String location, Sensor sensor) throws RemoteException;
+	public void register(SensorId fullName, Sensor sensor) throws RemoteException;
 
 	public void registerStation(String stationName, Station station) throws RemoteException;
 
@@ -84,7 +84,7 @@ public interface Provider extends Remote {
 	 * @throws RemoteException
 	 *             if the unregistration was not possible
 	 */
-	public void unregister(String name, String location) throws RemoteException;
+	public void unregister(SensorId fullName) throws RemoteException;
 
 	public void unregisterStation(String stationName) throws RemoteException;
 

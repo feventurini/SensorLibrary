@@ -34,6 +34,7 @@ import http.RmiClassServer;
 import logging.Logs;
 import provider.Provider;
 import provider.ProviderUtils;
+import provider.SensorId;
 import sensor.base.SensorServer;
 import sensor.base.SensorState;
 
@@ -82,7 +83,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			sensors.forEach((n, s) -> {
 				try {
 					s.tearDown();
-					provider.unregister(n, stationName);
+					provider.unregister(new SensorId(n, stationName));
 				} catch (Exception e) {
 					log.log(Level.SEVERE, "Error unregistering " + n, e);
 					e.printStackTrace();
@@ -259,7 +260,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 				s.tearDown();
 				throw new RemoteException(e.getMessage(), e);
 			}
-			provider.register(name, stationName, s);
+			provider.register(new SensorId(name, stationName), s);
 			log.info("Registrato sensore " + name);
 			break;
 		default:
@@ -273,6 +274,6 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			throw new RemoteException("Name not found");
 
 		sensors.get(name).tearDown();
-		provider.unregister(name, stationName);
+		provider.unregister(new SensorId(name, stationName));
 	}
 }

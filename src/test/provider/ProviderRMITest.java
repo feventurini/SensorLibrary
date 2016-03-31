@@ -16,7 +16,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import sensor.base.Sensor;
-import sensor.base.SensorServer;
 
 public class ProviderRMITest {
 
@@ -43,7 +42,7 @@ public class ProviderRMITest {
 		}
 		sensorIds.stream().forEach((name) -> {
 			try {
-				p.register(name, "mocklocation", Mockito.mock(Sensor.class));
+				p.register(new SensorId(name, "mocklocation"), Mockito.mock(Sensor.class));
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
