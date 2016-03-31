@@ -132,22 +132,17 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		return sensor;
 	}
 
-	/**
-	 * @param name
-	 *            or "" for any location
-	 * @param location
-	 *            or "" for any location
-	 * @return
-	 * @throws RemoteException
-	 */
+	// TODO Attenzione che ovunque tranne qui i nomi logici dei sensori nella
+	// forma nome@location non escono fuori dal provider, cioè nessuno sa che
+	// formato usiamo internamente, però questo metodo lo fa uscire all'esterno
+	// -> male
 	@Override
 	public synchronized Map<String, Sensor> findAll(String name, String location, Class<? extends Sensor> type)
 			throws RemoteException {
 		Map<String, Sensor> result = new HashMap<>();
 		sensorMap.forEach((fullname, sensor) -> {
 			String[] id = splitId(fullname);
-			if ((name == null || id[0].equals(name)) 
-					&& (location == null || id[1].equals(location))
+			if ((name == null || id[0].equals(name)) && (location == null || id[1].equals(location))
 					&& (type == null || type.isAssignableFrom(sensor.getClass())))
 				result.put(fullname, sensor);
 		});
