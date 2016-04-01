@@ -35,6 +35,7 @@ import logging.Logs;
 import provider.Provider;
 import provider.ProviderUtils;
 import provider.SensorId;
+import sensor.base.FaultListener;
 import sensor.base.SensorServer;
 import sensor.base.SensorState;
 
@@ -135,7 +136,8 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		try {
 			currentHostname = IpUtils.getCurrentIp().getHostAddress();
 			log.info("currentHostName: " + currentHostname);
-			// Avvia un server http affinchÃ¨ altri possano scaricare gli stub di
+			// Avvia un server http affinchÃ¨ altri possano scaricare gli stub
+			// di
 			// questa classe
 			// da questo codebase in maniera dinamica quando serve
 			// (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
@@ -261,6 +263,18 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 				throw new RemoteException(e.getMessage(), e);
 			}
 			provider.register(new SensorId(name, stationName), s);
+			// TODO mi sa che a fare così se ne aggiunge uno ogni volta che
+			// startiamo il sensore, perchè non rimuviamo nulla mai
+			s.addListener(new FaultListener() {
+				@Override
+				public void onFault() {
+					try {
+						stopSensor(name);
+					} catch (RemoteException e) {
+						log.log(Level.SEVERE, "Unable to stop sensor" + name, e);
+					}
+				}
+			});
 			log.info("Registrato sensore " + name);
 			break;
 		default:

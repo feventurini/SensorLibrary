@@ -43,7 +43,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 			return value;
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "A measure failed", e);
-			state = SensorState.FAULT;
+			setState(SensorState.FAULT);
 			throw new CompletionException(e);
 		}
 	};
@@ -73,7 +73,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 	public FutureResult<Double> readHumidityAsync() throws RemoteException {
 		// if a measure is already running, return the same FutureResult to
 		// everyone requesting, it will be updated as soon as the measure ends
-		switch (state) {
+		switch (getState()) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -99,7 +99,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 	public synchronized FutureResult<Double> readTemperatureAsync(Unit unit) throws RemoteException {
 		// if a measure is already running, return the same FutureResult to
 		// everyone requesting, it will be updated as soon as the measure ends
-		switch (state) {
+		switch (getState()) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -127,13 +127,13 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 			log.log(Level.SEVERE, "Error connecting to the sensor", e);
 		}
 		executor = Executors.newFixedThreadPool(1);
-		state = SensorState.RUNNING;
+		setState(SensorState.RUNNING);
 	}
 
 	@Override
 	public void tearDown() {
 		executor.shutdown();
-		state = SensorState.SHUTDOWN;
+		setState(SensorState.SHUTDOWN);
 	}
 
 }

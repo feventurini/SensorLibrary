@@ -54,7 +54,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 
 	public String readRfid() throws Exception {
 
-		switch (state) {
+		switch (getState()) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -114,7 +114,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			log.log(Level.WARNING, "Error reading from the sensor", e);
 			errorCounter++;
 			if (errorCounter >= errorTreshold) {
-				state = SensorState.FAULT;
+				setState(SensorState.FAULT);
 				log.severe("Rfid_SL030 state set to FAULT because of repeated failures");
 				throw e;
 			}
@@ -175,7 +175,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			}
 		});
 		errorCounter = 0;
-		state = SensorState.RUNNING;
+		setState(SensorState.RUNNING);
 	}
 
 	@Override

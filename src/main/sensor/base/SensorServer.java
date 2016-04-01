@@ -10,6 +10,8 @@ import java.lang.reflect.Modifier;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
@@ -21,11 +23,14 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 
 	private final static Logger log = Logger.getLogger(SensorServer.class.getName());
 
-	protected SensorState state;
+	private SensorState state;
+
+	private List<SensorStateChangeListener> listeners;
 
 	protected SensorServer() throws RemoteException {
 		super();
-		state = SensorState.SHUTDOWN;
+		setState(SensorState.SHUTDOWN);
+		listeners = new LinkedList<>();
 	}
 
 	/**
@@ -126,7 +131,23 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	}
 
 	public synchronized void tearDown() {
-		state = SensorState.SHUTDOWN;
+		setState(SensorState.SHUTDOWN);
 		log.info(this.getClass().getSimpleName() + " has stopped");
+	}
+
+	protected final synchronized void setState(SensorState state) {
+		SensorState old = this.state;
+		this.state = state;
+		// TODO vanno chiamati in thread separati?
+		for (SensorStateChangeListener sscl : listeners)
+			sscl.onStateChange(old, state);
+	}
+
+	public synchronized final void addListener(SensorStateChangeListener listener) {
+		listeners.add(listener);
+	}
+
+	public synchronized final void removeListeners(SensorStateChangeListener listener) {
+		listeners.remove(listener);
 	}
 }

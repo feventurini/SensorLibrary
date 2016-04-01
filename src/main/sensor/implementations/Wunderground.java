@@ -245,7 +245,7 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 		} catch (IOException e2) {
 			log.log(Level.WARNING, "A weather request failed", e2);
 			if (errorCounter.incrementAndGet() >= errorTreshold) {
-				state = SensorState.FAULT;
+				setState(SensorState.FAULT);
 				log.severe("Wunderground state set to FAULT because of repeated failures");
 			}
 			throw new CompletionException(e2);
@@ -282,7 +282,7 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 		} catch (IOException e2) {
 			log.log(Level.WARNING, "An astronomy request failed", e2);
 			if (errorCounter.incrementAndGet() >= errorTreshold) {
-				state = SensorState.FAULT;
+				setState(SensorState.FAULT);
 				log.severe("Wunderground state set to FAULT because of repeated failures");
 			}
 			throw new CompletionException(e2);
@@ -307,7 +307,7 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 	public synchronized FutureResult<Astronomy> getAstronomyAsync() throws RemoteException {
 		// if a measure is already running, return the same FutureResult to
 		// everyone requesting, it will be updated as soon as the measure ends
-		switch (state) {
+		switch (getState()) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -333,7 +333,7 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 	public synchronized FutureResult<Weather> getWeatherAsync() throws RemoteException {
 		// if a measure is already running, return the same FutureResult to
 		// everyone requesting, it will be updated as soon as the measure ends
-		switch (state) {
+		switch (getState()) {
 		case FAULT:
 			throw new IllegalStateException("Sensor fault");
 		case SHUTDOWN:
@@ -372,7 +372,7 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 		int oneDay = 24 * 60 * 60;
 		Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(astronomyInvalidator,
 				now.until(tomorrow_00_00, ChronoUnit.SECONDS), oneDay, TimeUnit.SECONDS);
-		state = SensorState.RUNNING;
+		setState(SensorState.RUNNING);
 	}
 
 	@Override
@@ -380,6 +380,6 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 		if (executor != null) {
 			executor.shutdown();
 		}
-		state = SensorState.SHUTDOWN;
+		setState(SensorState.SHUTDOWN);
 	}
 }

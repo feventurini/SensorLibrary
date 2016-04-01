@@ -38,7 +38,7 @@ public class Temp4000 extends SensorServer implements TempSensor {
 			return r.nextDouble() * 1000;
 		} catch (InterruptedException e) {
 			log.log(Level.WARNING, "Sensor interrupted while measuring", e);
-			state = SensorState.FAULT;
+			setState(SensorState.FAULT);
 			throw new CompletionException(e);
 		}
 	};
@@ -90,7 +90,7 @@ public class Temp4000 extends SensorServer implements TempSensor {
 		super.setUp();
 		r = new Random();
 		executor = Executors.newFixedThreadPool(1);
-		state = SensorState.RUNNING;
+		setState(SensorState.RUNNING);
 	}
 
 	@Override
