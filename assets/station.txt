@@ -1,5 +1,6 @@
 http/IpUtils.class
 http/MiniHttpServer.class
+http/MiniHttpServer$1.class
 http/MiniHttpServer$ConnectionHandler.class
 http/MiniHttpServer$Handler.class
 http/RmiClassServer.class
@@ -10,41 +11,48 @@ logging/OneLineFormatter.class
 
 provider/Provider.class
 provider/ProviderUtils.class
+provider/SensorId.class
 
+sensor/base/FaultListener.class
 sensor/base/FutureResult.class
 sensor/base/FutureResultImpl.class
 sensor/base/Sensor.class
 sensor/base/SensorParameter.class
 sensor/base/SensorServer.class
 sensor/base/SensorState.class
+sensor/base/SensorStateChangeListener.class
 
 sensor/implementations/GroveRgbDisplay.class
-sensor/implementations/Rfid_SL030$1.class
+sensor/implementations/GroveRgbDisplay$1.class
 sensor/implementations/Rfid_SL030.class
+sensor/implementations/Rfid_SL030$1.class
+sensor/implementations/Rfid_SL030$2.class
 sensor/implementations/TempAndHumiditySensor.class
-sensor/implementations/Wunderground$AstronomyHandler.class
+sensor/implementations/TempAndHumiditySensor$1.class
 sensor/implementations/Wunderground.class
+sensor/implementations/Wunderground$1.class
+sensor/implementations/Wunderground$AstronomyHandler.class
 sensor/implementations/Wunderground$WeatherHandler.class
 
-sensor/interfaces/AstronomySensor$Astronomy.class
 sensor/interfaces/AstronomySensor.class
+sensor/interfaces/AstronomySensor$Astronomy.class
 sensor/interfaces/HumiditySensor.class
 sensor/interfaces/RfidSensor.class
 sensor/interfaces/RgbLcdDisplay.class
 sensor/interfaces/TempSensor.class
+sensor/interfaces/TempSensor$1.class
 sensor/interfaces/TempSensor$Unit.class
 sensor/interfaces/WeatherSensor.class
 sensor/interfaces/WeatherSensor$Weather.class
 
-sensor/mocks/Temp2000.class
 sensor/mocks/Temp4000.class
 
 station/Station.class
 station/StationImpl.class
 station/StationImpl$1.class
+station/StationImpl$2.class
 
 assets/stationSchema.xsd
-assets/Temp2000.properties
 assets/Temp4000.properties
 assets/TempAndHumiditySensor.properties
 assets/weatherstation.xml

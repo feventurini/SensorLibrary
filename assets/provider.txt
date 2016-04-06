@@ -1,5 +1,6 @@
 http/IpUtils.class
 http/MiniHttpServer.class
+http/MiniHttpServer$1.class
 http/MiniHttpServer$ConnectionHandler.class
 http/MiniHttpServer$Handler.class
 http/RmiClassServer.class
@@ -10,14 +11,15 @@ logging/OneLineFormatter.class
 
 provider/Provider.class
 provider/ProviderRMI.class
-provider/ProviderRMI$MulticastProvider.class
+provider/MulticastProvider.class
 provider/ProviderUtils.class
+provider/SensorId.class
 
 sensor/base/FutureResult.class
 sensor/base/FutureResultImpl.class
 sensor/base/Sensor.class
-sensor/base/SensorParameter.class
 sensor/base/SensorState.class
 
 station/Station.class
+
 assets/rmi.policy
