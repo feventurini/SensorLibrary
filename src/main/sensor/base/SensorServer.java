@@ -29,7 +29,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 
 	protected SensorServer() throws RemoteException {
 		super();
-		setState(SensorState.SHUTDOWN);
+		state = SensorState.SHUTDOWN;
 		listeners = new LinkedList<>();
 	}
 
