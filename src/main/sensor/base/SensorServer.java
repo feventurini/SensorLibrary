@@ -29,7 +29,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 
 	protected SensorServer() throws RemoteException {
 		super();
-		setState(SensorState.SHUTDOWN);
+		state = SensorState.SHUTDOWN;
 		listeners = new LinkedList<>();
 	}
 
@@ -131,7 +131,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	}
 
 	public synchronized void tearDown() {
-		setState(SensorState.SHUTDOWN);
+		state = SensorState.SHUTDOWN;
 		log.info(this.getClass().getSimpleName() + " has stopped");
 	}
 

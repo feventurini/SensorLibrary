@@ -263,8 +263,10 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 				throw new RemoteException(e.getMessage(), e);
 			}
 			provider.register(new SensorId(name, stationName), s);
-			// TODO mi sa che a fare così se ne aggiunge uno ogni volta che
-			// startiamo il sensore, perchè non rimuviamo nulla mai
+			log.info("Registrato sensore " + name);
+
+			// TODO mi sa che a fare cosi se ne aggiunge uno ogni volta che
+			// startiamo il sensore, perche non rimuviamo nulla mai
 			s.addListener(new FaultListener() {
 				@Override
 				public void onFault() {
@@ -275,7 +277,6 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 					}
 				}
 			});
-			log.info("Registrato sensore " + name);
 			break;
 		default:
 			break;

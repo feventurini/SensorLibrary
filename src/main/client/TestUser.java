@@ -139,7 +139,7 @@ public class TestUser {
 				}
 			}).start();
 		});
-		Thread.sleep(10000);
+		Thread.sleep(3000);
 		d.setRGB(0, 0, 0);
 		d.display("", 0);
 	}
