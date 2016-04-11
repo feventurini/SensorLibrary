@@ -144,9 +144,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		log.log(Level.INFO, "Registered: {0}\n\tstub:\t\t{1}\n\tannotation:\t{2}\n\tinterfaces:\t{3}",
-				new Object[] { fullName, sensor.getClass().getName(), annotation,
-						Stream.of(sensor.getClass().getInterfaces()).filter(Sensor.class::isAssignableFrom)
-								.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")) });
+				new Object[] { fullName, sensor.getClass().getName(), annotation, sensor.getSensorInterfaces().stream()
+						.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")) });
 	}
 
 	@Override
