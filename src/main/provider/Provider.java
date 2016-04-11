@@ -5,6 +5,7 @@ import java.rmi.RemoteException;
 import java.util.Map;
 
 import sensor.base.Sensor;
+import sensor.base.SensorState;
 import station.Station;
 
 /**
@@ -50,11 +51,12 @@ public interface Provider extends Remote {
 	 *            the location (null for any location)
 	 * @param type
 	 *            the interface (null for any interface)
+	 * @param state TODO
 	 * @return an list of remote references to the sensors, possibly with 0
 	 *         length
 	 * @throws RemoteException
 	 */
-	public Map<SensorId, Sensor> findAll(String name, String location, Class<? extends Sensor> type) throws RemoteException;
+	public Map<SensorId, Sensor> findAll(String name, String location, Class<? extends Sensor> type, SensorState state) throws RemoteException;
 
 	/**
 	 * Register a new Sensor
