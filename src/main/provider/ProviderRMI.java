@@ -9,12 +9,12 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.RMIClassLoader;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import http.IpUtils;
 import http.RmiClassServer;
@@ -104,10 +104,13 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	private final Map<SensorId, Sensor> sensorMap;
 	private final Map<String, Station> stationMap;
 
+	private final ArrayList<RegistrationListener> listeners;
+
 	private ProviderRMI() throws RemoteException {
 		super();
 		sensorMap = new HashMap<>();
 		stationMap = new HashMap<>();
+		listeners = new ArrayList<>();
 	}
 
 	@Override
@@ -146,6 +149,13 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		log.log(Level.INFO, "Registered: {0}\n\tstub:\t\t{1}\n\tannotation:\t{2}\n\tinterfaces:\t{3}",
 				new Object[] { fullName, sensor.getClass().getName(), annotation, sensor.getSensorInterfaces().stream()
 						.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")) });
+		
+		for (RegistrationListener l : listeners)
+			try {
+				l.onSensorRegistered(fullName, sensor);
+			} catch (RemoteException e) {
+				log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
+			}
 	}
 
 	@Override
@@ -158,6 +168,12 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		stationMap.put(stationName, station);
 
 		log.info("Registered station: " + stationName);
+		for (RegistrationListener l : listeners)
+			try {
+				l.onStationRegistered(stationName, station);
+			} catch (RemoteException e) {
+				log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
+			}
 	}
 
 	@Override
@@ -165,8 +181,15 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (fullName == null)
 			throw new RemoteException("Argument error");
 
-		sensorMap.remove(fullName);
+		Sensor sensor = sensorMap.remove(fullName);
 		log.info("Unregistered: " + fullName);
+		
+		for (RegistrationListener l : listeners)
+			try {
+				l.onSensorUnRegistered(fullName, sensor);
+			} catch (RemoteException e) {
+				log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
+			}
 	}
 
 	@Override
@@ -175,9 +198,15 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			throw new RemoteException("Argument error");
 		if (!stationMap.containsKey(stationName))
 			throw new RemoteException("Station " + stationName + " not registered");
-		stationMap.remove(stationName);
+		Station station = stationMap.remove(stationName);
 
 		log.info("Unregistered station: " + stationName);
+		for (RegistrationListener l : listeners)
+			try {
+				l.onStationUnRegistered(stationName, station);
+			} catch (RemoteException e) {
+				log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
+			}
 	}
 
 	@Override
@@ -189,5 +218,15 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			throw new RemoteException("Station " + location + " not found");
 		log.info("Requested station: " + location);
 		return station;
+	}
+
+	@Override
+	public void addRegistrationListener(RegistrationListener listener) throws RemoteException {
+		listeners.add(listener);
+	}
+
+	@Override
+	public void removeRegistrationListener(RegistrationListener listener) throws RemoteException {
+		listeners.remove(listener);
 	}
 }

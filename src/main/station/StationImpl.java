@@ -35,7 +35,6 @@ import logging.Logs;
 import provider.Provider;
 import provider.ProviderUtils;
 import provider.SensorId;
-import sensor.base.FaultListener;
 import sensor.base.SensorServer;
 import sensor.base.SensorState;
 
@@ -264,19 +263,6 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			}
 			provider.register(new SensorId(name, stationName), s);
 			log.info("Registrato sensore " + name);
-
-			// TODO mi sa che a fare cosi se ne aggiunge uno ogni volta che
-			// startiamo il sensore, perche non rimuviamo nulla mai
-			s.addListener(new FaultListener() {
-				@Override
-				public void onFault() {
-					try {
-						stopSensor(name);
-					} catch (RemoteException e) {
-						log.log(Level.SEVERE, "Unable to stop sensor" + name, e);
-					}
-				}
-			});
 			break;
 		default:
 			break;

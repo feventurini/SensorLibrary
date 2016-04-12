@@ -141,13 +141,19 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 		this.state = state;
 		// TODO vanno chiamati in thread separati?
 		for (SensorStateChangeListener sscl : listeners)
-			sscl.onStateChange(old, state);
+			try {
+				sscl.onStateChange(old, state);
+			} catch (RemoteException e) {
+				log.log(Level.WARNING, "Exception in Listener", e.getCause());
+			}
 	}
 
-	public synchronized final void addListener(SensorStateChangeListener listener) {
+	@Override
+	public synchronized final void addListener(SensorStateChangeListener listener) throws RemoteException {
 		listeners.add(listener);
 	}
 
+	@Override
 	public synchronized final void removeListeners(SensorStateChangeListener listener) {
 		listeners.remove(listener);
 	}

@@ -15,6 +15,7 @@ import org.reflections.Reflections;
 
 import provider.Provider;
 import provider.ProviderUtils;
+import provider.RegistrationListener;
 import provider.SensorId;
 import sensor.base.FutureResult;
 import sensor.base.Sensor;
@@ -22,6 +23,7 @@ import sensor.interfaces.RfidSensor;
 import sensor.interfaces.RgbLcdDisplay;
 import sensor.interfaces.TempSensor;
 import sensor.interfaces.TempSensor.Unit;
+import station.Station;
 
 public class TestUser {
 
@@ -70,11 +72,38 @@ public class TestUser {
 		p = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Provider trovato");
 
+		provaListeners();
 		provaReflection();
 		provaTemp();
 		provaRfid();
 	}
 
+	private void provaListeners() throws RemoteException {
+		p.addRegistrationListener(new RegistrationListener() {
+			
+			@Override
+			public void onStationUnRegistered(String stationName, Station station) throws RemoteException {
+				System.out.println("Unregistered " + stationName);
+			}
+			
+			@Override
+			public void onStationRegistered(String stationName, Station station) throws RemoteException {
+				System.out.println("Registered " + stationName);
+			}
+			
+			@Override
+			public void onSensorUnRegistered(SensorId fullName, Sensor sensor) throws RemoteException {
+				System.out.println("Unregistered " + fullName);
+			}
+			
+			@Override
+			public void onSensorRegistered(SensorId fullName, Sensor sensor) throws RemoteException {
+				System.out.println("Registered " + fullName);
+			}
+		});
+	}
+
+	// elenca per ogni interfaccia nota i metodi con i parametri
 	private void provaReflection() {
 		// https://code.google.com/archive/p/reflections/
 		Reflections reflections = new Reflections("");

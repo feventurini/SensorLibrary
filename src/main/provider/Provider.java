@@ -87,5 +87,7 @@ public interface Provider extends Remote {
 	public void unregister(SensorId fullName) throws RemoteException;
 
 	public void unregisterStation(String stationName) throws RemoteException;
-
+	
+	public void addRegistrationListener(RegistrationListener listener) throws RemoteException;
+	public void removeRegistrationListener(RegistrationListener listener) throws RemoteException;
 }
