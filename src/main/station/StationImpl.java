@@ -207,9 +207,14 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 					}
 					sensors.put(name, ss);
 					log.info("Caricato sensore " + name);
+					
+					provider.register(new SensorId(name, stationName), ss);
+					log.info("Registrato sensore " + name);
+					
 					if (loadNow) {
 						startSensor(name);
 					}
+					
 				} catch (RemoteException | InstantiationException | IllegalAccessException
 						| ClassNotFoundException e1) {
 					log.log(Level.SEVERE, "Error while instantiating a class", e1);
@@ -262,9 +267,9 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 				s.tearDown();
 				throw new RemoteException(e.getMessage(), e);
 			}
-			provider.register(new SensorId(name, stationName), s);
-			// TODO mi sa che a fare così se ne aggiunge uno ogni volta che
-			// startiamo il sensore, perchè non rimuviamo nulla mai
+
+			// TODO mi sa che a fare cosi se ne aggiunge uno ogni volta che
+			// startiamo il sensore, perche non rimuviamo nulla mai
 			s.addListener(new FaultListener() {
 				@Override
 				public void onFault() {
@@ -275,7 +280,6 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 					}
 				}
 			});
-			log.info("Registrato sensore " + name);
 			break;
 		default:
 			break;

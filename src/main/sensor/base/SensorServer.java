@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class SensorServer extends UnicastRemoteObject implements Sensor {
 	private static final long serialVersionUID = 8455786461927369862L;
@@ -131,7 +132,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	}
 
 	public synchronized void tearDown() {
-		setState(SensorState.SHUTDOWN);
+		state = SensorState.SHUTDOWN;
 		log.info(this.getClass().getSimpleName() + " has stopped");
 	}
 
@@ -149,5 +150,17 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 
 	public synchronized final void removeListeners(SensorStateChangeListener listener) {
 		listeners.remove(listener);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see sensor.base.Sensor#getInterfaces()
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public List<Class<? extends Sensor>> getSensorInterfaces() throws RemoteException {
+		return Stream.of(getClass().getInterfaces()).filter(Sensor.class::isAssignableFrom)
+				.map((k) -> (Class<? extends Sensor>) k).collect(Collectors.toList());
 	}
 }

@@ -127,13 +127,12 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 			log.log(Level.SEVERE, "Error connecting to the sensor", e);
 		}
 		executor = Executors.newFixedThreadPool(1);
-		setState(SensorState.RUNNING);
 	}
 
 	@Override
 	public void tearDown() {
+		super.tearDown();
 		executor.shutdown();
-		setState(SensorState.SHUTDOWN);
 	}
 
 }

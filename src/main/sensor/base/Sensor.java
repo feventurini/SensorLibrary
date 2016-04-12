@@ -2,6 +2,7 @@ package sensor.base;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.List;
 
 /**
  * The basic interface that all sensor servers must provide. Extends
@@ -17,4 +18,6 @@ public interface Sensor extends Remote {
 	 * @throws RemoteException
 	 */
 	public SensorState getState() throws RemoteException;
+	
+	public List<Class<? extends Sensor>> getSensorInterfaces() throws RemoteException;
 }

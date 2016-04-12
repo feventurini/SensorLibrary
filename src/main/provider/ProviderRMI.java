@@ -20,6 +20,7 @@ import http.IpUtils;
 import http.RmiClassServer;
 import logging.Logs;
 import sensor.base.Sensor;
+import sensor.base.SensorState;
 import station.Station;
 
 public class ProviderRMI extends UnicastRemoteObject implements Provider {
@@ -122,13 +123,17 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized Map<SensorId, Sensor> findAll(String name, String location, Class<? extends Sensor> type)
+	public synchronized Map<SensorId, Sensor> findAll(String name, String location, Class<? extends Sensor> type, SensorState state)
 			throws RemoteException {
 		Map<SensorId, Sensor> result = new HashMap<>();
 		sensorMap.forEach((fullname, sensor) -> {
-			if ((name == null || fullname.name.equals(name)) && (location == null || fullname.location.equals(location))
-					&& (type == null || type.isAssignableFrom(sensor.getClass())))
-				result.put(fullname, sensor);
+			try {
+				if ((name == null || fullname.name.equals(name)) && (location == null || fullname.location.equals(location))
+						&& (type == null || type.isAssignableFrom(sensor.getClass())) && (state == null || sensor.getState()==state))
+					result.put(fullname, sensor);
+			} catch (RemoteException e) {
+				log.log(Level.WARNING, "Unable to get sensor state", e);
+			}
 		});
 		return result;
 	}
@@ -144,9 +149,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		log.log(Level.INFO, "Registered: {0}\n\tstub:\t\t{1}\n\tannotation:\t{2}\n\tinterfaces:\t{3}",
-				new Object[] { fullName, sensor.getClass().getName(), annotation,
-						Stream.of(sensor.getClass().getInterfaces()).filter(Sensor.class::isAssignableFrom)
-								.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")) });
+				new Object[] { fullName, sensor.getClass().getName(), annotation, sensor.getSensorInterfaces().stream()
+						.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")) });
 	}
 
 	@Override

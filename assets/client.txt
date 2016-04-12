@@ -2,6 +2,7 @@ client/TestUser.class
 
 http/IpUtils.class
 http/MiniHttpServer.class
+http/MiniHttpServer$1.class
 http/MiniHttpServer$ConnectionHandler.class
 http/MiniHttpServer$Handler.class
 http/RmiClassServer.class
@@ -12,6 +13,7 @@ logging/OneLineFormatter.class
 
 provider/Provider.class
 provider/ProviderUtils.class
+provider/SensorId.class
 
 sensor/base/FutureResult.class
 sensor/base/FutureResultImpl.class
@@ -24,6 +26,7 @@ sensor/interfaces/HumiditySensor.class
 sensor/interfaces/RfidSensor.class
 sensor/interfaces/RgbLcdDisplay.class
 sensor/interfaces/TempSensor.class
+sensor/interfaces/TempSensor$1.class
 sensor/interfaces/TempSensor$Unit.class
 sensor/interfaces/WeatherSensor.class
 sensor/interfaces/WeatherSensor$Weather.class

@@ -1,14 +1,16 @@
 #!/bin/bash
 
+cd ..
+
 # Load destinations
 PROVIDER_NAME=pi
-PROVIDER_HOST=192.168.1.111
+PROVIDER_HOST=192.168.1.118
 
 STATION_NAME=pi
 STATION_HOST=192.168.1.113
 
-CLIENT_NAME=federico
-CLIENT_HOST=localhost
+CLIENT_NAME=pi
+CLIENT_HOST=192.168.1.105
 
 # Shortcuts
 PROVIDER=$PROVIDER_NAME@$PROVIDER_HOST
@@ -30,7 +32,7 @@ echo ""
 echo "Copying provider files to $PROVIDER/$BASE_DIR"
 ssh $PROVIDER "rm -r $BASE_DIR"
 ssh $PROVIDER "mkdir $BASE_DIR"
-tar c --files-from provider.txt | ssh $PROVIDER "tar x -C $BASE_DIR"
+tar c --files-from assets/provider.txt | ssh $PROVIDER "tar x -C $BASE_DIR"
 ssh $PROVIDER "tar -x -C $BASE_DIR" < dependencies.tar
 
 # Stations need these resources: TO BE UPDATED
@@ -47,7 +49,7 @@ echo ""
 echo "Copying station files to $STATION/$BASE_DIR" 
 ssh $STATION "rm -r $BASE_DIR" 
 ssh $STATION "mkdir $BASE_DIR"
-tar c --files-from station.txt | ssh $STATION "tar x -C $BASE_DIR"
+tar c --files-from assets/station.txt | ssh $STATION "tar x -C $BASE_DIR"
 ssh $STATION "tar -x -C $BASE_DIR" < dependencies.tar
 
 # Clients need these resources: TO BE UPDATED
@@ -63,5 +65,5 @@ BASE_DIR=sensorlibraryclient
 echo ""
 echo "Copying client files to $CLIENT/$BASE_DIR"
 ssh $CLIENT "rm -r $BASE_DIR || mkdir $BASE_DIR"
-tar c --files-from client.txt | ssh $CLIENT "tar x -C $BASE_DIR"
+tar c --files-from assets/client.txt | ssh $CLIENT "tar x -C $BASE_DIR"
 ssh $CLIENT "tar -x -C $BASE_DIR" < dependencies.tar
