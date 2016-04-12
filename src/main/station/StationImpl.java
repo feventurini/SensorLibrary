@@ -206,9 +206,14 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 					}
 					sensors.put(name, ss);
 					log.info("Caricato sensore " + name);
+
+					provider.register(new SensorId(name, stationName), ss);
+					log.info("Registrato sensore " + name);
+
 					if (loadNow) {
 						startSensor(name);
 					}
+
 				} catch (RemoteException | InstantiationException | IllegalAccessException
 						| ClassNotFoundException e1) {
 					log.log(Level.SEVERE, "Error while instantiating a class", e1);
