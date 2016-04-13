@@ -21,7 +21,7 @@ public interface Sensor extends Remote {
 	
 	public List<Class<? extends Sensor>> getSensorInterfaces() throws RemoteException;
 
-	void addListener(SensorStateChangeListener listener) throws RemoteException;
+	void addListener(StateListener listener) throws RemoteException;
 
-	void removeListeners(SensorStateChangeListener listener) throws RemoteException;
+	void removeListeners(StateListener listener) throws RemoteException;
 }

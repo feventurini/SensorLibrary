@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -26,7 +28,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 
 	private SensorState state;
 
-	private List<SensorStateChangeListener> listeners;
+	private List<StateListener> listeners;
 
 	protected SensorServer() throws RemoteException {
 		super();
@@ -139,22 +141,27 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	protected final synchronized void setState(SensorState state) {
 		SensorState old = this.state;
 		this.state = state;
-		// TODO vanno chiamati in thread separati?
-		for (SensorStateChangeListener sscl : listeners)
+
+		ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
+		listeners.forEach((l) -> executorService.submit(() -> {
 			try {
-				sscl.onStateChange(old, state);
+				l.onStateChange(this, old, state);
 			} catch (RemoteException e) {
 				log.log(Level.WARNING, "Exception in Listener", e.getCause());
 			}
+		}));
+		// shutdown non ferma i thread già presenti, impedisce di aggiungerne nuovi,
+		// finalizza l'executorService quando si è svuotato, non è bloccante per chi lo chiama
+		executorService.shutdown();
 	}
 
 	@Override
-	public synchronized final void addListener(SensorStateChangeListener listener) throws RemoteException {
+	public synchronized final void addListener(StateListener listener) throws RemoteException {
 		listeners.add(listener);
 	}
 
 	@Override
-	public synchronized final void removeListeners(SensorStateChangeListener listener) {
+	public synchronized final void removeListeners(StateListener listener) {
 		listeners.remove(listener);
 	}
 
