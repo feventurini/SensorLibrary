@@ -228,10 +228,12 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	@Override
 	public void addRegistrationListener(RegistrationListener listener) throws RemoteException {
 		listeners.add(listener);
+		log.info("Registered listener");
 	}
 
 	@Override
 	public void removeRegistrationListener(RegistrationListener listener) throws RemoteException {
 		listeners.remove(listener);
+		log.info("Removed listener");
 	}
 }

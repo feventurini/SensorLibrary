@@ -92,7 +92,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 						}
 					} catch (InvocationTargetException e) {
 						// probabilemte un problema di parsing dei numeri
-						log.log(Level.SEVERE, "Error while loading the parameter " + propertyName, e);
+						log.log(Level.SEVERE, getClass().getSimpleName() + ": error while loading the parameter " + propertyName, e);
 					} catch (NoSuchMethodException ignore) {
 						// non dovrebbe mai avvenire perchè tutti i
 						// campi di SensorParameter.validTypes
@@ -115,7 +115,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 				properties.load(inputStream);
 				inputStream.close();
 			} catch (IOException e) {
-				log.log(Level.SEVERE, "Properties loading from " + propertyFile + " failed", e);
+				log.log(Level.SEVERE, getClass().getSimpleName() + ": properties loading from " + propertyFile + " failed", e);
 				return;
 			}
 			loadParameters(properties);
@@ -147,7 +147,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 			try {
 				l.onStateChange(this, old, state);
 			} catch (RemoteException e) {
-				log.log(Level.WARNING, "Exception in Listener", e.getCause());
+				log.log(Level.WARNING, getClass().getSimpleName() + ": exception in Listener", e.getCause());
 			}
 		}));
 		// shutdown non ferma i thread già presenti, impedisce di aggiungerne nuovi,
@@ -158,11 +158,13 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	@Override
 	public synchronized final void addListener(StateListener listener) throws RemoteException {
 		listeners.add(listener);
+		log.info(getClass().getSimpleName() + ": added listener");
 	}
 
 	@Override
 	public synchronized final void removeListeners(StateListener listener) {
 		listeners.remove(listener);
+		log.info(getClass().getSimpleName() + ": removed listener");
 	}
 
 	/*
