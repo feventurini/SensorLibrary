@@ -126,13 +126,15 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized Map<SensorId, Sensor> findAll(String name, String location, Class<? extends Sensor> type, SensorState state)
-			throws RemoteException {
+	public synchronized Map<SensorId, Sensor> findAll(String name, String location, Class<? extends Sensor> type,
+			SensorState state) throws RemoteException {
 		Map<SensorId, Sensor> result = new HashMap<>();
 		sensorMap.forEach((fullname, sensor) -> {
 			try {
-				if ((name == null || fullname.name.equals(name)) && (location == null || fullname.location.equals(location))
-						&& (type == null || type.isAssignableFrom(sensor.getClass())) && (state == null || sensor.getState()==state))
+				if ((name == null || fullname.name.equals(name))
+						&& (location == null || fullname.location.equals(location))
+						&& (type == null || type.isAssignableFrom(sensor.getClass()))
+						&& (state == null || sensor.getState() == state))
 					result.put(fullname, sensor);
 			} catch (RemoteException e) {
 				log.log(Level.WARNING, "Unable to get sensor state", e);
@@ -146,15 +148,17 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (fullName == null || sensor == null)
 			throw new RemoteException("Argument error");
 
-		if (sensorMap.containsKey(fullName))
+		if (sensorMap.containsKey(fullName)) {
+			log.info("Requested to register sensor " + fullName + " that is already registered");
 			throw new RemoteException("Sensor " + fullName + " already registered");
+		}
 		sensorMap.put(fullName, sensor);
 
 		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
 		log.log(Level.INFO, "Registered: {0}\n\tstub:\t\t{1}\n\tannotation:\t{2}\n\tinterfaces:\t{3}",
 				new Object[] { fullName, sensor.getClass().getName(), annotation, sensor.getSensorInterfaces().stream()
 						.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")) });
-		
+
 		for (RegistrationListener l : listeners)
 			try {
 				l.onSensorRegistered(fullName, sensor);
@@ -168,8 +172,10 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (stationName == null || stationName.isEmpty())
 			throw new RemoteException("Argument error");
 
-		if (stationMap.containsKey(stationName))
+		if (stationMap.containsKey(stationName)) {
+			log.info("Requested to register station " + stationName + " that is already registered");
 			throw new RemoteException("Station " + stationName + " already registered");
+		}
 		stationMap.put(stationName, station);
 
 		log.info("Registered station: " + stationName);
@@ -187,14 +193,17 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			throw new RemoteException("Argument error");
 
 		Sensor sensor = sensorMap.remove(fullName);
-		log.info("Unregistered: " + fullName);
-		
-		for (RegistrationListener l : listeners)
-			try {
-				l.onSensorUnRegistered(fullName, sensor);
-			} catch (RemoteException e) {
-				log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
-			}
+		if (sensor == null) {
+			log.info("Requested to unregister sensor " + fullName + " that is not registered");
+		} else {
+			log.info("Unregistered: " + fullName);
+			for (RegistrationListener l : listeners)
+				try {
+					l.onSensorUnRegistered(fullName, sensor);
+				} catch (RemoteException e) {
+					log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
+				}
+		}
 	}
 
 	@Override
@@ -205,13 +214,17 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			throw new RemoteException("Station " + stationName + " not registered");
 		Station station = stationMap.remove(stationName);
 
-		log.info("Unregistered station: " + stationName);
-		for (RegistrationListener l : listeners)
-			try {
-				l.onStationUnRegistered(stationName, station);
-			} catch (RemoteException e) {
-				log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
-			}
+		if (station == null) {
+			log.info("Requested to unregister station " + stationName + " that is not registered");
+		} else {
+			log.info("Unregistered station: " + stationName);
+			for (RegistrationListener l : listeners)
+				try {
+					l.onStationUnRegistered(stationName, station);
+				} catch (RemoteException e) {
+					log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
+				}
+		}
 	}
 
 	@Override

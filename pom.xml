@@ -19,6 +19,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.3</version>
 				<configuration>
+					<!--To mantain the names of the parameters of the methods when compiling  -->
 					<compilerArgument>-parameters</compilerArgument>
 					<testCompilerArgument>-parameters</testCompilerArgument>
 					<source>1.8</source>

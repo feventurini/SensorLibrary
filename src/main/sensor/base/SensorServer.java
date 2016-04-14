@@ -92,7 +92,8 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 						}
 					} catch (InvocationTargetException e) {
 						// probabilemte un problema di parsing dei numeri
-						log.log(Level.SEVERE, getClass().getSimpleName() + ": error while loading the parameter " + propertyName, e);
+						log.log(Level.SEVERE,
+								getClass().getSimpleName() + ": error while loading the parameter " + propertyName, e);
 					} catch (NoSuchMethodException ignore) {
 						// non dovrebbe mai avvenire perchè tutti i
 						// campi di SensorParameter.validTypes
@@ -115,7 +116,8 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 				properties.load(inputStream);
 				inputStream.close();
 			} catch (IOException e) {
-				log.log(Level.SEVERE, getClass().getSimpleName() + ": properties loading from " + propertyFile + " failed", e);
+				log.log(Level.SEVERE,
+						getClass().getSimpleName() + ": properties loading from " + propertyFile + " failed", e);
 				return;
 			}
 			loadParameters(properties);
@@ -142,17 +144,21 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 		SensorState old = this.state;
 		this.state = state;
 
-		ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
-		listeners.forEach((l) -> executorService.submit(() -> {
-			try {
-				l.onStateChange(this, old, state);
-			} catch (RemoteException e) {
-				log.log(Level.WARNING, getClass().getSimpleName() + ": exception in Listener", e.getCause());
-			}
-		}));
-		// shutdown non ferma i thread già presenti, impedisce di aggiungerne nuovi,
-		// finalizza l'executorService quando si è svuotato, non è bloccante per chi lo chiama
-		executorService.shutdown();
+		if (!listeners.isEmpty()) {
+			ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
+			listeners.forEach((l) -> executorService.submit(() -> {
+				try {
+					l.onStateChange(this, old, state);
+				} catch (RemoteException e) {
+					log.log(Level.WARNING, getClass().getSimpleName() + ": exception in Listener", e.getCause());
+				}
+			}));
+			// shutdown non ferma i thread già presenti, impedisce di
+			// aggiungerne nuovi,
+			// finalizza l'executorService quando si è svuotato, non è bloccante
+			// per chi lo chiama
+			executorService.shutdown();
+		}
 	}
 
 	@Override

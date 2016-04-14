@@ -64,6 +64,12 @@ ssh $STATION "tar -x -C $BASE_DIR" < dependencies.tar
 BASE_DIR=sensorlibraryclient
 echo ""
 echo "Copying client files to $CLIENT/$BASE_DIR"
-ssh $CLIENT "rm -r $BASE_DIR || mkdir $BASE_DIR"
+ssh $CLIENT "rm -r $BASE_DIR"
+ssh $CLIENT "mkdir $BASE_DIR"
 tar c --files-from assets/client.txt | ssh $CLIENT "tar x -C $BASE_DIR"
 ssh $CLIENT "tar -x -C $BASE_DIR" < dependencies.tar
+
+echo ""
+echo "------------------"
+echo "  DEPLOY SUCCESS"
+echo "------------------"

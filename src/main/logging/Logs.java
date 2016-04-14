@@ -29,8 +29,9 @@ public class Logs {
 			// txt.setFormatter(new SimpleFormatter());
 			// global.addHandler(txt);
 
-			FileHandler html = new FileHandler(
-					"logs/" + program + "_" + new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".html");
+			String filename = "logs/" + program + "_" + new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss").format(new Date()) + ".html";
+			FileHandler html = new FileHandler(filename);
+			new File(filename).setWritable(true); // perchè a volte FileHandler li fa write protected!
 			html.setFormatter(new HtmlFormatter(program));
 			global.addHandler(html);
 		} catch (SecurityException | IOException e) {

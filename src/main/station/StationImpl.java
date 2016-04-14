@@ -191,7 +191,6 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		for (int i = 0; i < nl.getLength(); i++) {
 			Element e = (Element) nl.item(i);
 			String klass = e.getElementsByTagName("class").item(0).getTextContent();
-			;
 			String name = e.getElementsByTagName("name").item(0).getTextContent();
 			String propertyFile = e.getElementsByTagName("parameters").item(0).getTextContent();
 			boolean loadNow = Boolean.parseBoolean(e.getAttribute("loadAtStartup"));

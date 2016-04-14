@@ -51,7 +51,6 @@ sensor/mocks/Temp4000.class
 station/Station.class
 station/StationImpl.class
 station/StationImpl$1.class
-station/StationImpl$2.class
 
 assets/stationSchema.xsd
 assets/Temp4000.properties
