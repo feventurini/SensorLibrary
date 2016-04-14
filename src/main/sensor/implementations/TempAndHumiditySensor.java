@@ -118,8 +118,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 	}
 
 	@Override
-	public void setUp() throws Exception {
-		super.setUp();
+	public void customSetUp() throws Exception {
 		try {
 			sensor = new GroveTemperatureAndHumiditySensor(new GrovePi4J(), 2,
 					GroveTemperatureAndHumiditySensor.Type.DHT11);
@@ -127,6 +126,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 			log.log(Level.SEVERE, "Error connecting to the sensor", e);
 		}
 		executor = Executors.newFixedThreadPool(1);
+		setState(SensorState.RUNNING);
 	}
 
 	@Override

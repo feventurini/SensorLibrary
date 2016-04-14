@@ -125,15 +125,26 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	}
 
 	/**
-	 * Use this method to perform the initialization of the sensor. Throw any
-	 * exception that can not be handled internally to allow Sensor Stations to
-	 * abort the registration of the sensor
+	 * This method will check if all the parameters are filled up, then will
+	 * call {@link #customSetUp()} to allow the specific implementation to
+	 * perform its initialization. If it succeeds the state is set to RUNNING
+	 * 
+	 * @throws Exception
 	 */
 	public void setUp() throws Exception {
 		if (!allParametersFilledUp())
 			throw new IllegalStateException("Missing parameters: " + getAllSensorParameterFields().stream()
 					.filter((f) -> f == null).map(Field::getName).collect(Collectors.joining(", ")));
+		customSetUp();
+		setState(SensorState.RUNNING);
 	}
+
+	/**
+	 * Use this method to perform the initialization of the sensor. Throw any
+	 * exception that can not be handled internally to allow Sensor Stations to
+	 * abort the initialization of the sensor
+	 */
+	public abstract void customSetUp() throws Exception;
 
 	public synchronized void tearDown() {
 		state = SensorState.SHUTDOWN;

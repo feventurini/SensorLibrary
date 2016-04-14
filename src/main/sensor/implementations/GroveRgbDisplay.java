@@ -81,8 +81,7 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 	}
 
 	@Override
-	public void setUp() throws Exception {
-		super.setUp();
+	public void customSetUp() throws Exception {
 		try {
 			display = new GroveRgbLcdPi4J();
 		} catch (IOException e) {

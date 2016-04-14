@@ -260,7 +260,7 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			throw new RemoteException("Sensor fault, unable to enable");
 		case SHUTDOWN:
 			try {
-				s.setUp();
+				s.customSetUp();
 			} catch (Exception e) {
 				s.tearDown();
 				throw new RemoteException(e.getMessage(), e);

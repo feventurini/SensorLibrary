@@ -135,9 +135,7 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 	}
 
 	@Override
-	public void setUp() throws Exception {
-		super.setUp();
-
+	public void customSetUp() throws Exception {
 		final GpioController gpio = GpioFactory.getInstance();
 		// provision gpio pin as an input pin with its internal pull
 		// down

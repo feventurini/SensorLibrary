@@ -34,7 +34,7 @@ public class Temp4000Test {
 		assertTrue(t.allParametersFilledUp());
 		assertEquals(t.invalidateResultAfter, (Long) 5L);
 
-		t.setUp();
+		t.customSetUp();
 		assertEquals(t.getState(), SensorState.RUNNING);
 	}
 

@@ -351,8 +351,7 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 	}
 
 	@Override
-	public void setUp() throws Exception {
-		super.setUp();
+	public void customSetUp() throws Exception {
 		try {
 			weatherUrl = new URL(
 					"http://api.wunderground.com/api/" + key + "/conditions/q/" + stat + "/" + city + ".xml");

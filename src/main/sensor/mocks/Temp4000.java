@@ -86,8 +86,7 @@ public class Temp4000 extends SensorServer implements TempSensor {
 	}
 
 	@Override
-	public void setUp() throws Exception {
-		super.setUp();
+	public void customSetUp() throws Exception {
 		r = new Random();
 		executor = Executors.newFixedThreadPool(1);
 		setState(SensorState.RUNNING);
