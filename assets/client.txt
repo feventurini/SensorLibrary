@@ -1,4 +1,5 @@
 client/TestUser.class
+client/TestUser$1.class
 
 http/IpUtils.class
 http/MiniHttpServer.class
@@ -14,6 +15,7 @@ logging/OneLineFormatter.class
 provider/Provider.class
 provider/ProviderUtils.class
 provider/RegistrationListener.class
+provider/RegistrationListenerImpl.class
 provider/SensorId.class
 
 sensor/base/FutureResult.class
@@ -21,6 +23,7 @@ sensor/base/FutureResultImpl.class
 sensor/base/Sensor.class
 sensor/base/SensorState.class
 sensor/base/StateListener.class
+sensor/base/StateListenerImpl.class
 
 sensor/interfaces/AstronomySensor$Astronomy.class
 sensor/interfaces/AstronomySensor.class

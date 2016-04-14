@@ -16,6 +16,7 @@ import org.reflections.Reflections;
 import provider.Provider;
 import provider.ProviderUtils;
 import provider.RegistrationListener;
+import provider.RegistrationListenerImpl;
 import provider.SensorId;
 import sensor.base.FutureResult;
 import sensor.base.Sensor;
@@ -79,28 +80,30 @@ public class TestUser {
 	}
 
 	private void provaListeners() throws RemoteException {
-		p.addRegistrationListener(new RegistrationListener() {
-			
+		RegistrationListener listener = new RegistrationListenerImpl() {
+			private static final long serialVersionUID = 7150468227915343021L;
+
 			@Override
 			public void onStationUnRegistered(String stationName, Station station) throws RemoteException {
-				System.out.println("Unregistered " + stationName);
+				System.out.println("Station unregistered "+ stationName);
 			}
 			
 			@Override
 			public void onStationRegistered(String stationName, Station station) throws RemoteException {
-				System.out.println("Registered " + stationName);
+				System.out.println("Station registered "+ stationName);
 			}
 			
 			@Override
 			public void onSensorUnRegistered(SensorId fullName, Sensor sensor) throws RemoteException {
-				System.out.println("Unregistered " + fullName);
+				System.out.println("Sensor unregistered "+ fullName);
 			}
 			
 			@Override
 			public void onSensorRegistered(SensorId fullName, Sensor sensor) throws RemoteException {
-				System.out.println("Registered " + fullName);
+				System.out.println("Sensor registered "+ fullName);
 			}
-		});
+		};
+		p.addRegistrationListener(listener);
 	}
 
 	// elenca per ogni interfaccia nota i metodi con i parametri
