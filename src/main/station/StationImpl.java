@@ -265,8 +265,6 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 				s.tearDown();
 				throw new RemoteException(e.getMessage(), e);
 			}
-			provider.register(new SensorId(name, stationName), s);
-			log.info("Registrato sensore " + name);
 			break;
 		default:
 			break;
