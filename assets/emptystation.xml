@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<station name="emptystation" xmlns="http://www.w3schools.com"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.w3schools.com stationSchema.xsd">
+	
+	<provider ip="192.168.0.12" port="1099"/>
+</station>

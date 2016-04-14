@@ -31,7 +31,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	// Avvio del Server RMI
 	// java provider.ProviderRMI
 	public static void main(String[] args) {
-		int registryPort = 1099;
+		int registryPort = 1098;
 		String registryHost = "localhost";
 		Logs.createLogFor("PROVIDER");
 

@@ -39,12 +39,12 @@ public class Temp4000Test {
 	}
 
 	/**
-	 * Test method for {@link sensor.mocks.Temp4000#tearDown()}.
+	 * Test method for {@link sensor.mocks.Temp4000#customTearDown()}.
 	 */
 	@After
 	public void tearDown() throws RemoteException {
 		assertEquals(t.getState(), SensorState.RUNNING);
-		t.tearDown();
+		t.customTearDown();
 		assertEquals(t.getState(), SensorState.SHUTDOWN);
 	}
 

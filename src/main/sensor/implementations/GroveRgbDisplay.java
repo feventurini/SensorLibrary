@@ -11,7 +11,6 @@ import org.iot.raspberry.grovepi.devices.GroveRgbLcd;
 import org.iot.raspberry.grovepi.pi4j.GroveRgbLcdPi4J;
 
 import sensor.base.SensorServer;
-import sensor.base.SensorState;
 import sensor.interfaces.RgbLcdDisplay;
 
 public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
@@ -25,8 +24,8 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 		try {
 			display.setText("");
 		} catch (IOException e) {
-			setState(SensorState.FAULT);
 			log.log(Level.SEVERE, "Error during write to sensor", e);
+			fail();
 		}
 	};
 
@@ -56,8 +55,8 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 					executor.schedule(clearer, time, TimeUnit.SECONDS);
 				}
 			} catch (IOException e) {
-				setState(SensorState.FAULT);
 				log.log(Level.SEVERE, "Error writing to the display", e);
+				fail();
 			}
 		}
 	}
@@ -74,8 +73,8 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 			try {
 				display.setRGB(r, g, b);
 			} catch (IOException e) {
-				setState(SensorState.FAULT);
 				log.log(Level.SEVERE, "Error writing to the display", e);
+				fail();
 			}
 		}
 	}
@@ -85,23 +84,26 @@ public class GroveRgbDisplay extends SensorServer implements RgbLcdDisplay {
 		try {
 			display = new GroveRgbLcdPi4J();
 		} catch (IOException e) {
-			setState(SensorState.FAULT);
 			log.log(Level.SEVERE, "Error writing to the display", e);
+			throw e;
 		}
 		executor = new ScheduledThreadPoolExecutor(1);
-		setState(SensorState.RUNNING);
-
 	}
 
 	@Override
-	public void tearDown() {
-		super.tearDown();
+	public void customTearDown() {
 		try {
 			display.setRGB(0, 0, 0);
 			display.setText("");
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "Error writing to the display", e);
 		}
+	}
+
+	@Override
+	protected void customFail() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

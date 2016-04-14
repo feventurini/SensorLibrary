@@ -73,10 +73,10 @@ public class TestUser {
 		p = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Provider trovato");
 
-		provaListeners();
+		//provaListeners();
 		provaReflection();
 		provaTemp();
-		provaRfid();
+		//provaRfid();
 	}
 
 	private void provaListeners() throws RemoteException {
@@ -85,28 +85,37 @@ public class TestUser {
 
 			@Override
 			public void onStationUnRegistered(String stationName, Station station) throws RemoteException {
-				System.out.println("Station unregistered "+ stationName);
+				System.out.println("Station unregistered " + stationName);
 			}
-			
+
 			@Override
 			public void onStationRegistered(String stationName, Station station) throws RemoteException {
-				System.out.println("Station registered "+ stationName);
+				System.out.println("Station registered " + stationName);
 			}
-			
+
 			@Override
 			public void onSensorUnRegistered(SensorId fullName, Sensor sensor) throws RemoteException {
-				System.out.println("Sensor unregistered "+ fullName);
+				System.out.println("Sensor unregistered " + fullName);
 			}
-			
+
 			@Override
 			public void onSensorRegistered(SensorId fullName, Sensor sensor) throws RemoteException {
-				System.out.println("Sensor registered "+ fullName);
+				System.out.println("Sensor registered " + fullName);
 			}
 		};
 		p.addRegistrationListener(listener);
+		
+		System.out.println("In attesa della station");
+		try {
+			Thread.sleep(30000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
-	// elenca per ogni interfaccia nota i metodi con i parametri
+	// elenca per ogni interfaccia nota i metodi con i parametri e i nomi dei
+	// parametri
+	// funziona solo se è stata data l'opzione -parameters a javac
 	private void provaReflection() {
 		// https://code.google.com/archive/p/reflections/
 		Reflections reflections = new Reflections("");
@@ -185,12 +194,13 @@ public class TestUser {
 		double temp;
 
 		System.out.println(
-				"Mando 3 richieste sincrone e aspetto (la prima ci mette un po' perchè deve misurare, le altre due sono immediate perchè la misura è ancora fresca)");
+				"Mando 2 richieste sincrone e aspetto (la prima ci mette un po' perchè deve misurare, la seconda è immediata perchè la misura è ancora fresca)");
 		System.out.print("Sync ");
 		temp = t.readTemperature(Unit.CELSIUS);
 		System.out.println(temp);
 		d.setRGB(255, 0, 0);
 		d.display("" + temp, 5);
+		System.out.println("Sleeppo 2 secondi");
 		Thread.sleep(2000);
 
 		System.out.print("Sync ");

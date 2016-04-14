@@ -25,7 +25,6 @@ import sensor.base.FutureResult;
 import sensor.base.FutureResultImpl;
 import sensor.base.SensorParameter;
 import sensor.base.SensorServer;
-import sensor.base.SensorState;
 import sensor.interfaces.RfidSensor;
 
 public class Rfid_SL030 extends SensorServer implements RfidSensor {
@@ -114,8 +113,8 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			log.log(Level.WARNING, "Error reading from the sensor", e);
 			errorCounter++;
 			if (errorCounter >= errorTreshold) {
-				setState(SensorState.FAULT);
 				log.severe("Rfid_SL030 state set to FAULT because of repeated failures");
+				fail();
 				throw e;
 			}
 			return "NO-TAG";
@@ -173,15 +172,19 @@ public class Rfid_SL030 extends SensorServer implements RfidSensor {
 			}
 		});
 		errorCounter = 0;
-		setState(SensorState.RUNNING);
 	}
 
 	@Override
-	public void tearDown() {
-		super.tearDown();
+	public void customTearDown() {
 		if (trigger != null) {
 			trigger.removeAllListeners();
 		}
 		GpioFactory.getInstance().unprovisionPin(trigger);
+	}
+
+	@Override
+	protected void customFail() {
+		// TODO Auto-generated method stub
+		
 	}
 }

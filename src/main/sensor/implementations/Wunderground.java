@@ -34,7 +34,6 @@ import sensor.base.FutureResult;
 import sensor.base.FutureResultImpl;
 import sensor.base.SensorParameter;
 import sensor.base.SensorServer;
-import sensor.base.SensorState;
 import sensor.interfaces.AstronomySensor;
 import sensor.interfaces.WeatherSensor;
 
@@ -245,8 +244,8 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 		} catch (IOException e2) {
 			log.log(Level.WARNING, "A weather request failed", e2);
 			if (errorCounter.incrementAndGet() >= errorTreshold) {
-				setState(SensorState.FAULT);
 				log.severe("Wunderground state set to FAULT because of repeated failures");
+				fail();
 			}
 			throw new CompletionException(e2);
 		}
@@ -282,8 +281,8 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 		} catch (IOException e2) {
 			log.log(Level.WARNING, "An astronomy request failed", e2);
 			if (errorCounter.incrementAndGet() >= errorTreshold) {
-				setState(SensorState.FAULT);
 				log.severe("Wunderground state set to FAULT because of repeated failures");
+				fail();
 			}
 			throw new CompletionException(e2);
 		}
@@ -357,7 +356,9 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 					"http://api.wunderground.com/api/" + key + "/conditions/q/" + stat + "/" + city + ".xml");
 			astronomyUrl = new URL(
 					"http://api.wunderground.com/api/" + key + "/astronomy/q/" + stat + "/" + city + ".xml");
-		} catch (MalformedURLException ignore) {
+		} catch (MalformedURLException e) {
+			log.log(Level.SEVERE, "Error creating wunderground url", e);
+			throw e;
 		}
 		errorCounter = new AtomicInteger();
 		weather = null;
@@ -371,14 +372,18 @@ public class Wunderground extends SensorServer implements WeatherSensor, Astrono
 		int oneDay = 24 * 60 * 60;
 		Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(astronomyInvalidator,
 				now.until(tomorrow_00_00, ChronoUnit.SECONDS), oneDay, TimeUnit.SECONDS);
-		setState(SensorState.RUNNING);
 	}
 
 	@Override
-	public void tearDown() {
+	public void customTearDown() {
 		if (executor != null) {
 			executor.shutdown();
 		}
-		setState(SensorState.SHUTDOWN);
+	}
+
+	@Override
+	protected void customFail() {
+		// TODO Auto-generated method stub
+		
 	}
 }

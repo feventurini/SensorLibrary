@@ -75,11 +75,6 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		loadSensors();
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			try {
-				provider.unregisterStation(stationName);
-			} catch (Exception e1) {
-				log.log(Level.SEVERE, "Error unregistering station", e1);
-			}
 			sensors.forEach((n, s) -> {
 				try {
 					s.tearDown();
@@ -89,6 +84,11 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 					e.printStackTrace();
 				}
 			});
+			try {
+				provider.unregisterStation(stationName);
+			} catch (Exception e1) {
+				log.log(Level.SEVERE, "Error unregistering station", e1);
+			}
 		}));
 	}
 
@@ -260,9 +260,14 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			throw new RemoteException("Sensor fault, unable to enable");
 		case SHUTDOWN:
 			try {
-				s.customSetUp();
+				s.setUp();
 			} catch (Exception e) {
-				s.tearDown();
+				log.log(Level.SEVERE, "Error starting the sensor " + name, e);
+				try {
+					s.tearDown();
+				} catch (Exception e1) {
+					log.log(Level.SEVERE, "Error tearing down the sensor " + name, e);
+				}
 				throw new RemoteException(e.getMessage(), e);
 			}
 			break;
@@ -276,7 +281,11 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 		if (name == null || name.isEmpty() || !sensors.containsKey(name))
 			throw new RemoteException("Name not found");
 
-		sensors.get(name).tearDown();
-		provider.unregister(new SensorId(name, stationName));
+		try {
+			sensors.get(name).tearDown();
+		} catch (Exception e) {
+			log.log(Level.SEVERE, "Error tearing down the sensor " + name, e);
+			throw new RemoteException(e.getMessage(), e);
+		}
 	}
 }

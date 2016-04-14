@@ -144,16 +144,38 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	 * exception that can not be handled internally to allow Sensor Stations to
 	 * abort the initialization of the sensor
 	 */
-	public abstract void customSetUp() throws Exception;
+	protected abstract void customSetUp() throws Exception;
 
-	public synchronized void tearDown() {
-		state = SensorState.SHUTDOWN;
-		log.info(this.getClass().getSimpleName() + " has stopped");
+	protected abstract void customTearDown();
+
+	public void tearDown() throws Exception {
+		customTearDown();
+		setState(SensorState.SHUTDOWN);
+	}
+	
+	protected abstract void customFail();
+
+	public void fail(){
+		customFail();
+		setState(SensorState.FAULT);
 	}
 
-	protected final synchronized void setState(SensorState state) {
+
+	private final synchronized void setState(SensorState state) {
 		SensorState old = this.state;
 		this.state = state;
+
+		switch (state) {
+		case RUNNING:
+			log.info(this.getClass().getSimpleName() + " started");
+			break;
+		case SHUTDOWN:
+			log.info(this.getClass().getSimpleName() + " stopped");
+			break;
+		case FAULT:
+			log.info(this.getClass().getSimpleName() + " state set to fault");
+			break;
+		}
 
 		if (!listeners.isEmpty()) {
 			ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());

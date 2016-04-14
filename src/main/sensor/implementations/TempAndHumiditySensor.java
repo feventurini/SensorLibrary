@@ -18,7 +18,6 @@ import sensor.base.FutureResult;
 import sensor.base.FutureResultImpl;
 import sensor.base.SensorParameter;
 import sensor.base.SensorServer;
-import sensor.base.SensorState;
 import sensor.interfaces.HumiditySensor;
 import sensor.interfaces.TempSensor;
 
@@ -43,7 +42,7 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 			return value;
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "A measure failed", e);
-			setState(SensorState.FAULT);
+			fail();
 			throw new CompletionException(e);
 		}
 	};
@@ -126,13 +125,16 @@ public class TempAndHumiditySensor extends SensorServer implements TempSensor, H
 			log.log(Level.SEVERE, "Error connecting to the sensor", e);
 		}
 		executor = Executors.newFixedThreadPool(1);
-		setState(SensorState.RUNNING);
 	}
 
 	@Override
-	public void tearDown() {
-		super.tearDown();
+	public void customTearDown() {
 		executor.shutdown();
+	}
+
+	@Override
+	protected void customFail() {
+		// TODO fermare i thread in executor, ma fermare come?
 	}
 
 }

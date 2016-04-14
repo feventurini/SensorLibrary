@@ -14,7 +14,6 @@ import sensor.base.FutureResult;
 import sensor.base.FutureResultImpl;
 import sensor.base.SensorParameter;
 import sensor.base.SensorServer;
-import sensor.base.SensorState;
 import sensor.interfaces.TempSensor;
 
 public class Temp4000 extends SensorServer implements TempSensor {
@@ -38,7 +37,7 @@ public class Temp4000 extends SensorServer implements TempSensor {
 			return r.nextDouble() * 1000;
 		} catch (InterruptedException e) {
 			log.log(Level.WARNING, "Sensor interrupted while measuring", e);
-			setState(SensorState.FAULT);
+			fail();
 			throw new CompletionException(e);
 		}
 	};
@@ -89,12 +88,14 @@ public class Temp4000 extends SensorServer implements TempSensor {
 	public void customSetUp() throws Exception {
 		r = new Random();
 		executor = Executors.newFixedThreadPool(1);
-		setState(SensorState.RUNNING);
 	}
 
 	@Override
-	public void tearDown() {
-		super.tearDown();
+	public void customTearDown() {
 		executor.shutdown();
+	}
+
+	@Override
+	protected void customFail() {
 	}
 }
