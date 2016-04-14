@@ -13,12 +13,14 @@ provider/Provider.class
 provider/ProviderRMI.class
 provider/MulticastProvider.class
 provider/ProviderUtils.class
+provider/RegistrationListener.class
 provider/SensorId.class
 
 sensor/base/FutureResult.class
 sensor/base/FutureResultImpl.class
 sensor/base/Sensor.class
 sensor/base/SensorState.class
+sensor/base/StateListener.class
 
 station/Station.class
 

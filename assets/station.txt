@@ -11,6 +11,7 @@ logging/OneLineFormatter.class
 
 provider/Provider.class
 provider/ProviderUtils.class
+provider/RegistrationListener.class
 provider/SensorId.class
 
 sensor/base/FaultListener.class
@@ -20,7 +21,7 @@ sensor/base/Sensor.class
 sensor/base/SensorParameter.class
 sensor/base/SensorServer.class
 sensor/base/SensorState.class
-sensor/base/SensorStateChangeListener.class
+sensor/base/StateListener.class
 
 sensor/implementations/GroveRgbDisplay.class
 sensor/implementations/GroveRgbDisplay$1.class
