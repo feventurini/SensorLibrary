@@ -3,6 +3,13 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>SensorNetwork</groupId>
 	<version>0.0.1-SNAPSHOT</version>
+	<distributionManagement>
+		<repository>
+			<id>example</id>
+			<name>Example</name>
+			<url>example.com</url>
+		</repository>
+	</distributionManagement>
 	<build>
 		<sourceDirectory>src/main</sourceDirectory>
 		<testSourceDirectory>src/test</testSourceDirectory>
@@ -14,12 +21,13 @@
 				<targetPath>assets</targetPath>
 			</resource>
 		</resources>
+		<!-- <pluginManagement> -->
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.3</version>
 				<configuration>
-					<!--To mantain the names of the parameters of the methods when compiling  -->
+					<!--To mantain the names of the parameters of the methods when compiling -->
 					<compilerArgument>-parameters</compilerArgument>
 					<testCompilerArgument>-parameters</testCompilerArgument>
 					<source>1.8</source>
@@ -27,35 +35,38 @@
 				</configuration>
 			</plugin>
 			<plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.7</version>
-        <executions>
-          <execution>
-            <phase>deploy</phase>
-            <configuration>
-              <tasks>
- 
- 				<exec
-                  dir="${project.basedir}/target/test-classes/assets"
-                  executable="deploy.sh"
-                  failonerror="true">
-                </exec>
-                
-                <!--
-                  Place any ant task here. You can add anything
-                  you can add between <target> and </target> in a
-                  build.xml.
-                -->
- 
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.8</version>
+				<executions>
+					<execution>
+						<id>deploy-all</id>
+						<configuration>
+							<target>
+
+								<echo>Deployment..</echo>
+								<!-- chmod non serve più perchè facciamo leggere deploy.sh a bash, 
+									però lo lascio così si può far partire anche esternamente -->
+								<chmod file="${project.basedir}/target/classes/assets/deploy.sh"
+									perm="755" />
+								<exec executable="bash"
+									dir="${project.basedir}/target/classes/assets/" failonerror="true">
+									<arg value="deploy.sh" />
+								</exec>
+
+								<!-- Place any ant task here. You can add anything you can add between 
+									<target> and </target> in a build.xml. -->
+
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
+		<!-- </pluginManagement> -->
 	</build>
 	<dependencies>
 		<dependency>
