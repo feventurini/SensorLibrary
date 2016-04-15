@@ -3,11 +3,11 @@
 cd ..
 
 # Load destinations
-PROVIDER_NAME=pi
-PROVIDER_HOST=192.168.0.20
+PROVIDER_NAME=federico
+PROVIDER_HOST=localhost
 
-STATION_NAME=pi
-STATION_HOST=192.168.0.23
+STATION_NAME=federico
+STATION_HOST=localhost
 
 CLIENT_NAME=federico
 CLIENT_HOST=localhost

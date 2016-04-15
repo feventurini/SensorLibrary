@@ -21,6 +21,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import provider.RegistrationListener;
+
 public abstract class SensorServer extends UnicastRemoteObject implements Sensor {
 	private static final long serialVersionUID = 8455786461927369862L;
 
@@ -132,6 +134,8 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	 * @throws Exception
 	 */
 	public void setUp() throws Exception {
+		if (state == SensorState.RUNNING)
+			return;
 		if (!allParametersFilledUp())
 			throw new IllegalStateException("Missing parameters: " + getAllSensorParameterFields().stream()
 					.filter((f) -> f == null).map(Field::getName).collect(Collectors.joining(", ")));
@@ -148,7 +152,9 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 
 	protected abstract void customTearDown();
 
-	public void tearDown() throws Exception {
+	public synchronized void tearDown() throws Exception {
+		if (state == SensorState.SHUTDOWN)
+			return;
 		customTearDown();
 		setState(SensorState.SHUTDOWN);
 	}
@@ -156,6 +162,8 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	protected abstract void customFail();
 
 	public void fail(){
+		if (state == SensorState.FAULT)
+			return;
 		customFail();
 		setState(SensorState.FAULT);
 	}

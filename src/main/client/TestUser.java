@@ -73,9 +73,9 @@ public class TestUser {
 		p = (Provider) Naming.lookup(providerUrl);
 		System.out.println("Provider trovato");
 
-		//provaListeners();
-		provaReflection();
-		provaTemp();
+		provaListeners();
+		//provaReflection();
+		//provaTemp();
 		//provaRfid();
 	}
 
@@ -107,7 +107,7 @@ public class TestUser {
 		
 		System.out.println("In attesa della station");
 		try {
-			Thread.sleep(30000);
+			Thread.sleep(300000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -142,7 +142,7 @@ public class TestUser {
 				});
 	}
 
-	public void provaRfid() throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
+	private void provaRfid() throws RemoteException, InterruptedException, MalformedURLException, NotBoundException {
 		// Ricerca e uso del sensore
 		RfidSensor t = (RfidSensor) p.find(new SensorId("rfidFrigo", "cucina"));
 		RgbLcdDisplay d = (RgbLcdDisplay) p.find(new SensorId("display", "cucina"));
@@ -185,7 +185,7 @@ public class TestUser {
 		d.display("", 0);
 	}
 
-	public void provaTemp() throws Exception {
+	private void provaTemp() throws Exception {
 		// Ricerca e uso del sensore
 		TempSensor t = (TempSensor) p.find(new SensorId("tempAmbiente", "cucina"));
 		RgbLcdDisplay d = (RgbLcdDisplay) p.find(new SensorId("display", "cucina"));

@@ -20,6 +20,7 @@ sensor/base/FutureResultImpl.class
 sensor/base/Sensor.class
 sensor/base/SensorParameter.class
 sensor/base/SensorServer.class
+sensor/base/SensorServer$1.class
 sensor/base/SensorState.class
 sensor/base/StateListener.class
 
