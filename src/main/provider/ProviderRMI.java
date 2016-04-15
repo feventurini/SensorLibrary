@@ -143,7 +143,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			}
 		});
 		log.log(Level.INFO, "Found {0} sensors matching query ({1},{2},{3},{4},)",
-				new Object[] { result.size(), name, location, type.getSimpleName(), state });
+				new Object[] { result.size(), name, location, type == null ? null : type.getSimpleName(), state });
 		return result;
 	}
 
@@ -286,9 +286,9 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			throw new RemoteException("Argument error");
 		if (!stationMap.containsKey(stationName))
 			throw new RemoteException("Station " + stationName + " not registered");
-		
+
 		Station station = null;
-		synchronized (stationMap) {			
+		synchronized (stationMap) {
 			station = stationMap.remove(stationName);
 		}
 
@@ -296,7 +296,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			log.info("Requested to unregister station " + stationName + " that is not registered");
 		} else {
 			log.info("Unregistered station: " + stationName);
-			
+
 			synchronized (listeners) {
 				if (!listeners.isEmpty()) {
 					ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());

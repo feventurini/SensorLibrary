@@ -11,8 +11,6 @@ logging/OneLineFormatter.class
 
 provider/Provider.class
 provider/ProviderRMI.class
-provider/ProviderRMI$1.class
-provider/ProviderRMI$1$1.class
 provider/MulticastProvider.class
 provider/ProviderUtils.class
 provider/RegistrationListener.class

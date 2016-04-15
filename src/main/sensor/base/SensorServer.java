@@ -21,8 +21,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import provider.RegistrationListener;
-
 public abstract class SensorServer extends UnicastRemoteObject implements Sensor {
 	private static final long serialVersionUID = 8455786461927369862L;
 
@@ -158,18 +156,17 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 		customTearDown();
 		setState(SensorState.SHUTDOWN);
 	}
-	
+
 	protected abstract void customFail();
 
-	public void fail(){
+	protected void fail() {
 		if (state == SensorState.FAULT)
 			return;
 		customFail();
 		setState(SensorState.FAULT);
 	}
 
-
-	private final synchronized void setState(SensorState state) {
+	private final void setState(SensorState state) {
 		SensorState old = this.state;
 		this.state = state;
 
@@ -185,20 +182,26 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 			break;
 		}
 
-		if (!listeners.isEmpty()) {
-			ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
-			listeners.forEach((l) -> executorService.submit(() -> {
-				try {
-					l.onStateChange(this, old, state);
-				} catch (RemoteException e) {
-					log.log(Level.WARNING, getClass().getSimpleName() + ": exception in Listener", e.getCause());
-				}
-			}));
-			// shutdown non ferma i thread già presenti, impedisce di
-			// aggiungerne nuovi,
-			// finalizza l'executorService quando si è svuotato, non è bloccante
-			// per chi lo chiama
-			executorService.shutdown();
+		synchronized (listeners) {
+			if (!listeners.isEmpty()) {
+				ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
+				listeners.forEach((l) -> executorService.submit(() -> {
+					try {
+						l.onStateChange(this, old, state);
+					} catch (RemoteException e) {
+						log.log(Level.WARNING, getClass().getSimpleName() + ": exception in Listener", e.getCause());
+						synchronized (listeners) {
+							listeners.remove(l);
+						}
+					}
+				}));
+				// shutdown non ferma i thread già presenti, impedisce di
+				// aggiungerne nuovi,
+				// finalizza l'executorService quando si è svuotato, non è
+				// bloccante
+				// per chi lo chiama
+				executorService.shutdown();
+			}
 		}
 	}
 
