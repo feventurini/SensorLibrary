@@ -12,7 +12,7 @@ public abstract class RegistrationListenerImpl extends UnicastRemoteObject imple
 		super();
 	}
 	public abstract void onStationRegistered(String stationName, Station station) throws RemoteException;
-	public abstract void onStationUnRegistered(String stationName, Station station) throws RemoteException;
+	public abstract void onStationUnRegistered(String stationName) throws RemoteException;
 	public abstract void onSensorRegistered(SensorId fullName, Sensor sensor) throws RemoteException;
-	public abstract void onSensorUnRegistered(SensorId fullName, Sensor sensor) throws RemoteException;
+	public abstract void onSensorUnRegistered(SensorId fullName) throws RemoteException;
 }

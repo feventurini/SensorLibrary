@@ -84,7 +84,7 @@ public class TestUser {
 			private static final long serialVersionUID = 7150468227915343021L;
 
 			@Override
-			public void onStationUnRegistered(String stationName, Station station) throws RemoteException {
+			public void onStationUnRegistered(String stationName) throws RemoteException {
 				System.out.println("Station unregistered " + stationName);
 			}
 
@@ -94,7 +94,7 @@ public class TestUser {
 			}
 
 			@Override
-			public void onSensorUnRegistered(SensorId fullName, Sensor sensor) throws RemoteException {
+			public void onSensorUnRegistered(SensorId fullName) throws RemoteException {
 				System.out.println("Sensor unregistered " + fullName);
 			}
 

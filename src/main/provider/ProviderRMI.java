@@ -11,15 +11,9 @@ import java.rmi.server.RMIClassLoader;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -148,6 +142,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 				log.log(Level.WARNING, "Unable to get sensor state", e);
 			}
 		});
+		log.log(Level.INFO, "Found {0} sensors matching query ({1},{2},{3},{4},)",
+				new Object[] { result.size(), name, location, type.getSimpleName(), state });
 		return result;
 	}
 
@@ -162,12 +158,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 				throw new RemoteException("Sensor " + fullName + " already registered");
 			}
 			sensorMap.put(fullName, sensor);
+			String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
+			log.log(Level.INFO, "Registered: {0}\n\tstub:\t\t{1}\n\tannotation:\t{2}\n\tinterfaces:\t{3}",
+					new Object[] { fullName, sensor.getClass().getName(), annotation, sensor.getSensorInterfaces()
+							.stream().map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")) });
 		}
-
-		String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
-		log.log(Level.INFO, "Registered: {0}\n\tstub:\t\t{1}\n\tannotation:\t{2}\n\tinterfaces:\t{3}",
-				new Object[] { fullName, sensor.getClass().getName(), annotation, sensor.getSensorInterfaces().stream()
-						.map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")) });
 
 		/*
 		 * I Listeners che lanciano eccezione (per ora qualsiasi eccezione, poi
@@ -176,38 +171,22 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		 * altrimenti rimangono lì in eterno e a ogni invocazione manderanno
 		 * altre eccezioni.
 		 * 
-		 * Per fare ciò la seconda soluzione è la seguente: togliere il
+		 * Per fare ciò la terza soluzione è la seguente: togliere il
 		 * synchronized dal metodo e metterlo sulle singole istanze da
-		 * sincronizzare che sono sensorMap e listeners. Creare un
-		 * ThreadPoolExecutor non tramite Executors.newFixedThreadPool ma
-		 * subclassando ThreadPoolExecutor per overridare il metodo terminated()
-		 * che viene chiamato quando tutti i thread del pool hanno finito. Ogni
-		 * thread controlla che il suo listener non lanci eccezioni in caso
-		 * contrario lo aggiunge a una lista temporanea di listener da
-		 * rimuovere. Chiamando shutdown (impedisce l'aggiunta di altri thread,
-		 * lasciando terminare quelli già dentro, non è bloccante per chi lo
-		 * chiama) facciamo in modo che quando tutti i thread terminano venga
-		 * chiamato terminated che rimuove dalla lista dei listeners i listeners
-		 * contenuti nella lista di faulty listeners.
+		 * sincronizzare che sono sensorMap e listeners. Avviare un thread per
+		 * ogni listener all'interno di un blocco sincronizzato su listeners
+		 * così da evitare che qualcuno modifichi la lista mentre la scorriamo.
+		 * Ogni thread verifica se ci sono eccezioni e nel caso rimuove il suo
+		 * listener dalla lista di listeners, il blocco synchronized interno ad
+		 * ogni thread assicura che la rimozione avvenga solamente dopo che il
+		 * for principale ha scorso tutta la lista e che non avvengano rimozioni
+		 * concorrenti tra i thread paralleli.
 		 * 
 		 */
 
-		List<RegistrationListener> toBeRemoved = new LinkedList<>();
 		synchronized (listeners) {
 			if (!listeners.isEmpty()) {
-
-				int nThreads = listeners.size();
-				ExecutorService executorService = new ThreadPoolExecutor(nThreads, nThreads, 0L, TimeUnit.MILLISECONDS,
-						new LinkedBlockingQueue<Runnable>()) {
-					@Override
-					protected void terminated() {
-						super.terminated();
-						synchronized (listeners) {
-							listeners.removeAll(toBeRemoved);
-							log.info(toBeRemoved.size() + " faulty Listeners removed from the queue");
-						}
-					}
-				};
+				ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
 
 				for (RegistrationListener l : listeners) {
 					executorService.submit(() -> {
@@ -216,8 +195,8 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 						} catch (RemoteException e) {
 							log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
 									e.getCause());
-							synchronized (toBeRemoved) {
-								toBeRemoved.add(l);
+							synchronized (listeners) {
+								listeners.remove(l);
 							}
 						}
 					});
@@ -228,90 +207,114 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized void registerStation(String stationName, Station station) throws RemoteException {
+	public void registerStation(String stationName, Station station) throws RemoteException {
 		if (stationName == null || stationName.isEmpty())
 			throw new RemoteException("Argument error");
 
-		if (stationMap.containsKey(stationName)) {
-			log.info("Requested to register station " + stationName + " that is already registered");
-			throw new RemoteException("Station " + stationName + " already registered");
+		synchronized (stationMap) {
+			if (stationMap.containsKey(stationName)) {
+				log.info("Requested to register station " + stationName + " that is already registered");
+				throw new RemoteException("Station " + stationName + " already registered");
+			}
+			stationMap.put(stationName, station);
+			log.info("Registered station: " + stationName);
 		}
-		stationMap.put(stationName, station);
-		log.info("Registered station: " + stationName);
 
-		/*
-		 * I Listeners che lanciano eccezione (per ora qualsiasi eccezione, poi
-		 * magari in futuro filtriamo le eccezioni significative come
-		 * ConnectException) vanno rimossi dalla lista dei listeners, perchè
-		 * altrimenti rimangono lì in eterno e a ogni invocazione manderanno
-		 * altre eccezioni.
-		 * 
-		 * Per fare ciò la prima soluzione è la seguente: iterare sulla lista
-		 * con un iterator e quando si verifica un'eccezione togliere il
-		 * listener dalla lista usando il metodo remove di iterator e non quello
-		 * della lista che non garantisce consistenza durante l'iterazione.
-		 * Tuttavia fare così ci costringe a invocare i listeners in maniera
-		 * sequenziale, attendendo uno a uno che finiscano. Questo non è un
-		 * comportamento desiderabile in un sistema distribuito perchè uno dei
-		 * listener potrebbe introdurre enormi ritardi nel sistema, tanto più
-		 * che i listener vengono chiamati da un metodo synchronized del
-		 * provider e quindi non permettono ad altri agenti di accedere al
-		 * provider.
-		 * 
-		 */
+		synchronized (listeners) {
+			if (!listeners.isEmpty()) {
+				ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
 
-		for (Iterator<RegistrationListener> iterator = listeners.iterator(); iterator.hasNext();) {
-			RegistrationListener l = (RegistrationListener) iterator.next();
-			try {
-				l.onStationRegistered(stationName, station);
-			} catch (RemoteException e) {
-				log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
-				iterator.remove();
+				for (RegistrationListener l : listeners) {
+					executorService.submit(() -> {
+						try {
+							l.onStationRegistered(stationName, station);
+						} catch (RemoteException e) {
+							log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+									e.getCause());
+							synchronized (listeners) {
+								listeners.remove(l);
+							}
+						}
+					});
+				}
+				executorService.shutdown();
 			}
 		}
 	}
 
 	@Override
-	public synchronized void unregister(SensorId fullName) throws RemoteException {
+	public void unregister(SensorId fullName) throws RemoteException {
 		if (fullName == null)
 			throw new RemoteException("Argument error");
 
-		Sensor sensor = sensorMap.remove(fullName);
+		Sensor sensor = null;
+		synchronized (sensorMap) {
+			sensor = sensorMap.remove(fullName);
+		}
+
 		if (sensor == null) {
 			log.info("Requested to unregister sensor " + fullName + " that is not registered");
 		} else {
 			log.info("Unregistered: " + fullName);
-			for (Iterator<RegistrationListener> iterator = listeners.iterator(); iterator.hasNext();) {
-				RegistrationListener l = (RegistrationListener) iterator.next();
-				try {
-					l.onSensorUnRegistered(fullName, sensor);
-				} catch (RemoteException e) {
-					log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
-					// iterator.remove();
+
+			synchronized (listeners) {
+				if (!listeners.isEmpty()) {
+					ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
+
+					for (RegistrationListener l : listeners) {
+						executorService.submit(() -> {
+							try {
+								l.onSensorUnRegistered(fullName);
+							} catch (RemoteException e) {
+								log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+										e.getCause());
+								synchronized (listeners) {
+									listeners.remove(l);
+								}
+							}
+						});
+					}
+					executorService.shutdown();
 				}
 			}
 		}
 	}
 
 	@Override
-	public synchronized void unregisterStation(String stationName) throws RemoteException {
+	public void unregisterStation(String stationName) throws RemoteException {
 		if (stationName == null || stationName.isEmpty())
 			throw new RemoteException("Argument error");
 		if (!stationMap.containsKey(stationName))
 			throw new RemoteException("Station " + stationName + " not registered");
-		Station station = stationMap.remove(stationName);
+		
+		Station station = null;
+		synchronized (stationMap) {			
+			station = stationMap.remove(stationName);
+		}
 
 		if (station == null) {
 			log.info("Requested to unregister station " + stationName + " that is not registered");
 		} else {
 			log.info("Unregistered station: " + stationName);
-			for (Iterator<RegistrationListener> iterator = listeners.iterator(); iterator.hasNext();) {
-				RegistrationListener l = (RegistrationListener) iterator.next();
-				try {
-					l.onStationUnRegistered(stationName, station);
-				} catch (RemoteException e) {
-					log.log(Level.WARNING, "Exception in RegistrationListener", e.getCause());
-					// iterator.remove();
+			
+			synchronized (listeners) {
+				if (!listeners.isEmpty()) {
+					ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
+
+					for (RegistrationListener l : listeners) {
+						executorService.submit(() -> {
+							try {
+								l.onStationUnRegistered(stationName);
+							} catch (RemoteException e) {
+								log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+										e.getCause());
+								synchronized (listeners) {
+									listeners.remove(l);
+								}
+							}
+						});
+					}
+					executorService.shutdown();
 				}
 			}
 		}
