@@ -6,8 +6,8 @@ cd ..
 PROVIDER_NAME=federico
 PROVIDER_HOST=localhost
 
-STATION_NAME=federico
-STATION_HOST=localhost
+STATION_NAME=pi
+STATION_HOST=192.168.0.23
 
 CLIENT_NAME=federico
 CLIENT_HOST=localhost

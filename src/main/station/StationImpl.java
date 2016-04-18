@@ -49,6 +49,38 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 			log.severe("Usage: StationImpl xmlFile");
 			System.exit(-1);
 		}
+		
+		// Impostazione del SecurityManager
+		if (!new File("assets/rmi.policy").canRead()) {
+			System.out
+					.println("Unable to load security policy, assure that you have rmi.policy in the assets directory");
+			System.exit(-3);
+		}
+		System.setProperty("java.security.policy", "assets/rmi.policy");
+		if (System.getSecurityManager() == null) {
+			System.setSecurityManager(new SecurityManager());
+		}
+
+		String currentHostname;
+		try {
+			currentHostname = IpUtils.getCurrentIp().getHostAddress();
+			log.info("currentHostName: " + currentHostname);
+			// Avvia un server http affinchè altri possano scaricare gli stub
+			// di
+			// questa classe
+			// da questo codebase in maniera dinamica quando serve
+			// (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
+			RmiClassServer rmiClassServer = new RmiClassServer();
+			rmiClassServer.start();
+			System.setProperty("java.rmi.server.hostname", currentHostname);
+			System.setProperty("java.rmi.server.useCodebaseOnly", "false");
+			System.setProperty("java.rmi.server.codebase",
+					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
+		} catch (SocketException | UnknownHostException e) {
+			log.log(Level.SEVERE, "Unable to retrieve current ip", e);
+			System.exit(-7);
+		}
+		
 		try {
 			new StationImpl(new File(args[0]));
 		} catch (RemoteException e) {
@@ -120,36 +152,6 @@ public class StationImpl extends UnicastRemoteObject implements Station {
 	}
 
 	private void initRmi(String providerUrl) {
-		// Impostazione del SecurityManager
-		if (!new File("assets/rmi.policy").canRead()) {
-			System.out
-					.println("Unable to load security policy, assure that you have rmi.policy in the assets directory");
-			System.exit(-3);
-		}
-		System.setProperty("java.security.policy", "assets/rmi.policy");
-		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new SecurityManager());
-		}
-
-		String currentHostname;
-		try {
-			currentHostname = IpUtils.getCurrentIp().getHostAddress();
-			log.info("currentHostName: " + currentHostname);
-			// Avvia un server http affinchè altri possano scaricare gli stub
-			// di
-			// questa classe
-			// da questo codebase in maniera dinamica quando serve
-			// (https://publicobject.com/2008/03/java-rmi-without-webserver.html)
-			RmiClassServer rmiClassServer = new RmiClassServer();
-			rmiClassServer.start();
-			System.setProperty("java.rmi.server.hostname", currentHostname);
-			System.setProperty("java.rmi.server.codebase",
-					"http://" + currentHostname + ":" + rmiClassServer.getHttpPort() + "/");
-		} catch (SocketException | UnknownHostException e) {
-			log.log(Level.SEVERE, "Unable to retrieve current ip", e);
-			System.exit(-7);
-		}
-
 		try {
 			// Ricerca del providerHost e registrazione
 			log.info("Looking up provider on: " + providerUrl);

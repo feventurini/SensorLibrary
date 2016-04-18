@@ -15,7 +15,7 @@
 		<class>sensor.implementations.TempAndHumiditySensor</class>
 		<parameters>assets/TempAndHumiditySensor.properties</parameters>
 	</sensor>
-	<sensor loadAtStartup="true">
+	<sensor loadAtStartup="false">
 		<name>display</name>
 		<class>sensor.implementations.GroveRgbDisplay</class>
 		<parameters></parameters>

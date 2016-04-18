@@ -142,7 +142,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 				log.log(Level.WARNING, "Unable to get sensor state", e);
 			}
 		});
-		log.log(Level.INFO, "Found {0} sensors matching query ({1},{2},{3},{4},)",
+		log.log(Level.INFO, "Found {0} sensors matching query ({1},{2},{3},{4})",
 				new Object[] { result.size(), name, location, type == null ? null : type.getSimpleName(), state });
 		return result;
 	}
@@ -217,7 +217,9 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 				throw new RemoteException("Station " + stationName + " already registered");
 			}
 			stationMap.put(stationName, station);
-			log.info("Registered station: " + stationName);
+			String annotation = RMIClassLoader.getClassAnnotation(station.getClass());
+			log.log(Level.INFO, "Registered station: {0}\n\tstub:\t\t{1}\n\tannotation:\t{2}",
+					new Object[] { stationName, station.getClass().getName(), annotation});
 		}
 
 		synchronized (listeners) {
@@ -334,12 +336,14 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	@Override
 	public synchronized void addRegistrationListener(RegistrationListener listener) throws RemoteException {
 		listeners.add(listener);
-		log.info("Registered listener");
+		String annotation = RMIClassLoader.getClassAnnotation(listener.getClass());
+		log.log(Level.INFO, "Added registration listener\n\tstub:\t\t{0}\n\tannotation:\t{1}",
+				new Object[] { listener.getClass().getName(), annotation});
 	}
 
 	@Override
 	public synchronized void removeRegistrationListener(RegistrationListener listener) throws RemoteException {
 		listeners.remove(listener);
-		log.info("Removed listener");
+		log.info("Removed registration listener");
 	}
 }
