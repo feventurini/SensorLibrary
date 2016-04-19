@@ -212,7 +212,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 	}
 
 	@Override
-	public synchronized final void removeListeners(StateListener listener) {
+	public synchronized final void removeListener(StateListener listener) {
 		listeners.remove(listener);
 		log.info(getClass().getSimpleName() + ": removed listener");
 	}

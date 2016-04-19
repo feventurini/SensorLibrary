@@ -23,5 +23,5 @@ public interface Sensor extends Remote {
 
 	void addListener(StateListener listener) throws RemoteException;
 
-	void removeListeners(StateListener listener) throws RemoteException;
+	void removeListener(StateListener listener) throws RemoteException;
 }
