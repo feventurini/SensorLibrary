@@ -3,6 +3,7 @@ package client;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -10,6 +11,8 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.reflections.Reflections;
 
@@ -73,7 +76,7 @@ public class TestUser {
 		System.out.println("Provider trovato");
 
 		provaListeners();
-		//provaReflection();
+		provaReflection();
 		//provaTemp();
 		//provaRfid();
 	}
@@ -104,12 +107,7 @@ public class TestUser {
 		};
 		p.addRegistrationListener(listener);
 		
-		System.out.println("In attesa della station");
-		try {
-			Thread.sleep(300000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+		System.out.println("RegistrationListener registrato");
 	}
 
 	// elenca per ogni interfaccia nota i metodi con i parametri e i nomi dei
@@ -120,22 +118,22 @@ public class TestUser {
 		Reflections reflections = new Reflections("");
 		Set<Class<? extends Sensor>> subTypes = reflections.getSubTypesOf(Sensor.class);
 
-		subTypes.stream().sorted((o1, o2) -> o1.getSimpleName().compareTo(o2.getSimpleName()))
-				.filter((interfaccia) -> interfaccia.isInterface()).forEach((interfaccia) -> {
+		subTypes.stream()
+			.filter(Class::isInterface)
+			.sorted((o1, o2) -> o1.getSimpleName().compareTo(o2.getSimpleName()))
+			.forEach((interfaccia) -> {
 					StringBuilder sb = new StringBuilder();
-					sb.append(interfaccia.getSimpleName()).append("\n");
+					sb.append("-------------------------------------")
+					  .append(interfaccia.getSimpleName())
+					  .append("-------------------------------------\n");
 					for (Method m : interfaccia.getMethods()) {
-						sb.append("\t").append(m.getReturnType().getSimpleName()).append(" ").append(m.getName())
-								.append("(");
-						if (m.getParameterCount() == 0) {
-							sb.append(")\n");
-						} else {
-							for (int i = 0; i < m.getParameterCount(); i++) {
-								sb.append(m.getParameterTypes()[i].getSimpleName()).append(" ")
-										.append(m.getParameters()[i].getName())
-										.append(i == m.getParameterCount() - 1 ? ")\n" : ", ");
-							}
-						}
+						sb.append("\t")
+						  .append(m.getReturnType().getSimpleName())
+						  .append(" ")
+						  .append(m.getName())
+						  .append(Stream.of(m.getParameters())
+								  .map(p -> p.getType().getSimpleName() + " " + p.getName())
+								  .collect(Collectors.joining(", ", "(", ")\n")));						
 					}
 					System.out.println(sb.toString());
 				});
