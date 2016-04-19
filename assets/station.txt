@@ -42,8 +42,6 @@ sensor/interfaces/HumiditySensor.class
 sensor/interfaces/RfidSensor.class
 sensor/interfaces/RgbLcdDisplay.class
 sensor/interfaces/TempSensor.class
-sensor/interfaces/TempSensor$1.class
-sensor/interfaces/TempSensor$Unit.class
 sensor/interfaces/WeatherSensor.class
 sensor/interfaces/WeatherSensor$Weather.class
 
