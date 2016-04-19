@@ -23,7 +23,6 @@ import sensor.base.Sensor;
 import sensor.interfaces.RfidSensor;
 import sensor.interfaces.RgbLcdDisplay;
 import sensor.interfaces.TempSensor;
-import sensor.interfaces.TempSensor.Unit;
 import station.Station;
 
 public class TestUser {
@@ -196,7 +195,7 @@ public class TestUser {
 		System.out.println(
 				"Mando 2 richieste sincrone e aspetto (la prima ci mette un po' perchè deve misurare, la seconda è immediata perchè la misura è ancora fresca)");
 		System.out.print("Sync ");
-		temp = t.readTemperature(Unit.CELSIUS);
+		temp = t.readTemperature();
 		System.out.println(temp);
 		d.setRGB(255, 0, 0);
 		d.display("" + temp, 5);
@@ -204,14 +203,14 @@ public class TestUser {
 		Thread.sleep(2000);
 
 		System.out.print("Sync ");
-		temp = t.readTemperature(Unit.CELSIUS);
+		temp = t.readTemperature();
 		System.out.println(temp);
 		d.setRGB(0, 255, 0);
 		d.display("" + temp, 5);
 
 		Thread.sleep(10000);
 		System.out.print("Sync ");
-		temp = t.readTemperature(Unit.CELSIUS);
+		temp = t.readTemperature();
 		System.out.println(temp);
 		d.setRGB(0, 0, 255);
 		d.display("" + temp, 10);
@@ -219,7 +218,7 @@ public class TestUser {
 		System.out.println("Mando 10 richieste asincrone e faccio altro");
 		List<FutureResult<Double>> results = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			results.add(t.readTemperatureAsync(Unit.CELSIUS));
+			results.add(t.readTemperatureAsync());
 		}
 
 		System.out.println("Per ogni future result faccio partire un thread che quando ha il risultato lo stampa");

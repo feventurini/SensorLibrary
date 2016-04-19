@@ -12,7 +12,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import sensor.interfaces.TempSensor.Unit;
 import sensor.mocks.Temp4000;
 
 public class Temp4000Test {
@@ -50,22 +49,22 @@ public class Temp4000Test {
 
 	/**
 	 * Test method for
-	 * {@link sensor.mocks.Temp4000#readTemperature(sensor.interfaces.TempSensor.Unit)}
+	 * {@link sensor.mocks.Temp4000#readTemperature()}
 	 * .
 	 */
 	@Test
 	public void testReadTemperature() throws RemoteException {
-		assertNotNull(t.readTemperature(Unit.KELVIN));
+		assertNotNull(t.readTemperature());
 	}
 
 	/**
 	 * Test method for
-	 * {@link sensor.mocks.Temp4000#readTemperatureAsync(sensor.interfaces.TempSensor.Unit)}
+	 * {@link sensor.mocks.Temp4000#readTemperatureAsync()}
 	 * .
 	 */
 	@Test
 	public void testReadTemperatureAsync() throws RemoteException {
-		FutureResult<Double> r = t.readTemperatureAsync(Unit.KELVIN);
+		FutureResult<Double> r = t.readTemperatureAsync();
 		assertNotNull(r);
 		assertNotNull(r.get());
 	}

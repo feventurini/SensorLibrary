@@ -59,12 +59,12 @@ public class Temp4000 extends SensorServer implements TempSensor {
 	}
 
 	@Override
-	public synchronized Double readTemperature(Unit unit) throws RemoteException {
-		return readTemperatureAsync(unit).get();
+	public synchronized Double readTemperature() throws RemoteException {
+		return readTemperatureAsync().get();
 	}
 
 	@Override
-	public synchronized FutureResult<Double> readTemperatureAsync(Unit unit) throws RemoteException {
+	public synchronized FutureResult<Double> readTemperatureAsync() throws RemoteException {
 		// if a measure is already running, return the same FutureResult to
 		// everyone requesting, it will be updated as soon as the measure ends
 		if (result == null) {
