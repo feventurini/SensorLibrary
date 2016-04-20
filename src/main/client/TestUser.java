@@ -79,6 +79,7 @@ public class TestUser {
 		provaReflection();
 		//provaTemp();
 		//provaRfid();
+		Thread.sleep(300000);
 	}
 
 	private void provaListeners() throws RemoteException {

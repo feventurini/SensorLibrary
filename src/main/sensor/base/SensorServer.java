@@ -185,7 +185,7 @@ public abstract class SensorServer extends UnicastRemoteObject implements Sensor
 		synchronized (listeners) {
 			if (!listeners.isEmpty()) {
 				ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
-				listeners.forEach((l) -> executorService.submit(() -> {
+				listeners.parallelStream().forEach((l) -> executorService.submit(() -> {
 					try {
 						l.onStateChange(this, old, state);
 					} catch (RemoteException e) {

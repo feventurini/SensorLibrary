@@ -159,9 +159,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			}
 			sensorMap.put(fullName, sensor);
 			String annotation = RMIClassLoader.getClassAnnotation(sensor.getClass());
-			log.log(Level.INFO, "Registered: {0}\n\tstub:\t\t{1}\n\tannotation:\t{2}\n\tinterfaces:\t{3}",
-					new Object[] { fullName, sensor.getClass().getName(), annotation, sensor.getSensorInterfaces()
-							.stream().map(Class::getSimpleName).sorted().collect(Collectors.joining(", ")) });
+			log.log(Level.INFO,
+					"Registered: {0}, {1} listeners to notify\n\tstub:\t\t{2}\n\tannotation:\t{3}\n\tinterfaces:\t{4}",
+					new Object[] { fullName, listeners.size(), sensor.getClass().getName(), annotation,
+							sensor.getSensorInterfaces().stream().map(Class::getSimpleName).sorted()
+									.collect(Collectors.joining(", ")) });
 		}
 
 		/*
@@ -188,19 +190,17 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			if (!listeners.isEmpty()) {
 				ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
 
-				for (RegistrationListener l : listeners) {
-					executorService.submit(() -> {
-						try {
-							l.onSensorRegistered(fullName, sensor);
-						} catch (RemoteException e) {
-							log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
-									e.getCause());
-							synchronized (listeners) {
-								listeners.remove(l);
-							}
+				listeners.parallelStream().forEach(l -> executorService.submit(() -> {
+					try {
+						l.onSensorRegistered(fullName, sensor);
+					} catch (RemoteException e) {
+						log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+								e.getCause());
+						synchronized (listeners) {
+							listeners.remove(l);
 						}
-					});
-				}
+					}
+				}));
 				executorService.shutdown();
 			}
 		}
@@ -218,27 +218,25 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			}
 			stationMap.put(stationName, station);
 			String annotation = RMIClassLoader.getClassAnnotation(station.getClass());
-			log.log(Level.INFO, "Registered station: {0}\n\tstub:\t\t{1}\n\tannotation:\t{2}",
-					new Object[] { stationName, station.getClass().getName(), annotation});
+			log.log(Level.INFO, "Registered station {0}, {1} listeners to notify\n\tstub:\t\t{2}\n\tannotation:\t{3}",
+					new Object[] { stationName, listeners.size(), station.getClass().getName(), annotation });
 		}
 
 		synchronized (listeners) {
 			if (!listeners.isEmpty()) {
 				ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
 
-				for (RegistrationListener l : listeners) {
-					executorService.submit(() -> {
-						try {
-							l.onStationRegistered(stationName, station);
-						} catch (RemoteException e) {
-							log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
-									e.getCause());
-							synchronized (listeners) {
-								listeners.remove(l);
-							}
+				listeners.parallelStream().forEach(l -> executorService.submit(() -> {
+					try {
+						l.onStationRegistered(stationName, station);
+					} catch (RemoteException e) {
+						log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+								e.getCause());
+						synchronized (listeners) {
+							listeners.remove(l);
 						}
-					});
-				}
+					}
+				}));
 				executorService.shutdown();
 			}
 		}
@@ -257,25 +255,23 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (sensor == null) {
 			log.info("Requested to unregister sensor " + fullName + " that is not registered");
 		} else {
-			log.info("Unregistered: " + fullName);
+			log.info("Unregistered " + fullName + ", " + listeners.size() + " listeners to notify");
 
 			synchronized (listeners) {
 				if (!listeners.isEmpty()) {
 					ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
 
-					for (RegistrationListener l : listeners) {
-						executorService.submit(() -> {
-							try {
-								l.onSensorUnRegistered(fullName);
-							} catch (RemoteException e) {
-								log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
-										e.getCause());
-								synchronized (listeners) {
-									listeners.remove(l);
-								}
+					listeners.parallelStream().forEach(l -> executorService.submit(() -> {
+						try {
+							l.onSensorUnRegistered(fullName);
+						} catch (RemoteException e) {
+							log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+									e.getCause());
+							synchronized (listeners) {
+								listeners.remove(l);
 							}
-						});
-					}
+						}
+					}));
 					executorService.shutdown();
 				}
 			}
@@ -297,25 +293,23 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		if (station == null) {
 			log.info("Requested to unregister station " + stationName + " that is not registered");
 		} else {
-			log.info("Unregistered station: " + stationName);
+			log.info("Unregistered station " + stationName + ", " + listeners.size() + " listeners to notify");
 
 			synchronized (listeners) {
 				if (!listeners.isEmpty()) {
 					ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
 
-					for (RegistrationListener l : listeners) {
-						executorService.submit(() -> {
-							try {
-								l.onStationUnRegistered(stationName);
-							} catch (RemoteException e) {
-								log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
-										e.getCause());
-								synchronized (listeners) {
-									listeners.remove(l);
-								}
+					listeners.parallelStream().forEach(l -> executorService.submit(() -> {
+						try {
+							l.onStationUnRegistered(stationName);
+						} catch (RemoteException e) {
+							log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+									e.getCause());
+							synchronized (listeners) {
+								listeners.remove(l);
 							}
-						});
-					}
+						}
+					}));
 					executorService.shutdown();
 				}
 			}
@@ -338,7 +332,7 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 		listeners.add(listener);
 		String annotation = RMIClassLoader.getClassAnnotation(listener.getClass());
 		log.log(Level.INFO, "Added registration listener\n\tstub:\t\t{0}\n\tannotation:\t{1}",
-				new Object[] { listener.getClass().getName(), annotation});
+				new Object[] { listener.getClass().getName(), annotation });
 	}
 
 	@Override
