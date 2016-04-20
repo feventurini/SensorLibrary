@@ -13,5 +13,5 @@
 <stringAttribute key="M2_USER_SETTINGS" value=""/>
 <booleanAttribute key="M2_WORKSPACE_RESOLUTION" value="false"/>
 <stringAttribute key="bad_container_name" value="SensorLibrary (compile + skip test + custom deploy).launch"/>
-<stringAttribute key="org.eclipse.jdt.launching.WORKING_DIRECTORY" value="/home/federico/git/SensorLibrary"/>
+<stringAttribute key="org.eclipse.jdt.launching.WORKING_DIRECTORY" value="${workspace_loc:/SensorLibrary}"/>
 </launchConfiguration>
