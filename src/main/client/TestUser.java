@@ -76,7 +76,7 @@ public class TestUser {
 		System.out.println("Provider trovato");
 
 		provaListeners();
-		provaReflection();
+		//provaReflection();
 		//provaTemp();
 		//provaRfid();
 		Thread.sleep(300000);

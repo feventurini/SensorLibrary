@@ -117,10 +117,13 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized Sensor find(SensorId fullName) throws RemoteException {
+	public Sensor find(SensorId fullName) throws RemoteException {
 		if (fullName == null)
 			throw new RemoteException("Argument error");
-		Sensor sensor = sensorMap.get(fullName);
+		Sensor sensor = null;
+		synchronized (sensorMap) {
+			sensor = sensorMap.get(fullName);
+		}
 		if (sensor == null)
 			throw new RemoteException("Sensor " + fullName + " not found");
 		log.info("Requested: " + fullName);
@@ -128,20 +131,22 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized Map<SensorId, Sensor> findAll(String name, String location, Class<? extends Sensor> type,
-			SensorState state) throws RemoteException {
+	public Map<SensorId, Sensor> findAll(String name, String location, Class<? extends Sensor> type, SensorState state)
+			throws RemoteException {
 		Map<SensorId, Sensor> result = new HashMap<>();
-		sensorMap.forEach((fullname, sensor) -> {
-			try {
-				if ((name == null || fullname.name.equals(name))
-						&& (location == null || fullname.location.equals(location))
-						&& (type == null || type.isAssignableFrom(sensor.getClass()))
-						&& (state == null || sensor.getState() == state))
-					result.put(fullname, sensor);
-			} catch (RemoteException e) {
-				log.log(Level.WARNING, "Unable to get sensor state", e);
-			}
-		});
+		synchronized (sensorMap) {
+			sensorMap.forEach((fullname, sensor) -> {
+				try {
+					if ((name == null || fullname.name.equals(name))
+							&& (location == null || fullname.location.equals(location))
+							&& (type == null || type.isAssignableFrom(sensor.getClass()))
+							&& (state == null || sensor.getState() == state))
+						result.put(fullname, sensor);
+				} catch (RemoteException e) {
+					log.log(Level.WARNING, "Unable to get sensor state", e);
+				}
+			});
+		}
 		log.log(Level.INFO, "Found {0} sensors matching query ({1},{2},{3},{4})",
 				new Object[] { result.size(), name, location, type == null ? null : type.getSimpleName(), state });
 		return result;
@@ -190,11 +195,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			if (!listeners.isEmpty()) {
 				ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
 
-				listeners.parallelStream().forEach(l -> executorService.submit(() -> {
+				listeners.stream().forEach(l -> executorService.submit(() -> {
 					try {
 						l.onSensorRegistered(fullName, sensor);
 					} catch (RemoteException e) {
-						log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+						log.log(Level.WARNING, e.getClass().getSimpleName() + " in Listener, it will be removed from the queue",
 								e.getCause());
 						synchronized (listeners) {
 							listeners.remove(l);
@@ -226,11 +231,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 			if (!listeners.isEmpty()) {
 				ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
 
-				listeners.parallelStream().forEach(l -> executorService.submit(() -> {
+				listeners.stream().forEach(l -> executorService.submit(() -> {
 					try {
 						l.onStationRegistered(stationName, station);
 					} catch (RemoteException e) {
-						log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+						log.log(Level.WARNING, e.getClass().getSimpleName() + " in Listener, it will be removed from the queue",
 								e.getCause());
 						synchronized (listeners) {
 							listeners.remove(l);
@@ -261,11 +266,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 				if (!listeners.isEmpty()) {
 					ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
 
-					listeners.parallelStream().forEach(l -> executorService.submit(() -> {
+					listeners.stream().forEach(l -> executorService.submit(() -> {
 						try {
 							l.onSensorUnRegistered(fullName);
 						} catch (RemoteException e) {
-							log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+							log.log(Level.WARNING, e.getClass().getSimpleName() + " in Listener, it will be removed from the queue",
 									e.getCause());
 							synchronized (listeners) {
 								listeners.remove(l);
@@ -299,11 +304,11 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 				if (!listeners.isEmpty()) {
 					ExecutorService executorService = Executors.newFixedThreadPool(listeners.size());
 
-					listeners.parallelStream().forEach(l -> executorService.submit(() -> {
+					listeners.stream().forEach(l -> executorService.submit(() -> {
 						try {
 							l.onStationUnRegistered(stationName);
 						} catch (RemoteException e) {
-							log.log(Level.WARNING, "Exception in Listener, it will be removed from the queue",
+							log.log(Level.WARNING, e.getClass().getSimpleName() + " in Listener, it will be removed from the queue",
 									e.getCause());
 							synchronized (listeners) {
 								listeners.remove(l);
@@ -317,10 +322,13 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized Station findStation(String location) throws RemoteException {
+	public Station findStation(String location) throws RemoteException {
 		if (location == null || location.isEmpty())
 			throw new RemoteException("Argument error");
-		Station station = stationMap.get(location);
+		Station station = null;
+		synchronized (stationMap) {
+			station = stationMap.get(location);
+		}
 		if (station == null)
 			throw new RemoteException("Station " + location + " not found");
 		log.info("Requested station: " + location);
@@ -328,16 +336,20 @@ public class ProviderRMI extends UnicastRemoteObject implements Provider {
 	}
 
 	@Override
-	public synchronized void addRegistrationListener(RegistrationListener listener) throws RemoteException {
-		listeners.add(listener);
+	public void addRegistrationListener(RegistrationListener listener) throws RemoteException {
+		synchronized (listeners) {
+			listeners.add(listener);
+		}
 		String annotation = RMIClassLoader.getClassAnnotation(listener.getClass());
 		log.log(Level.INFO, "Added registration listener\n\tstub:\t\t{0}\n\tannotation:\t{1}",
 				new Object[] { listener.getClass().getName(), annotation });
 	}
 
 	@Override
-	public synchronized void removeRegistrationListener(RegistrationListener listener) throws RemoteException {
-		listeners.remove(listener);
+	public void removeRegistrationListener(RegistrationListener listener) throws RemoteException {
+		synchronized (listener) {
+			listeners.remove(listener);
+		}
 		log.info("Removed registration listener");
 	}
 }
